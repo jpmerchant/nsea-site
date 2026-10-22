@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NSEA Upcoming Deadlines</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Oswald:wght@500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#008675;--teal-d:#006A5C;--coral:#ee492f;--coral-l:#FCE7E3;--gray:#676d70;--ink:#1B2325;--line:#E4E7E8;--soft:#FAFBFB;--mono:'Space Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:15px/1.4 Inter,system-ui,sans-serif}
+.w{max-width:1200px;margin:0 auto;padding:8px}
+h2{font:600 20px/1.2 Oswald,Inter,sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0 0 8px;color:var(--teal-d)}
+ul{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--soft);overflow:hidden}
+li{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+li:last-child{border-bottom:0}
+.d{text-align:center;border:1px solid var(--line);border-top:3px solid var(--teal);border-radius:8px;background:#fff;padding:3px 2px}
+.d b{display:block;font:600 20px/1.1 Oswald,sans-serif;color:var(--teal-d)}
+.d span{font:700 10px var(--mono);color:var(--gray);text-transform:uppercase;letter-spacing:.05em}
+.t{font-weight:600;line-height:1.25}
+.s{font-size:13px;color:var(--gray)}
+.b{font:700 11px var(--mono);padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:#fff;white-space:nowrap}
+.b.soon{background:var(--coral-l);border-color:var(--coral);color:#a32a16}
+a{color:var(--teal-d);font-weight:600}
+.btn{display:inline-block;font:600 13px Inter;border:1px solid var(--teal);color:var(--teal-d);background:#fff;padding:5px 11px;border-radius:8px;text-decoration:none;white-space:nowrap}
+.btn.p{background:var(--teal);color:#fff}
+.right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.more{margin-top:8px;font-size:14px}
+.empty{padding:14px;color:var(--gray)}
+@media (max-width:520px){li{grid-template-columns:54px 1fr}.right{grid-column:2;flex-direction:row;align-items:center;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="w">
+<h2>Upcoming deadlines</h2>
+<ul id="list"></ul>
+<div class="more"><a id="all" href="../" target="_top">See the full calendar &rarr;</a></div>
+</div>
+<script>
+const ITEMS=/*WIDGET_DATA_HERE*/null;
+const q=new URLSearchParams(location.search);
+const MAX=Math.max(1,Math.min(15,+q.get('max')||5)),DAYS=+q.get('days')||0;
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const d=new Date(),today=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());
+const left=s=>{const [y,m,dd]=s.split('-').map(Number);return Math.round((Date.UTC(y,m-1,dd)-today)/864e5)};
+const rows=ITEMS.map(i=>({...i,n:left(i.date)})).filter(i=>i.n>=0&&(!DAYS||i.n<=DAYS)).sort((a,b)=>a.n-b.n||a.title.localeCompare(b.title)).slice(0,MAX);
+const safe=u=>/^https?:\/\//.test(u||'')?u:'';
+document.getElementById('list').innerHTML=rows.length?rows.map(r=>{
+  const [y,m,dd]=r.date.split('-').map(Number);
+  const badge=r.n===0?'<span class="b soon">Today</span>':r.n<=14?`<span class="b soon">${r.n} day${r.n>1?'s':''} left</span>`:`<span class="b">${r.n} days</span>`;
+  const act=safe(r.link)?`<a class="btn p" href="${esc(safe(r.link))}" target="_blank" rel="noopener">Sign up</a>`:'';
+  return `<li><div class="d"><b>${dd}</b><span>${MON[m-1]}</span></div><div><div class="t">${esc(r.title)}</div>${r.sub?`<div class="s">${esc(r.sub)}</div>`:''}</div><div class="right">${badge}${act}</div></li>`}).join('')
+ :'<li class="empty" style="display:block">No upcoming deadlines right now.</li>';
+// Optional: lets a host page resize the frame if it listens for this message
+try{parent.postMessage({type:'nsea-widget-height',height:document.documentElement.scrollHeight},'*')}catch(e){}
+</script>
+</body>
+</html>

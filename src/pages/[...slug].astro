@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import HubGrid from '../components/HubGrid.astro';
+import ToolEmbed from '../components/ToolEmbed.astro';
+import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
+
+export function getStaticPaths() {
+  return pages
+    .filter((p) => p.type !== 'link')
+    .map((p) => ({ params: { slug: p.path.replace(/^\/|\/$/g, '') }, props: { page: p } }));
+}
+
+const p = Astro.props.page;
+const live = import.meta.env.PUBLIC_LIVE === 'true';
+const kids = children(p.path);
+const cross = crossLinks(p.path);
+
+// Real content: drop a Markdown file at src/content/<same path>.md and it replaces the placeholder.
+const md = import.meta.glob('/src/content/**/*.md', { eager: true });
+const mod = md['/src/content' + p.path.replace(/\/$/, '') + '.md'];
+const Content = mod?.Content;
+const hasEmbed = p.embed || p.variants;
+---
+<Base title={p.title} description={p.desc} path={p.path}>
+  <Breadcrumbs path={p.path} />
+  <h1>{p.title}</h1>
+  {p.desc && <p class="lede">{p.desc}</p>}
+  {p.gated && <p class="chip new">Members only &middot; gated by Cloudflare Access</p>}
+
+  {Content && <div class="prose"><Content /></div>}
+
+  {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
+
+  {!Content && !hasEmbed && p.type !== 'hub' && !live && (
+    <div class="todo">
+      <h3>Content not migrated yet</h3>
+      <dl>
+        <dt>Status</dt><dd>{statusLabel[p.status] ?? p.status}</dd>
+        {p.from && <><dt>Replaces</dt><dd>{p.from.map((f) => `nseaswimteam.com${f}`).join(', ')}</dd></>}
+        {p.legacy && <><dt>Source files</dt><dd>{p.legacy.join(' · ')}</dd></>}
+        <dt>To do</dt><dd>Add <code>src/content{p.path.replace(/\/$/, '')}.md</code> (or an .astro page) to replace this panel.</dd>
+      </dl>
+    </div>
+  )}
+
+  {kids.length > 0 && <HubGrid items={kids} showStatus={!live} />}
+
+  {cross.length > 0 && (
+    <>
+      <div class="section-title">Related</div>
+      <HubGrid items={cross} showStatus={!live} />
+    </>
+  )}
+</Base>

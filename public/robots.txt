@@ -1,0 +1,3 @@
+# Preview/staging: block everything. Replace with the live robots.txt at go-live.
+User-agent: *
+Disallow: /

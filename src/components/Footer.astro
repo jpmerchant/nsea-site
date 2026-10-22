@@ -1,0 +1,31 @@
+---
+import { SITE } from '../data/site.mjs';
+import { topLevel, dropdown, hrefOf } from '../lib/nav.mjs';
+---
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="fcols">
+      <div>
+        <h4>NSEA Swim</h4>
+        <ul>
+          <li>{SITE.address}</li>
+          <li><a href={`tel:${SITE.phone.replace(/-/g, '')}`}>{SITE.phone}</a></li>
+          <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          {SITE.social.map((s) => <li><a href={s.url} rel="noopener">{s.label}</a></li>)}
+        </ul>
+      </div>
+      {topLevel.map((h) => (
+        <div>
+          <h4><a href={h.path}>{h.title}</a></h4>
+          <ul>{dropdown(h).slice(0, 6).map((c) => <li><a href={hrefOf(c)}>{c.title}</a></li>)}</ul>
+        </div>
+      ))}
+    </div>
+    <div class="partners">
+      {SITE.partners.map(([name, url]) => <a href={url} rel="noopener">{name}</a>)}
+    </div>
+    <div class="legal">
+      &copy; {new Date().getFullYear()} NSEA Swim &middot; <a href="/tools/">Tool library</a> &middot; <a href="/privacy/">Privacy Statement</a>
+    </div>
+  </div>
+</footer>

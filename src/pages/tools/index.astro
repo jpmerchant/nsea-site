@@ -1,0 +1,12 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import HubGrid from '../../components/HubGrid.astro';
+import { tools } from '../../lib/nav.mjs';
+const live = import.meta.env.PUBLIC_LIVE === 'true';
+---
+<Base title="Tool Library" description="Every NSEA Swim tool in one place." path="/tools/">
+  <h1>Tool Library</h1>
+  <p class="lede">Interactive tools for swimmers and families. New tools appear here automatically when they are added to the site registry.</p>
+  <HubGrid items={tools} showStatus={!live} />
+</Base>

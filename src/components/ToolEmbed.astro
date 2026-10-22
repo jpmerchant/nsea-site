@@ -1,0 +1,22 @@
+---
+// Embeds an already-hosted tool. Pass `variants` to get a course (SCY/LCM) toggle.
+const { src, variants, height = 1200, title = 'Embedded tool' } = Astro.props;
+const keys = variants ? Object.keys(variants) : [];
+const first = variants ? variants[keys[0]] : src;
+---
+{variants && (
+  <div class="toggle" role="group" aria-label="Course">
+    {keys.map((k, i) => <button type="button" data-src={variants[k]} aria-pressed={i === 0 ? 'true' : 'false'}>{k}</button>)}
+  </div>
+)}
+<iframe class="embed" id="tool-frame" src={first} title={title} style={`height:${height}px;`} loading="lazy"></iframe>
+<script>
+  const frame = document.getElementById('tool-frame');
+  document.querySelectorAll('.toggle button').forEach((b) => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.toggle button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+      frame.src = b.dataset.src;
+    });
+  });
+</script>

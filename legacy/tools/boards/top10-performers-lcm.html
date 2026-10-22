@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NSEA Swim — Top 10 Performers (LCM)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325;
+    --white:#ffffff; --panel:#FAFBFB;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--white); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; padding-bottom:60px; }
+  .sub{ color:var(--gray); font-size:13px; max-width:640px; margin:0 auto; line-height:1.5; }
+  .sub strong{ color:var(--coral); }
+  .stats-strip{ display:flex; justify-content:center; gap:48px; padding:18px 16px; border:1px solid var(--line); border-radius:8px; background:var(--panel); flex-wrap:wrap; }
+  .stat{ text-align:center; }
+  .stat .num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; color:var(--teal-dark); }
+  .stat .label{ font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray-light); margin-top:2px; }
+  main{ max-width:1200px; margin:0 auto; padding:0 16px; }
+  .intro{ padding:18px 0 14px; text-align:center; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .source-note{ text-align:center; color:var(--gray-light); font-size:11.5px; margin:24px 0 0; font-family:'Space Mono',monospace; letter-spacing:0.04em; }
+  .disclaimer{ display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--coral); border-radius:8px; padding:14px 18px; margin:24px 0; font-size:13px; color:var(--gray); line-height:1.55; }
+  .disclaimer b{ color:var(--ink); }
+  .tabs, .gender-tabs{ display:flex; gap:8px; justify-content:center; margin:18px 0 10px; flex-wrap:wrap; }
+  .pill-btn{ font-family:'Space Mono',monospace; font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:8px 20px; border-radius:999px; border:1.5px solid var(--teal); background:var(--white); color:var(--teal-dark); cursor:pointer; transition:all .15s ease; }
+  .pill-btn.active{ background:var(--teal); color:var(--white); }
+  .age-tabs{ display:flex; gap:6px; justify-content:center; margin:0 0 22px; flex-wrap:wrap; }
+  .age-btn{ font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:6px; border:1px solid var(--line); background:var(--white); color:var(--gray); cursor:pointer; transition:all .15s ease; }
+  .age-btn.active{ background:var(--ink); color:var(--white); border-color:var(--ink); }
+  .event-tabs{ display:flex; gap:6px; justify-content:center; margin:0 0 20px; flex-wrap:wrap; }
+  .stroke-tab{ font-family:'Inter',sans-serif; font-size:13px; font-weight:700; padding:8px 18px; border-radius:8px; border:1.5px solid var(--teal); background:var(--white); color:var(--teal-dark); cursor:pointer; transition:all .15s ease; text-transform:uppercase; letter-spacing:0.03em; }
+  .stroke-tab.active{ background:var(--teal); color:var(--white); }
+  .distance-list{ display:none; }
+  .event-group{ margin-bottom:34px; }
+  .event-head{ display:flex; align-items:baseline; justify-content:space-between; border-bottom:2px solid var(--ink); padding-bottom:6px; margin-bottom:10px; }
+  .event-head h2{ font-family:'Oswald',sans-serif; font-weight:600; font-size:19px; text-transform:uppercase; letter-spacing:0.02em; margin:0; color:var(--ink); }
+  .event-head .count{ font-family:'Space Mono',monospace; font-size:10.5px; color:var(--gray-light); text-transform:uppercase; letter-spacing:0.05em; }
+  .event-title{ font-family:'Oswald',sans-serif; font-weight:600; font-size:20px; text-transform:uppercase; letter-spacing:0.02em; text-align:center; margin:0 0 14px; color:var(--ink); }
+  table{ width:100%; border-collapse:collapse; }
+  thead th{ text-align:left; font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:var(--gray-light); padding:8px 10px; border-bottom:1px solid var(--line); }
+  tbody tr{ border-bottom:1px solid var(--line); }
+  tbody tr:last-child{ border-bottom:none; }
+  tbody td{ padding:10px; font-size:13.5px; }
+  td.rank{ font-family:'Oswald',sans-serif; font-weight:700; color:var(--gray-light); width:36px; }
+  td.time{ font-family:'Space Mono',monospace; font-weight:700; color:var(--teal-dark); white-space:nowrap; }
+  td.meet{ color:var(--gray); font-size:12px; }
+  td.date{ font-family:'Space Mono',monospace; font-size:11.5px; color:var(--gray-light); white-space:nowrap; }
+  tr.new-record{ background:linear-gradient(90deg, var(--coral-light), rgba(252,231,227,0.15)); }
+  tr.new-record .time{ color:var(--coral); }
+  .flag{ display:inline-block; font-family:'Space Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.07em; color:#fff; background:var(--coral); padding:2px 6px; border-radius:4px; margin-left:7px; vertical-align:middle; }
+  .empty-msg{ text-align:center; color:var(--gray-light); font-size:13px; padding:30px 0; }
+  @media (max-width:640px){ thead th:nth-child(5), td.meet{ display:none; } .stats-strip{ gap:24px; } .pill-btn{ padding:8px 16px; } .stroke-tab{ padding:8px 14px; } }
+  /* Top time (rank 1): teal star + framed row, larger Oswald time. Teal keeps coral reserved for NEW. */
+  tbody tr.top-time{ border-top:2px solid var(--teal); border-bottom:2px solid var(--teal); }
+  tbody tr.top-time td{ padding-top:14px; padding-bottom:14px; }
+  tbody tr.top-time td.time{ font-family:'Oswald',sans-serif; font-size:21px; letter-spacing:0.01em; }
+  tbody tr.top-time td.rank{ color:var(--teal-dark); }
+  .top-star{ color:var(--teal); margin-right:6px; font-size:15px; }
+</style>
+</head>
+<body>
+
+
+<main>
+  <div class="intro">
+    <p class="sub"><strong id="season-label">Swims</strong> (<span id="cutoff-label">—</span>) are highlighted in coral.<br>Each swimmer's single fastest swim per event.</p>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat"><div class="num" id="stat-total">–</div><div class="label">Total Swims</div></div>
+    <div class="stat"><div class="num" id="stat-new">–</div><div class="label">This Season</div></div>
+    <div class="stat"><div class="num" id="stat-swimmers">–</div><div class="label">Swimmers</div></div>
+  </div>
+  <div class="disclaimer"><b>This list may be incomplete.</b> <span id="disclaimer-text">This board reflects the meet results currently on file and may not capture every historical swim.</span></div>
+
+  <div class="gender-tabs" id="gender-tabs"></div>
+  <div class="age-tabs" id="age-tabs"></div>
+  <div class="event-tabs" id="stroke-tabs"></div>
+  <div id="events-container"><div class="empty-msg">Loading…</div></div>
+
+  <p class="source-note" id="footer-text">NSEA Swim &middot; All-Time Top 10 &middot; Long Course Meters</p>
+</main>
+
+
+<script>
+/*
+  This page renders whatever is in ./data/top10-performers-lcm.json (fetched at load time).
+  To publish a season update: replace that JSON file's contents and push —
+  do NOT edit this HTML file. See README.md for the exact JSON shape and the
+  nsea-swim-boards Claude skill, which generates this file for you.
+*/
+const DATA_URL = './data/top10-performers-lcm.json';
+let DATA = {};
+let AGE_ORDER = [];
+let SEASON = null;
+let DISCLAIMER = '';
+let FOOTER = '';
+
+let state = { gender: 'Female', age: null, stroke: null };
+const STROKE_ORDER = ['Free', 'Back', 'Breast', 'Fly', 'IM'];
+
+/* Season highlight window: cutoff_iso .. cutoff_end_iso (inclusive). If no end date is set, highlights run to present. */
+function seasonWindow(json){
+  const start = new Date(json.cutoff_iso || '1900-01-01');
+  const end = json.cutoff_end_iso ? new Date(json.cutoff_end_iso + 'T23:59:59') : null;
+  const season = json.season_label || '';
+  const range = (json.cutoff_label || '') + (json.cutoff_end_label ? ' – ' + json.cutoff_end_label : ' to present');
+  return { start, end, season, range,
+    isNew: d => { if(!d) return false; const t = new Date(d); return t >= start && (!end || t <= end); },
+    short: season ? season + ' Season' : 'Since ' + (json.cutoff_label || '') };
+}
+function setIntro(w){
+  const s = document.getElementById('season-label'), r = document.getElementById('cutoff-label');
+  if(s) s.textContent = w.season ? w.season + ' season swims' : 'Swims';
+  if(r) r.textContent = w.range;
+}
+
+
+function ageGroupsForGender(gender){
+  return AGE_ORDER.filter(a => DATA[a] && DATA[a][gender] && Object.keys(DATA[a][gender]).length);
+}
+function eventsForGenderAge(gender, age){
+  if(!DATA[age] || !DATA[age][gender]) return [];
+  return Object.keys(DATA[age][gender]);
+}
+function strokesForGenderAge(gender, age){
+  const events = eventsForGenderAge(gender, age);
+  const present = new Set(events.map(e => e.split(' ').slice(1).join(' ')));
+  return STROKE_ORDER.filter(s => present.has(s));
+}
+function eventsForStroke(gender, age, stroke){
+  const events = eventsForGenderAge(gender, age);
+  return events
+    .filter(e => e.split(' ').slice(1).join(' ') === stroke)
+    .sort((a, b) => parseInt(a) - parseInt(b));
+}
+
+function computeStats(){
+  let total = 0, newCount = 0;
+  const swimmers = new Set();
+  for(const age in DATA){
+    for(const gender in DATA[age]){
+      for(const event in DATA[age][gender]){
+        for(const row of DATA[age][gender][event]){
+          total++;
+          swimmers.add(row.first + ' ' + row.last);
+          if(SEASON.isNew(row.date)) newCount++;
+        }
+      }
+    }
+  }
+  document.getElementById('stat-total').textContent = total.toLocaleString();
+  document.getElementById('stat-new').textContent = newCount.toLocaleString();
+  document.getElementById('stat-swimmers').textContent = swimmers.size.toLocaleString();
+}
+
+function renderGenderTabs(){
+  const el = document.getElementById('gender-tabs');
+  el.innerHTML = '';
+  ['Female','Male'].forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'pill-btn' + (state.gender === g ? ' active' : '');
+    btn.textContent = g === 'Female' ? 'Women' : 'Men';
+    btn.onclick = () => { state.gender = g; state.age = null; state.stroke = null; render(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderAgeTabs(){
+  const ages = ageGroupsForGender(state.gender);
+  if(!state.age || !ages.includes(state.age)) state.age = ages[0];
+  const el = document.getElementById('age-tabs');
+  el.innerHTML = '';
+  ages.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'age-btn' + (state.age === a ? ' active' : '');
+    btn.textContent = a;
+    btn.onclick = () => { state.age = a; state.stroke = null; render(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderStrokeTabs(){
+  const strokes = strokesForGenderAge(state.gender, state.age);
+  if(!state.stroke || !strokes.includes(state.stroke)) state.stroke = strokes[0];
+  const el = document.getElementById('stroke-tabs');
+  el.innerHTML = '';
+  strokes.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'stroke-tab' + (state.stroke === s ? ' active' : '');
+    btn.textContent = s;
+    btn.onclick = () => { state.stroke = s; render(); };
+    el.appendChild(btn);
+  });
+}
+
+function eventRowHtml(r){
+  const isNew = SEASON.isNew(r.date);
+  const top = String(r.rank) === '1';
+  return `<tr class="${[isNew ? 'new-record' : '', top ? 'top-time' : ''].join(' ').trim()}">
+    <td class="rank">${r.rank}</td>
+    <td class="time">${top ? '<span class="top-star" title="Top time">★</span>' : ''}${r.time}${isNew ? '<span class="flag">NEW</span>' : ''}</td>
+    <td>${r.first} ${r.last}</td>
+    <td>${r.age}</td>
+    <td class="meet">${r.meet}</td>
+    <td class="date">${r.date}</td>
+    <td>${r.points ?? ''}</td>
+  </tr>`;
+}
+
+function renderEventTables(){
+  const container = document.getElementById('events-container');
+  const events = eventsForStroke(state.gender, state.age, state.stroke);
+  if(!events.length){
+    container.innerHTML = '<div class="empty-msg">No events on file for this group.</div>';
+    return;
+  }
+
+  container.innerHTML = events.map(ev => {
+    const rows = (DATA[state.age][state.gender][ev] || []).slice().sort((a,b) => a.rank - b.rank);
+    return `
+      <section class="event-group">
+        <div class="event-head">
+          <h2>${ev}</h2>
+          <span class="count">${rows.length} on file</span>
+        </div>
+        <div class="table-scroll"><table>
+          <thead>
+            <tr><th>Rank</th><th>Time</th><th>Name</th><th>Age</th><th>Meet</th><th>Date</th><th>Power Points</th></tr>
+          </thead>
+          <tbody>${rows.map(r => eventRowHtml(r)).join('')}</tbody>
+        </table></div>
+      </section>
+    `;
+  }).join('');
+}
+
+function render(){
+  renderGenderTabs();
+  renderAgeTabs();
+  renderStrokeTabs();
+  renderEventTables();
+}
+
+fetch(DATA_URL, {cache: 'no-store'})
+  .then(r => r.json())
+  .then(json => {
+    DATA = json.data || {};
+    AGE_ORDER = json.age_order || [];
+    SEASON = seasonWindow(json);
+    DISCLAIMER = json.disclaimer || document.getElementById('disclaimer-text').textContent;
+    FOOTER = json.footer || document.getElementById('footer-text').textContent;
+
+    setIntro(SEASON);
+    document.querySelector('.stat:nth-child(2) .label').textContent = SEASON.short;
+    document.getElementById('disclaimer-text').textContent = DISCLAIMER;
+    document.getElementById('footer-text').textContent = FOOTER;
+
+    computeStats();
+    render();
+  })
+  .catch(err => {
+    document.getElementById('events-container').innerHTML =
+      '<div class="empty-msg">Could not load results data.</div>';
+    console.error('Failed to load', DATA_URL, err);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import HubGrid from '../components/HubGrid.astro';
+import { SITE, pages } from '../data/site.mjs';
+import { topLevel, getPage } from '../lib/nav.mjs';
+const quick = ['/programs/practice-groups/', '/about/coaching-staff/', '/meets/calendar/', '/programs/join/'].map(getPage);
+const featured = ['/times/standards/check-my-time/', '/meets/calendar/', '/times/top-times/swimmers/', '/times/records/individual/'].map(getPage);
+---
+<Base title="NSEA Swim" description="NSEA Swim: a USA Swimming / North Carolina Swimming club in Wilmington, NC." path="/">
+  <section class="hero">
+    <div>
+      <h1>{SITE.tagline}</h1>
+      <p>NSEA Swim is a USA Swimming and North Carolina Swimming affiliated club in Wilmington, NC.</p>
+      <a class="btn solid" href="/programs/">Find your group</a> &nbsp; <a class="btn" href="/about/">Learn more</a>
+    </div>
+  </section>
+
+  <div class="two">
+    <div>
+      <h2>Upcoming deadlines</h2>
+      <iframe class="embed" src="https://events.nseaswimteam.com/widget/" title="Upcoming deadlines" style="height:420px" loading="lazy"></iframe>
+    </div>
+    <div>
+      <h2>About NSEA Swim</h2>
+      <div class="prose"><p>NSEA Swim is a nonprofit, board-run club offering coaching for swimmers of all ages and abilities.</p></div>
+      <HubGrid items={quick} cta="Go" />
+    </div>
+  </div>
+
+  <div class="section-title">Explore</div>
+  <HubGrid items={topLevel} cta="Explore" />
+
+  <div class="section-title">Popular tools</div>
+  <HubGrid items={featured} cta="Open" />
+
+  <div class="section-title">Coach&rsquo;s Corner</div>
+  <div class="todo"><h3>Coach&rsquo;s Corner</h3><dl><dt>To do</dt><dd>Blog/news feed. Add posts as Markdown in <code>src/content/coaches-corner/</code> and list them here.</dd></dl></div>
+</Base>

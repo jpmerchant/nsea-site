@@ -1,0 +1,15 @@
+---
+import { hrefOf, isExternal, statusLabel } from '../lib/nav.mjs';
+const { items = [], showStatus = false, cta = 'Open' } = Astro.props;
+---
+<div class="grid">
+  {items.map((p) => (
+    <a class:list={['card', { feat: p.feature }]} href={hrefOf(p)} {...(isExternal(p) ? { rel: 'noopener', target: '_blank' } : {})}>
+      {isExternal(p) && <span class="ext">external &#8599;</span>}
+      <h3>{p.title}</h3>
+      {p.desc && <p>{p.desc}</p>}
+      {showStatus && <span class:list={['chip', p.status]}>{statusLabel[p.status] ?? p.status}</span>}
+      <span class="more">{cta} &rarr;</span>
+    </a>
+  ))}
+</div>

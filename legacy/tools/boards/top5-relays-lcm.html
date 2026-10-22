@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NSEA Swim — Top 5 Relays (LCM)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325;
+    --white:#ffffff; --panel:#FAFBFB;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--white); color:var(--ink); font-family:'Inter',sans-serif; padding-bottom:60px; }
+  header{ padding:18px 16px 12px; text-align:center; }
+  .sub{ color:var(--gray); font-size:13px; max-width:640px; margin:0 auto; line-height:1.5; }
+  .sub strong{ color:var(--coral); }
+  .stats-strip{ display:flex; justify-content:center; gap:48px; padding:20px 16px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--panel); flex-wrap:wrap; }
+  .stat{ text-align:center; }
+  .stat .num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; color:var(--teal-dark); }
+  .stat .label{ font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray-light); margin-top:2px; }
+  main{ max-width:1200px; margin:0 auto; padding:0 16px; }
+  .disclaimer{ background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--coral); border-radius:8px; padding:14px 18px; margin:24px 0; font-size:13px; color:var(--gray); line-height:1.55; }
+  .disclaimer b{ color:var(--ink); }
+  .tabs{ display:flex; gap:8px; justify-content:center; margin:18px 0 10px; flex-wrap:wrap; }
+  .tab{ font-family:'Space Mono',monospace; font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:9px 24px; border-radius:999px; border:1.5px solid var(--teal); background:var(--white); color:var(--teal-dark); cursor:pointer; transition:all .15s ease; }
+  .tab.active{ background:var(--teal); color:var(--white); }
+  .age-tabs{ display:flex; gap:6px; justify-content:center; margin:0 0 24px; flex-wrap:wrap; }
+  .age-btn{ font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:6px; border:1px solid var(--line); background:var(--white); color:var(--gray); cursor:pointer; transition:all .15s ease; }
+  .age-btn.active{ background:var(--ink); color:var(--white); border-color:var(--ink); }
+  .group{ margin-bottom:34px; }
+  .group-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; border-bottom:2px solid var(--ink); padding-bottom:6px; margin-bottom:10px; }
+  .group-head h2{ font-family:'Oswald',sans-serif; font-weight:600; font-size:19px; text-transform:uppercase; letter-spacing:0.02em; margin:0; color:var(--ink); }
+  .group-head .count{ font-family:'Space Mono',monospace; font-size:10.5px; color:var(--gray-light); text-transform:uppercase; letter-spacing:0.05em; }
+  .scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table{ width:100%; border-collapse:collapse; }
+  table{ table-layout:fixed; min-width:520px; }
+  thead th:nth-child(1){ width:56px; } thead th:nth-child(2){ width:110px; } thead th:nth-child(4){ width:26%; } thead th:last-child{ width:100px; }
+  thead th{ text-align:left; font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:var(--gray-light); padding:8px 10px; border-bottom:1px solid var(--line); }
+  tbody tr{ border-bottom:1px solid var(--line); }
+  tbody tr:last-child{ border-bottom:none; }
+  tbody td{ padding:10px; font-size:13.5px; vertical-align:top; }
+  td.rank{ font-family:'Oswald',sans-serif; font-weight:700; color:var(--gray-light); width:36px; }
+  td.ev{ font-weight:600; color:var(--ink); white-space:nowrap; }
+  td.time{ font-family:'Space Mono',monospace; font-weight:700; color:var(--teal-dark); white-space:nowrap; }
+  td.meet{ color:var(--gray); font-size:12px; }
+  td.date{ font-family:'Space Mono',monospace; font-size:11.5px; color:var(--gray-light); white-space:nowrap; }
+  tr.new-record{ background:linear-gradient(90deg, var(--coral-light), rgba(252,231,227,0.15)); }
+  tr.new-record .time{ color:var(--coral); }
+  .flag{ display:inline-block; font-family:'Space Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.07em; color:#fff; background:var(--coral); padding:2px 6px; border-radius:4px; margin-left:7px; vertical-align:middle; }
+  .empty-msg{ text-align:center; color:var(--gray-light); font-size:13px; padding:30px 0; }
+  footer{ text-align:center; color:var(--gray-light); font-size:11.5px; margin-top:20px; padding:0 16px; font-family:'Space Mono',monospace; letter-spacing:0.04em; }
+  @media (max-width:640px){ .stats-strip{ gap:24px; } .col-meet{ display:none; } td.ev{ white-space:normal; } table{ min-width:0; } thead th:nth-child(1){ width:44px; } thead th:nth-child(2){ width:78px; } thead th:last-child{ width:88px; } }
+  /* Top time (rank 1): teal star + framed row, larger Oswald time. Teal keeps coral reserved for NEW. */
+  tbody tr.top-time{ border-top:2px solid var(--teal); border-bottom:2px solid var(--teal); }
+  tbody tr.top-time td{ padding-top:14px; padding-bottom:14px; }
+  tbody tr.top-time td.time{ font-family:'Oswald',sans-serif; font-size:21px; letter-spacing:0.01em; }
+  tbody tr.top-time td.rank{ color:var(--teal-dark); }
+  .top-star{ color:var(--teal); margin-right:6px; font-size:15px; }
+</style>
+</head>
+<body>
+<header>
+  <p class="sub"><strong id="season-label">Swims</strong> (<span id="cutoff-label">&mdash;</span>) are highlighted in coral.
+    If you notice a missing or incorrect entry, let a coach know so we can update the records.</p>
+</header>
+
+<div class="stats-strip">
+  <div class="stat"><div class="num" id="stat-total">&ndash;</div><div class="label">Relay Swims</div></div>
+  <div class="stat"><div class="num" id="stat-new">&ndash;</div><div class="label" id="stat-new-label">This Season</div></div>
+  <div class="stat"><div class="num" id="stat-swimmers">&ndash;</div><div class="label">Swimmers</div></div>
+</div>
+
+<main>
+  <div class="disclaimer"><b>This list may be incomplete.</b> <span id="disclaimer-text">Loading&hellip;</span></div>
+  <div class="tabs" id="gender-tabs"></div>
+  <div class="age-tabs" id="age-tabs"></div>
+  <div id="events-container"><div class="empty-msg">Loading&hellip;</div></div>
+</main>
+
+<footer id="footer-text">NSEA Swim &middot; Top 5 Relays &middot; Long Course Meters</footer>
+
+<script>
+/*
+  Renders ./data/top5-relays-lcm.json (fetched at load time). To publish an
+  update, replace that JSON file and push; do not edit this HTML file.
+  JSON shape: data[ageGroup][Female|Male|Mixed][eventName] = [{rank,time,swimmers[],meet,date}]
+*/
+const DATA_URL = './data/top5-relays-lcm.json';
+
+const GENDER_LABEL = { Female:'Women', Male:'Men', Mixed:'Mixed' };
+const GENDERS = ['Female','Male','Mixed'];
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+/* Season highlight window: cutoff_iso .. cutoff_end_iso (inclusive). If no end date is set, highlights run to present. */
+function seasonWindow(json){
+  const start = new Date(json.cutoff_iso || '1900-01-01');
+  const end = json.cutoff_end_iso ? new Date(json.cutoff_end_iso + 'T23:59:59') : null;
+  const season = json.season_label || '';
+  const range = (json.cutoff_label || '') + (json.cutoff_end_label ? ' – ' + json.cutoff_end_label : ' to present');
+  return { start, end, season, range,
+    isNew: d => { if(!d) return false; const t = new Date(d); return t >= start && (!end || t <= end); },
+    short: season ? season + ' Season' : 'Since ' + (json.cutoff_label || '') };
+}
+let SEASON = null;
+function isNew(d){ return SEASON.isNew(d); }
+function team(arr){ return (arr || []).map(esc).join(', '); }
+
+let DATA = {}, AGE_ORDER = [];
+let state = { gender:'Female', age:null };
+
+function agesFor(g){ return AGE_ORDER.filter(a => DATA[a] && DATA[a][g] && Object.keys(DATA[a][g]).length); }
+
+function computeStats(){
+  let total = 0, fresh = 0; const sw = new Set();
+  for(const a in DATA) for(const g in DATA[a]) for(const e in DATA[a][g]) for(const r of DATA[a][g][e]){
+    total++; if(isNew(r.date)) fresh++; (r.swimmers || []).forEach(s => sw.add(s));
+  }
+  document.getElementById('stat-total').textContent = total.toLocaleString();
+  document.getElementById('stat-new').textContent = fresh.toLocaleString();
+  document.getElementById('stat-swimmers').textContent = sw.size.toLocaleString();
+}
+
+function renderTabs(){
+  const gEl = document.getElementById('gender-tabs'); gEl.innerHTML = '';
+  GENDERS.filter(g => agesFor(g).length).forEach(g => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (state.gender === g ? ' active' : ''); b.textContent = GENDER_LABEL[g];
+    b.onclick = () => { state.gender = g; state.age = null; render(); };
+    gEl.appendChild(b);
+  });
+  const ages = agesFor(state.gender);
+  if(!state.age || !ages.includes(state.age)) state.age = ages[0];
+  const aEl = document.getElementById('age-tabs'); aEl.innerHTML = '';
+  ages.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'age-btn' + (state.age === a ? ' active' : ''); b.textContent = a;
+    b.onclick = () => { state.age = a; render(); };
+    aEl.appendChild(b);
+  });
+}
+
+function rowHtml(r){
+  const nw = isNew(r.date);
+  const top = String(r.rank) === '1';
+  return `<tr class="${[nw ? 'new-record' : '', top ? 'top-time' : ''].join(' ').trim()}">
+    <td class="rank">${esc(r.rank)}</td>
+    <td class="time">${top ? '<span class="top-star" title="Top time">★</span>' : ''}${esc(r.time)}${nw ? '<span class="flag">NEW</span>' : ''}</td>
+    <td>${team(r.swimmers)}</td>
+    <td class="meet col-meet">${esc(r.meet)}</td>
+    <td class="date">${esc(r.date)}</td>
+  </tr>`;
+}
+
+function renderEvents(){
+  const el = document.getElementById('events-container');
+  const evs = (DATA[state.age] && DATA[state.age][state.gender]) || {};
+  const names = Object.keys(evs);
+  if(!names.length){ el.innerHTML = '<div class="empty-msg">No relays on file for this group.</div>'; return; }
+  el.innerHTML = names.map(ev => {
+    const rows = evs[ev].slice().sort((a,b) => a.rank - b.rank);
+    return `<section class="group">
+      <div class="group-head"><h2>${esc(ev)}</h2><span class="count">${rows.length} on file</span></div>
+      <div class="scroll"><table>
+        <thead><tr><th>Rank</th><th>Time</th><th>Relay Team</th><th class="col-meet">Meet</th><th>Date</th></tr></thead>
+        <tbody>${rows.map(rowHtml).join('')}</tbody>
+      </table></div>
+    </section>`;
+  }).join('');
+}
+
+function render(){ renderTabs(); renderEvents(); }
+
+fetch(DATA_URL, {cache:'no-store'})
+  .then(r => r.json())
+  .then(json => {
+    DATA = json.data || {}; AGE_ORDER = json.age_order || [];
+    SEASON = seasonWindow(json);
+    document.getElementById('season-label').textContent = SEASON.season ? SEASON.season + ' season swims' : 'Swims';
+    document.getElementById('cutoff-label').textContent = SEASON.range;
+    document.getElementById('stat-new-label').textContent = SEASON.short;
+    document.getElementById('disclaimer-text').textContent = json.disclaimer || '';
+    document.getElementById('footer-text').textContent = json.footer || document.getElementById('footer-text').textContent;
+    computeStats(); render();
+  })
+  .catch(err => {
+    document.getElementById('events-container').innerHTML = '<div class="empty-msg">Could not load results data.</div>';
+    console.error('Failed to load', DATA_URL, err);
+  });
+</script>
+</body>
+</html>

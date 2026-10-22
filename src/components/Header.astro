@@ -1,0 +1,41 @@
+---
+import { SITE } from '../data/site.mjs';
+import { topLevel, dropdown, hrefOf, isExternal } from '../lib/nav.mjs';
+const { path = '/' } = Astro.props;
+const active = (p) => path.startsWith(p.path);
+---
+<header class="site-header">
+  <div class="wrap">
+    <input type="checkbox" id="navtoggle" aria-label="Toggle menu" />
+    <div class="bar">
+      <a class="brand" href="/">NSEA Swim<small>NORTHSIDE ELITE AQUATICS</small></a>
+      <nav class="nav" aria-label="Main">
+        {topLevel.map((h) => (
+          <div class:list={['nav-item', { on: active(h) }]}>
+            <a href={h.path}>{h.title}</a>
+            <ul class="drop">
+              {dropdown(h).map((c) => (
+                <li class:list={[{ feat: c.feature }]}>
+                  <a href={hrefOf(c)} {...(isExternal(c) ? { rel: 'noopener', target: '_blank' } : {})}>{c.title}</a>
+                </li>
+              ))}
+              <li class="all"><a href={h.path}>All of {h.title} &rarr;</a></li>
+            </ul>
+          </div>
+        ))}
+      </nav>
+      <div class="cta">
+        <a class="btn solid" href={SITE.assessmentUrl} rel="noopener">Free Assessment</a>
+        <a class="btn" href={SITE.captynLogin} rel="noopener">Captyn Login</a>
+      </div>
+      <label for="navtoggle" class="burger">Menu</label>
+    </div>
+    <div class="bar-extra">
+      {topLevel.map((h) => <a class="m" href={h.path}>{h.title}</a>)}
+      <div class="cta">
+        <a class="btn solid" href={SITE.assessmentUrl} rel="noopener">Free Assessment</a>
+        <a class="btn" href={SITE.captynLogin} rel="noopener">Captyn Login</a>
+      </div>
+    </div>
+  </div>
+</header>

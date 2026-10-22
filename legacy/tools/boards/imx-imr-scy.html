@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NSEA Swim — IM Ready &amp; IM Xtreme Completion (SCY)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325;
+    --white:#ffffff; --panel:#FAFBFB; --teal-tint:#E3F3F0;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--white); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; padding-bottom:60px; }
+  main{ max-width:1200px; margin:0 auto; padding:0 16px; }
+  .intro{ padding:18px 0 14px; text-align:center; }
+  .sub{ color:var(--gray); font-size:13px; max-width:700px; margin:0 auto; line-height:1.5; }
+  .sub strong{ color:var(--teal-dark); }
+  .stats-strip{ display:flex; justify-content:center; gap:48px; padding:18px 16px; border:1px solid var(--line); border-radius:8px; background:var(--panel); flex-wrap:wrap; }
+  .stat{ text-align:center; }
+  .stat .num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; color:var(--teal-dark); }
+  .stat .label{ font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray-light); margin-top:2px; }
+  .disclaimer{ background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--coral); border-radius:8px; padding:14px 18px; margin:20px 0; font-size:13px; color:var(--gray); line-height:1.55; }
+  .disclaimer b{ color:var(--ink); }
+  .tabs{ display:flex; gap:8px; justify-content:center; margin:18px 0 10px; flex-wrap:wrap; }
+  .pill-btn{ font-family:'Space Mono',monospace; font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:8px 20px; border-radius:999px; border:1.5px solid var(--teal); background:var(--white); color:var(--teal-dark); cursor:pointer; transition:all .15s ease; }
+  .pill-btn.active{ background:var(--teal); color:var(--white); }
+  .age-tabs{ display:flex; gap:6px; justify-content:center; margin:0 0 18px; flex-wrap:wrap; }
+  .age-btn{ font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:6px; border:1px solid var(--line); background:var(--white); color:var(--gray); cursor:pointer; }
+  .age-btn.active{ background:var(--ink); color:var(--white); border-color:var(--ink); }
+  .prog-note{ text-align:center; font-family:'Space Mono',monospace; font-size:11px; color:var(--gray); letter-spacing:0.04em; margin:0 0 14px; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table{ width:100%; border-collapse:collapse; min-width:640px; }
+  thead th{ text-align:left; font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:var(--gray-light); padding:8px 10px; border-bottom:2px solid var(--ink); white-space:nowrap; }
+  thead th.ev{ text-align:center; }
+  tbody tr{ border-bottom:1px solid var(--line); }
+  tbody td{ padding:10px; font-size:13.5px; }
+  td.name{ font-weight:600; white-space:nowrap; }
+  td.age{ color:var(--gray-light); font-family:'Space Mono',monospace; font-size:12px; }
+  td.cell{ text-align:center; padding:8px 10px; line-height:0; }
+  td.cell svg{ vertical-align:middle; }
+  td.cell.done{ background:var(--teal-tint); }
+  td.prog{ white-space:nowrap; min-width:120px; }
+  .bar{ display:inline-block; width:56px; height:6px; background:var(--line); border-radius:3px; vertical-align:middle; margin-right:8px; overflow:hidden; }
+  .bar i{ display:block; height:100%; background:var(--teal); }
+  .count{ font-family:'Oswald',sans-serif; font-weight:600; font-size:15px; }
+  .chip{ display:inline-block; font-family:'Space Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; padding:3px 7px; border-radius:4px; margin-left:8px; color:#fff; background:var(--coral); }
+  tr.complete td.name{ color:var(--teal-dark); }
+  tr.none td.name{ color:var(--gray-light); font-weight:500; }
+  .empty-msg{ text-align:center; color:var(--gray-light); font-size:13px; padding:30px 0; }
+  .source-note{ text-align:center; color:var(--gray-light); font-size:11.5px; margin:24px 0 0; font-family:'Space Mono',monospace; letter-spacing:0.04em; }
+  .about{ background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:8px; padding:14px 18px; margin:0 0 18px; font-size:13px; color:var(--gray); line-height:1.55; }
+  .about p{ margin:0 0 8px; }
+  .about b{ color:var(--ink); }
+  .about ul{ margin:0 0 10px; padding-left:18px; }
+  .about li{ margin-bottom:3px; }
+  .about .links{ display:flex; gap:10px 20px; flex-wrap:wrap; margin:0; }
+  .about .links a{ font-family:'Space Mono',monospace; font-size:11.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:var(--teal-dark); text-decoration:none; border-bottom:1.5px solid var(--teal); }
+  .about .links a:hover{ color:var(--coral); border-color:var(--coral); }
+  @media (max-width:640px){ .stats-strip{ gap:24px; } .pill-btn{ padding:8px 16px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="intro">
+    <p class="sub" id="intro">Loading…</p>
+  </div>
+  <div class="about">
+    <p><b>What are IMR and IMX?</b> Two USA Swimming programs that reward well-rounded swimmers. <b>IM Ready (IMR)</b> uses five shorter-distance events; <b>IM Xtreme (IMX)</b> is the next step up, with five or six longer events. IMR is a stepping stone, not a prerequisite for IMX.</p>
+    <ul>
+      <li>Each program runs on the USA Swimming season, September 1 to August 31.</li>
+      <li>Every required event must be swum in the same course (SCY or LCM), at official meets, and can be spread across different meets.</li>
+      <li>Each swim earns power points for age, sex and event; the points are summed into the swimmer&rsquo;s IMR or IMX score once all events are done.</li>
+      <li>Scores and national, zone, LSC and club rankings are viewed through a USA Swimming account. Participation also counts toward Bronze, Silver and Gold Medal Club recognition.</li>
+    </ul>
+    <p class="links"><a href="https://www.nseaswimteam.com/imx-progress" target="_blank" rel="noopener">NSEA IMX / IMR page</a><a href="https://www.usaswimming.org/times/popular-resources/programs" target="_blank" rel="noopener">USA Swimming Programs page</a></p>
+  </div>
+  <div class="stats-strip">
+    <div class="stat"><div class="num" id="s-complete">–</div><div class="label">Complete</div></div>
+    <div class="stat"><div class="num" id="s-progress">–</div><div class="label">In Progress</div></div>
+    <div class="stat"><div class="num" id="s-none">–</div><div class="label">Not Started</div></div>
+  </div>
+  <div class="disclaimer"><b>Progress, not final.</b> <span id="disclaimer-text"></span></div>
+  <div class="tabs" id="prog-tabs"></div>
+  <div class="tabs" id="gender-tabs" style="margin-top:0"></div>
+  <div class="age-tabs" id="age-tabs"></div>
+  <p class="prog-note" id="prog-note"></p>
+  <div class="table-scroll" id="table-wrap"><div class="empty-msg">Loading…</div></div>
+  <p class="source-note" id="footer-text">NSEA Swim</p>
+</main>
+<script>
+/* Renders ./data/imx-imr-scy.json. To add results: append swims to each swimmer's `swims` map (fastest per event) and push the JSON — don't edit this HTML. */
+const DATA_URL = './data/imx-imr-scy.json';
+let D = null;
+let state = { prog:'IMR', gender:'Female', bracket:null };
+const PROG_LABEL = { IMR:'IM Ready', IMX:'IM Xtreme' };
+const GENDER_LABEL = { Female:'Girls', Male:'Boys', All:'All' };
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function secs(t){ const p = String(t).split(':'); return p.length > 1 ? (+p[0]) * 60 + parseFloat(p[1]) : parseFloat(p[0]); }
+function events(){ return D.programs[state.prog][state.bracket]; }
+function rowsFor(bracket, gender, prog){
+  const ev = D.programs[prog][bracket];
+  return D.swimmers.filter(s => s.bracket === bracket && (gender === 'All' || s.gender === gender)).map(s => {
+    const done = ev.filter(e => s.swims[e]).length;
+    return { s, done, total: ev.length };
+  });
+}
+function buttons(id, items, key, cls){
+  const el = document.getElementById(id);
+  el.innerHTML = items.map(([v, l]) => `<button class="${cls}${state[key] === v ? ' active' : ''}" data-v="${esc(v)}">${esc(l)}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { state[key] = b.dataset.v; render(); });
+}
+function render(){
+  buttons('prog-tabs', Object.keys(PROG_LABEL).map(k => [k, PROG_LABEL[k]]), 'prog', 'pill-btn');
+  buttons('gender-tabs', Object.keys(GENDER_LABEL).map(k => [k, GENDER_LABEL[k]]), 'gender', 'pill-btn');
+  buttons('age-tabs', D.bracket_order.map(b => [b, b]), 'bracket', 'age-btn');
+  // summary across all brackets for the chosen program + gender
+  let c = 0, p = 0, n = 0;
+  D.bracket_order.forEach(b => rowsFor(b, state.gender, state.prog).forEach(r => { if(r.done === r.total) c++; else if(r.done > 0) p++; else n++; }));
+  document.getElementById('s-complete').textContent = c;
+  document.getElementById('s-progress').textContent = p;
+  document.getElementById('s-none').textContent = n;
+  const ev = events();
+  document.getElementById('prog-note').textContent = `${PROG_LABEL[state.prog]} · ${state.bracket} · ${ev.length} events`;
+  const rows = rowsFor(state.bracket, state.gender, state.prog).sort((a, b) => (b.done / b.total) - (a.done / a.total) || a.s.name.localeCompare(b.s.name));
+  if(!rows.length){ document.getElementById('table-wrap').innerHTML = '<div class="empty-msg">No swimmers in this group yet.</div>'; return; }
+  const head = `<tr><th>Swimmer</th><th>Age</th>${ev.map(e => `<th class="ev">${esc(e)}</th>`).join('')}<th>Progress</th></tr>`;
+  const body = rows.map(r => {
+    const cls = r.done === r.total ? 'complete' : r.done === 0 ? 'none' : '';
+    const CHECK = '<svg viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Completed"><circle cx="12" cy="12" r="11" fill="#008675"/><path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const OPEN = '<svg viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Not yet swum"><circle cx="12" cy="12" r="10" fill="none" stroke="#D3D7D9" stroke-width="2" stroke-dasharray="3 3"/></svg>';
+    const cells = ev.map(e => { const w = r.s.swims[e]; return w ? `<td class="cell done" title="${esc(e)} · ${esc(w.time)} · ${esc(w.meet || '')} ${esc(w.date || '')}">${CHECK}</td>` : `<td class="cell todo" title="${esc(e)} · not yet swum">${OPEN}</td>`; }).join('');
+    const chip = r.done === r.total ? '<span class="chip" style="background:var(--teal)">Complete</span>' : '';
+    return `<tr class="${cls}"><td class="name">${esc(r.s.name)}</td><td class="age">${r.s.age}</td>${cells}<td class="prog"><span class="bar"><i style="width:${Math.round(100 * r.done / r.total)}%"></i></span><span class="count">${r.done}/${r.total}</span>${chip}</td></tr>`;
+  }).join('');
+  document.getElementById('table-wrap').innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+fetch(DATA_URL).then(r => r.json()).then(j => {
+  D = j; state.bracket = D.bracket_order[0];
+  document.getElementById('intro').innerHTML = `<strong>${esc(D.season_label)} season</strong> · swims on file through ${esc(new Date(D.as_of + 'T12:00:00').toLocaleDateString('en-US', {month:'numeric', day:'numeric', year:'numeric'}))}.<br>A check means the event has been swum at an official meet this season. Complete = every event in the program checked off.`;
+  document.getElementById('disclaimer-text').textContent = D.disclaimer;
+  document.getElementById('footer-text').textContent = D.footer;
+  render();
+}).catch(() => { document.getElementById('table-wrap').innerHTML = '<div class="empty-msg">Could not load data.</div>'; });
+</script>
+</body>
+</html>

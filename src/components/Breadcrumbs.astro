@@ -1,0 +1,11 @@
+---
+import { breadcrumbs } from '../lib/nav.mjs';
+const { path } = Astro.props;
+const trail = breadcrumbs(path);
+---
+{trail.length > 0 && (
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a>
+    {trail.map((t) => <><span>/</span><a href={t.path}>{t.title}</a></>)}
+  </nav>
+)}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NSEA Swim — Record Holders</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325;
+    --white:#ffffff; --panel:#FAFBFB;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--white); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; padding-bottom:60px; }
+  .sub{ color:var(--gray); font-size:13.5px; max-width:600px; margin:0 auto; line-height:1.5; }
+  .legend{ display:flex; gap:22px; justify-content:center; margin-top:22px; flex-wrap:wrap; font-size:12.5px; color:var(--gray); font-family:'Space Mono',monospace; }
+  .legend-item{ display:flex; align-items:center; gap:7px; }
+  .swatch{ width:12px;height:12px;border-radius:3px;display:inline-block; }
+  .swatch.new{ background:var(--coral); box-shadow:0 0 8px rgba(238,73,47,0.35); }
+  .swatch.reg{ background:var(--white); border:1px solid var(--teal); }
+  main{ max-width:1200px; margin:0 auto; padding:0 16px; }
+  .intro{ padding:18px 0 14px; text-align:center; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .source-note{ text-align:center; color:var(--gray-light); font-size:11.5px; margin:24px 0 0; font-family:'Space Mono',monospace; letter-spacing:0.04em; }
+  .disclaimer{ display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--coral); border-radius:8px; padding:14px 18px; margin:28px 0 40px; font-size:13px; color:var(--gray); line-height:1.55; }
+  .disclaimer b{ color:var(--ink); }
+  .disclaimer .icon{ font-family:'Space Mono',monospace; font-weight:700; color:var(--coral); font-size:16px; line-height:1; margin-top:1px; }
+  .leaderboard{ list-style:none; margin:0 0 12px; padding:0; }
+  .rank-row{ display:grid; grid-template-columns:44px 1fr auto auto; align-items:center; gap:14px; padding:16px 14px; border-bottom:1px solid var(--line); cursor:pointer; transition:background .15s ease; }
+  .rank-row:hover{ background:var(--panel); }
+  .rank-row.open{ background:var(--panel); }
+  .rank-num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:22px; color:var(--gray-light); text-align:center; }
+  .rank-row:nth-child(1) .rank-num, .rank-row:nth-child(2) .rank-num, .rank-row:nth-child(3) .rank-num{ color:var(--coral); }
+  .rank-name{ font-family:'Oswald',sans-serif; font-weight:600; font-size:18px; text-transform:uppercase; letter-spacing:0.01em; color:var(--ink); }
+  .rank-meta{ font-family:'Space Mono',monospace; font-size:11px; color:var(--gray-light); text-transform:uppercase; letter-spacing:0.06em; }
+  .rank-count{ font-family:'Oswald',sans-serif; font-weight:700; font-size:24px; color:var(--teal-dark); text-align:right; min-width:70px; }
+  .rank-count span{ display:block; font-family:'Space Mono',monospace; font-weight:400; font-size:9.5px; color:var(--gray-light); text-transform:uppercase; letter-spacing:0.08em; }
+  .chevron{ font-family:'Space Mono',monospace; color:var(--gray-light); font-size:14px; transition:transform .2s ease; }
+  .rank-row.open .chevron{ transform:rotate(90deg); color:var(--teal); }
+  .detail{ display:none; padding:6px 14px 26px 58px; border-bottom:1px solid var(--line); }
+  .detail.open{ display:block; }
+  .detail-stats{ display:flex; gap:18px; margin-bottom:14px; flex-wrap:wrap; font-family:'Space Mono',monospace; font-size:11.5px; color:var(--gray); }
+  .detail-stats b{ color:var(--coral); font-family:'Oswald',sans-serif; font-size:15px; font-weight:700; margin-right:4px; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th{ text-align:left; font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:var(--gray-light); padding:6px 8px; border-bottom:1px solid var(--line); }
+  tbody tr{ border-bottom:1px solid var(--line); }
+  tbody tr:last-child{ border-bottom:none; }
+  tbody td{ padding:8px 8px; vertical-align:top; }
+  .course-badge{ font-family:'Space Mono',monospace; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:4px; letter-spacing:0.04em; }
+  .course-badge.LC{ background:rgba(0,134,117,0.12); color:var(--teal-dark); }
+  .course-badge.SCY{ background:rgba(103,109,112,0.12); color:var(--gray); }
+  .ev{ font-weight:600; color:var(--ink); white-space:nowrap; }
+  .time{ font-family:'Space Mono',monospace; font-weight:700; color:var(--teal-dark); font-size:14px; white-space:nowrap; }
+  .meet{ color:var(--gray); font-size:12px; line-height:1.4; }
+  .date{ font-family:'Space Mono',monospace; font-size:11.5px; color:var(--gray-light); white-space:nowrap; }
+  tr.new-record{ background:linear-gradient(90deg, var(--coral-light), rgba(252,231,227,0.15)); }
+  tr.new-record .time{ color:var(--coral); }
+  .flag{ display:inline-block; font-family:'Space Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.07em; color:#fff; background:var(--coral); padding:2px 6px; border-radius:4px; margin-left:7px; vertical-align:middle; }
+  @media (max-width:640px){ .detail{ padding-left:8px; padding-right:8px; } .legend{ gap:12px; } thead th:nth-child(4), td.meet{ display:none; } .rank-row{ grid-template-columns:32px 1fr auto auto; gap:8px; padding:14px 8px; } .rank-name{ font-size:15px; } }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="intro">
+  <p class="sub" id="page-sub">Loading…</p>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch new"></span> Set in <span id="legend-cutoff">—</span></div>
+      <div class="legend-item"><span class="swatch reg"></span> Standing record</div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <span class="icon">!</span>
+    <div><b>This list may be incomplete.</b> <span id="disclaimer-text">Loading…</span></div>
+  </div>
+
+  <ul class="leaderboard" id="leaderboard"><li class="detail open" style="padding-left:14px;">Loading…</li></ul>
+
+  <p class="source-note" id="footer-text">NSEA SWIM</p>
+</main>
+
+
+<script>
+/*
+  This page renders whatever is in ./data/records.json (fetched at load time).
+  To publish an update: replace that JSON file's contents and push —
+  do NOT edit this HTML file. See README.md for the exact JSON shape and the
+  nsea-swim-boards Claude skill, which generates this file for you.
+*/
+const DATA_URL = './data/records.json';
+
+/* Season highlight window: cutoff_iso .. cutoff_end_iso (inclusive). If no end date is set, highlights run to present. */
+function seasonWindow(json){
+  const start = new Date(json.cutoff_iso || '1900-01-01');
+  const end = json.cutoff_end_iso ? new Date(json.cutoff_end_iso + 'T23:59:59') : null;
+  const season = json.season_label || '';
+  const range = (json.cutoff_label || '') + (json.cutoff_end_label ? ' – ' + json.cutoff_end_label : ' to present');
+  return { start, end, season, range,
+    isNew: d => { if(!d) return false; const t = new Date(d); return t >= start && (!end || t <= end); },
+    short: season ? season + ' Season' : 'Since ' + (json.cutoff_label || '') };
+}
+function setIntro(w){
+  const s = document.getElementById('season-label'), r = document.getElementById('cutoff-label');
+  if(s) s.textContent = w.season ? w.season + ' season swims' : 'Swims';
+  if(r) r.textContent = w.range;
+}
+
+
+function parseDate(d){
+  // Accepts ISO (YYYY-MM-DD) only; generate data with ISO dates.
+  return new Date(d);
+}
+
+fetch(DATA_URL, {cache: 'no-store'})
+  .then(r => r.json())
+  .then(json => {
+    const swimmers = json.swimmers || [];
+    const SEASON = seasonWindow(json);
+    const cutoffLabel = SEASON.season ? SEASON.season + ' (' + SEASON.range + ')' : SEASON.range;
+    const shortLabel = SEASON.season ? 'in ' + SEASON.season : 'since ' + (json.cutoff_label || '');
+
+    document.getElementById('page-sub').textContent = json.subtitle ||
+      'Ranked by number of individual NSEA team records held. Tap a swimmer to see every record on their card.';
+    document.getElementById('legend-cutoff').textContent = cutoffLabel;
+    document.getElementById('disclaimer-text').textContent = json.disclaimer ||
+      "It's built entirely from the official team record sheets, which only capture the single fastest swim per event, per age group.";
+    document.getElementById('footer-text').textContent = json.footer || 'NSEA SWIM';
+
+    function isNew(d){ return SEASON.isNew(d); }
+
+    const board = document.getElementById('leaderboard');
+    board.innerHTML = '';
+
+    swimmers.forEach((sw, idx) => {
+      const newCount = sw.records.filter(r => isNew(r.date)).length;
+
+      const row = document.createElement('li');
+      row.className = 'rank-row';
+      row.innerHTML = `
+        <div class="rank-num">${idx+1}</div>
+        <div>
+          <div class="rank-name">${sw.name}</div>
+          <div class="rank-meta">${sw.records.length} team records${newCount ? ` &middot; ${newCount} ${shortLabel}` : ''}</div>
+        </div>
+        <div class="rank-count">${sw.records.length}<span>Records</span></div>
+        <div class="chevron">&#9656;</div>
+      `;
+
+      const detail = document.createElement('li');
+      detail.className = 'detail';
+      const rows = sw.records.map(r => {
+        const nw = isNew(r.date);
+        return `<tr class="${nw ? 'new-record':''}">
+          <td><span class="course-badge ${r.course}">${r.course}</span></td>
+          <td class="ev">${r.event}</td>
+          <td class="time">${r.time}${nw ? '<span class="flag">NEW</span>' : ''}</td>
+          <td class="meet">${r.meet}</td>
+          <td class="date">${r.date}</td>
+        </tr>`;
+      }).join('');
+      detail.innerHTML = `
+        <div class="detail-stats">
+          <div><b>${sw.records.length}</b>total records</div>
+          <div><b>${newCount}</b>${shortLabel}</div>
+        </div>
+        <div class="table-scroll"><table>
+          <thead><tr><th>Course</th><th>Event</th><th>Time</th><th>Meet</th><th>Date</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+      `;
+
+      row.addEventListener('click', () => {
+        const isOpen = row.classList.contains('open');
+        document.querySelectorAll('.rank-row.open').forEach(r=>r.classList.remove('open'));
+        document.querySelectorAll('.detail.open').forEach(d=>d.classList.remove('open'));
+        if(!isOpen){
+          row.classList.add('open');
+          detail.classList.add('open');
+        }
+      });
+
+      board.appendChild(row);
+      board.appendChild(detail);
+    });
+  })
+  .catch(err => {
+    document.getElementById('leaderboard').innerHTML =
+      '<li class="detail open" style="padding-left:14px;">Could not load records data.</li>';
+    console.error('Failed to load', DATA_URL, err);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+---
+import '../styles/brand.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+const { title, description = '', path = '/' } = Astro.props;
+const live = import.meta.env.PUBLIC_LIVE === 'true';
+const full = title === 'NSEA Swim' ? title : `${title} | NSEA Swim`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{full}</title>
+    {description && <meta name="description" content={description} />}
+    {!live && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    {!live && <div class="preview"><b>PREVIEW BUILD</b> &middot; not the live site &middot; hidden from search engines</div>}
+    <Header path={path} />
+    <main id="main"><div class="wrap"><slot /></div></main>
+    <Footer />
+  </body>
+</html>

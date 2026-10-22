@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NSEA Swim — Team Records (SCY)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325;
+    --white:#ffffff; --panel:#FAFBFB;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--white); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; padding-bottom:60px; }
+  .sub{ color:var(--gray); font-size:13px; max-width:640px; margin:0 auto; line-height:1.5; }
+  .sub strong{ color:var(--coral); }
+  .stats-strip{ display:flex; justify-content:center; gap:48px; padding:18px 16px; border:1px solid var(--line); border-radius:8px; background:var(--panel); flex-wrap:wrap; }
+  .stat{ text-align:center; }
+  .stat .num{ font-family:'Oswald',sans-serif; font-weight:700; font-size:26px; color:var(--teal-dark); }
+  .stat .label{ font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray-light); margin-top:2px; }
+  main{ max-width:1200px; margin:0 auto; padding:0 16px; }
+  .intro{ padding:18px 0 14px; text-align:center; }
+  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .source-note{ text-align:center; color:var(--gray-light); font-size:11.5px; margin:24px 0 0; font-family:'Space Mono',monospace; letter-spacing:0.04em; }
+  .disclaimer{ display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--coral); border-radius:8px; padding:14px 18px; margin:24px 0; font-size:13px; color:var(--gray); line-height:1.55; }
+  .disclaimer b{ color:var(--ink); }
+  .tabs{ display:flex; gap:8px; justify-content:center; margin:18px 0 30px; flex-wrap:wrap; }
+  .tab{ font-family:'Space Mono',monospace; font-size:12px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:9px 26px; border-radius:999px; border:1.5px solid var(--teal); background:var(--white); color:var(--teal-dark); cursor:pointer; transition:all .15s ease; }
+  .tab.active{ background:var(--teal); color:var(--white); }
+  .age-group{ margin-bottom:34px; }
+  .age-head{ display:flex; align-items:baseline; justify-content:space-between; border-bottom:2px solid var(--ink); padding-bottom:6px; margin-bottom:10px; }
+  .age-head h2{ font-family:'Oswald',sans-serif; font-weight:600; font-size:19px; text-transform:uppercase; letter-spacing:0.02em; margin:0; color:var(--ink); }
+  .age-head.relay h2{ color:var(--teal-dark); }
+  .age-head .count{ font-family:'Space Mono',monospace; font-size:10.5px; color:var(--gray-light); text-transform:uppercase; letter-spacing:0.05em; }
+  table{ width:100%; border-collapse:collapse; }
+  thead th{ text-align:left; font-family:'Space Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:var(--gray-light); padding:6px 8px; border-bottom:1px solid var(--line); }
+  tbody tr{ border-bottom:1px solid var(--line); }
+  tbody tr:last-child{ border-bottom:none; }
+  tbody td{ padding:8px 8px; font-size:13.5px; vertical-align:top; }
+  td.ev{ font-weight:600; color:var(--ink); white-space:nowrap; width:110px; }
+  td.time{ font-family:'Space Mono',monospace; font-weight:700; color:var(--teal-dark); white-space:nowrap; }
+  td.name{ color:var(--ink); }
+  td.meet{ color:var(--gray); font-size:12px; }
+  td.date{ font-family:'Space Mono',monospace; font-size:11.5px; color:var(--gray-light); white-space:nowrap; }
+  tr.no-record td{ color:var(--gray-light); font-style:italic; }
+  tr.new-record{ background:linear-gradient(90deg, var(--coral-light), rgba(252,231,227,0.15)); }
+  tr.new-record .time{ color:var(--coral); }
+  .flag{ display:inline-block; font-family:'Space Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.07em; color:#fff; background:var(--coral); padding:2px 6px; border-radius:4px; margin-left:7px; vertical-align:middle; }
+  .loading{ text-align:center; color:var(--gray-light); padding:40px 0; font-size:13px; }
+  @media (max-width:640px){ thead th:nth-child(4), td.meet{ display:none; } td.ev{ width:auto; } .stats-strip{ gap:24px; } }
+</style>
+</head>
+<body>
+
+
+<main>
+  <div class="intro">
+    <p class="sub"><strong id="season-label">Swims</strong> (<span id="cutoff-label">—</span>) are highlighted in coral.</p>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat"><div class="num" id="stat-total">–</div><div class="label">Records on Book</div></div>
+    <div class="stat"><div class="num" id="stat-new">–</div><div class="label">This Season</div></div>
+    <div class="stat"><div class="num" id="stat-holders">–</div><div class="label">Record Holders</div></div>
+  </div>
+  <div class="disclaimer"><b>This list may be incomplete.</b> <span id="disclaimer-text">Loading…</span></div>
+  <div class="tabs" id="gender-tabs"></div>
+  <div id="board"><div class="loading">Loading…</div></div>
+
+  <p class="source-note" id="footer-text">NSEA Swim &middot; Team Records</p>
+</main>
+
+
+<script>
+/*
+  This page renders whatever is in ./data/records-traditional-scy.json (fetched at load time).
+  To publish an update: replace that JSON file's contents and push —
+  do NOT edit this HTML file. See README.md for the JSON shape and the
+  nsea-swim-boards Claude skill, which generates this file for you.
+*/
+const DATA_URL = './data/records-traditional-scy.json';
+
+let DATA = null;
+let SEASON = null;
+let currentGender = 'Female';
+
+/* Season highlight window: cutoff_iso .. cutoff_end_iso (inclusive). If no end date is set, highlights run to present. */
+function seasonWindow(json){
+  const start = new Date(json.cutoff_iso || '1900-01-01');
+  const end = json.cutoff_end_iso ? new Date(json.cutoff_end_iso + 'T23:59:59') : null;
+  const season = json.season_label || '';
+  const range = (json.cutoff_label || '') + (json.cutoff_end_label ? ' – ' + json.cutoff_end_label : ' to present');
+  return { start, end, season, range,
+    isNew: d => { if(!d) return false; const t = new Date(d); return t >= start && (!end || t <= end); },
+    short: season ? season + ' Season' : 'Since ' + (json.cutoff_label || '') };
+}
+function setIntro(w){
+  const s = document.getElementById('season-label'), r = document.getElementById('cutoff-label');
+  if(s) s.textContent = w.season ? w.season + ' season swims' : 'Swims';
+  if(r) r.textContent = w.range;
+}
+function isNew(d){ return SEASON.isNew(d); }
+
+function renderTabs(){
+  const el = document.getElementById('gender-tabs');
+  el.innerHTML = '';
+  ['Female','Male'].forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (currentGender === g ? ' active' : '');
+    btn.textContent = g === 'Female' ? 'Women' : 'Men';
+    btn.onclick = () => { currentGender = g; render(); window.scrollTo({top: document.getElementById('gender-tabs').offsetTop - 20, behavior:'smooth'}); };
+    el.appendChild(btn);
+  });
+}
+
+function eventRowHtml(e){
+  if(e.noRecord){
+    return `<tr class="no-record"><td class="ev">${e.event}</td><td colspan="4">No qualifying mark on file yet</td></tr>`;
+  }
+  const nw = isNew(e.date);
+  return `<tr class="${nw ? 'new-record' : ''}">
+    <td class="ev">${e.event}</td>
+    <td class="time">${e.time}${nw ? '<span class="flag">NEW</span>' : ''}</td>
+    <td class="name">${e.holder}</td>
+    <td class="meet">${e.meet || ''}</td>
+    <td class="date">${e.date || ''}</td>
+  </tr>`;
+}
+
+function relayRowHtml(r){
+  const nw = isNew(r.date);
+  return `<tr class="${nw ? 'new-record' : ''}">
+    <td class="ev">${r.event}</td>
+    <td class="time">${r.time}${nw ? '<span class="flag">NEW</span>' : ''}</td>
+    <td class="name">${r.swimmers}</td>
+    <td class="meet">${r.meet || ''}</td>
+    <td class="date">${r.date || ''}</td>
+  </tr>`;
+}
+
+function computeStats(genderData){
+  let total = 0, newCount = 0;
+  const holders = new Set();
+  ['Female','Male'].forEach(g => {
+    (DATA.genders[g].ageGroups || []).forEach(ag => {
+      ag.events.forEach(e => {
+        if(e.noRecord) return;
+        total++;
+        holders.add(e.holder);
+        if(isNew(e.date)) newCount++;
+      });
+    });
+    (DATA.genders[g].relays || []).forEach(r => {
+      total++;
+      if(isNew(r.date)) newCount++;
+    });
+  });
+  document.getElementById('stat-total').textContent = total.toLocaleString();
+  document.getElementById('stat-new').textContent = newCount.toLocaleString();
+  document.getElementById('stat-holders').textContent = holders.size.toLocaleString();
+}
+
+function render(){
+  renderTabs();
+  const g = DATA.genders[currentGender];
+  const boardEl = document.getElementById('board');
+
+  const ageSections = (g.ageGroups || []).map(ag => `
+    <section class="age-group">
+      <div class="age-head">
+        <h2>${ag.age}</h2>
+        <span class="count">${ag.events.filter(e=>!e.noRecord).length} events on record</span>
+      </div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Event</th><th>Time</th><th>Record Holder</th><th>Meet</th><th>Date</th></tr></thead>
+        <tbody>${ag.events.map(eventRowHtml).join('')}</tbody>
+      </table></div>
+    </section>
+  `).join('');
+
+  const relaySection = (g.relays && g.relays.length) ? `
+    <section class="age-group">
+      <div class="age-head relay">
+        <h2>Relay Records</h2>
+        <span class="count">${g.relays.length} on record</span>
+      </div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Relay</th><th>Time</th><th>Swimmers</th><th>Meet</th><th>Date</th></tr></thead>
+        <tbody>${g.relays.map(relayRowHtml).join('')}</tbody>
+      </table></div>
+    </section>
+  ` : '';
+
+  boardEl.innerHTML = ageSections + relaySection;
+}
+
+fetch(DATA_URL, {cache: 'no-store'})
+  .then(r => r.json())
+  .then(json => {
+    DATA = json;
+    SEASON = seasonWindow(json);
+    setIntro(SEASON);
+    document.querySelector('.stat:nth-child(2) .label').textContent = SEASON.short;
+    document.getElementById('disclaimer-text').textContent = json.disclaimer || '';
+    document.getElementById('footer-text').textContent = json.footer || 'NSEA Swim · Team Records';
+    computeStats();
+    render();
+  })
+  .catch(err => {
+    document.getElementById('board').innerHTML = '<div class="loading">Could not load records data.</div>';
+    console.error('Failed to load', DATA_URL, err);
+  });
+</script>
+</body>
+</html>

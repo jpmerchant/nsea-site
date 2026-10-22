@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 1400px;
+  height: 1040px;
+  background: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  color: #1B2325;
+  position: relative;
+  overflow: hidden;
+}
+
+.page {
+  width: 100%;
+  height: 100%;
+  padding: 48px 64px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* header */
+.header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+.eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #ee492f;
+  text-transform: uppercase;
+}
+h1 {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 42px;
+  color: #008675;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+.subtitle {
+  font-size: 14.5px;
+  color: #676d70;
+  max-width: 880px;
+  margin: 10px auto 0;
+  line-height: 1.5;
+}
+.subtitle b { color: #1B2325; font-weight: 600; }
+.subtitle i { font-style: italic; }
+
+/* flow grid */
+.flow {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 64px 1fr 64px 1fr;
+  grid-template-rows: 1fr 48px 1fr 48px 0.85fr;
+  align-items: center;
+  margin-top: 22px;
+}
+
+.card {
+  border-radius: 14px;
+  padding: 22px 24px;
+  position: relative;
+  box-shadow: 0 4px 14px rgba(27,35,37,0.08);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.card.teal { background: linear-gradient(150deg, #008675 0%, #006A5C 100%); color: #fff; }
+.card.coral { background: linear-gradient(150deg, #ee492f 0%, #c93a23 100%); color: #fff; }
+
+.step-num {
+  position: absolute;
+  top: -14px;
+  left: 20px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: #FAFBFB;
+  border: 3px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+}
+.card.teal .step-num { border-color: #008675; color: #008675; }
+.card.coral .step-num { border-color: #ee492f; color: #ee492f; }
+
+.card-name {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  font-size: 26px;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+.age-badge {
+  display: inline-block;
+  font-family: 'Space Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 20px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  width: fit-content;
+}
+.card-body {
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.card-body .req {
+  font-weight: 600;
+  opacity: 0.98;
+}
+.card-body .desc {
+  opacity: 0.92;
+  margin-top: 3px;
+}
+
+/* arrows */
+.arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9BA0A3;
+}
+.arrow svg { display: block; }
+.arrow-h { grid-row: 1; }
+.arrow-v { grid-column: 5; grid-row: 2; }
+.arrow-v2 { grid-column: 1; grid-row: 2; }
+.arrow-h2 { grid-row: 3; }
+
+/* legend / footer */
+.footer {
+  margin-top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding-top: 18px;
+  border-top: 1px solid #E4E7E8;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.4px;
+  color: #676d70;
+  text-transform: uppercase;
+}
+.dot { width: 12px; height: 12px; border-radius: 3px; }
+.dot.teal { background: #008675; }
+.dot.coral { background: #ee492f; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="eyebrow">NSEA Swim</div>
+    <h1>Team Group Flow</h1>
+    <div class="subtitle">
+      The general progression through NSEA's training groups, based on the <b>typical</b> purpose of each level.
+      This is a guide, not a strict rulebook — it <i>does not</i> capture every component of a group, and shouldn't be read as the <i>only</i> path or requirement for a given swimmer.
+    </div>
+  </div>
+
+  <div class="flow">
+    <!-- Row 1: entry / development path -->
+    <div class="card teal" style="grid-column:1; grid-row:1;">
+      <div class="step-num">1</div>
+      <div class="card-name">Splash</div>
+      <div class="age-badge">AGE 5–9</div>
+      <div class="card-body">
+        <div class="req">Intro to Competitive Swimming</div>
+        <div class="desc">Building basic skills and practice habits</div>
+      </div>
+    </div>
+
+    <div class="arrow arrow-h" style="grid-column:2; grid-row:1;">
+      <svg width="48" height="20" viewBox="0 0 48 20"><path d="M0 10H40M40 10L30 3M40 10L30 17" stroke="#9BA0A3" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <div class="card teal" style="grid-column:3; grid-row:1;">
+      <div class="step-num">2</div>
+      <div class="card-name">Tidepool</div>
+      <div class="age-badge">AGE 8–11</div>
+      <div class="card-body">
+        <div class="req">Previous Swim Experience Necessary</div>
+        <div class="desc">Building fundamentals of competitive swimming and racing</div>
+      </div>
+    </div>
+
+    <div class="arrow arrow-h" style="grid-column:4; grid-row:1;">
+      <svg width="48" height="20" viewBox="0 0 48 20"><path d="M0 10H40M40 10L30 3M40 10L30 17" stroke="#9BA0A3" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <div class="card teal" style="grid-column:5; grid-row:1;">
+      <div class="step-num">3</div>
+      <div class="card-name">Riptide</div>
+      <div class="age-badge">AGE 10–13</div>
+      <div class="card-body">
+        <div class="req">Previous Competitive Experience Required</div>
+        <div class="desc">Refining and building long-term habits</div>
+      </div>
+    </div>
+
+    <!-- connector down: Riptide -> Breakers -->
+    <div class="arrow" style="grid-column:5; grid-row:2;">
+      <svg width="20" height="40" viewBox="0 0 20 40"><path d="M10 0V32M10 32L3 22M10 32L17 22" stroke="#9BA0A3" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <!-- Row 3: competitive track -->
+    <div class="card coral" style="grid-column:5; grid-row:3;">
+      <div class="step-num">4</div>
+      <div class="card-name">Breakers</div>
+      <div class="age-badge">AGE 13 &amp; OLDER</div>
+      <div class="card-body">
+        <div class="req">Previous Competitive Training Experience Required</div>
+        <div class="desc">Continuing to build habits while establishing a training and racing base</div>
+      </div>
+    </div>
+
+    <!-- double arrow: Breakers <-> Surge (lateral / equivalent tracks) -->
+    <div class="arrow" style="grid-column:4; grid-row:3;">
+      <svg width="48" height="20" viewBox="0 0 48 20"><path d="M8 10H40M8 10L18 3M8 10L18 17M40 10L30 3M40 10L30 17" stroke="#9BA0A3" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <div class="card coral" style="grid-column:3; grid-row:3;">
+      <div class="step-num">5</div>
+      <div class="card-name">Surge</div>
+      <div class="age-badge">AGE 14 &amp; OLDER</div>
+      <div class="card-body">
+        <div class="req">At Least 1 Year in Breakers (or Similar)</div>
+        <div class="desc">Refining racing habits and skills; expanding training intensity and volume</div>
+      </div>
+    </div>
+
+    <!-- double arrow: Surge <-> Senior -->
+    <div class="arrow" style="grid-column:3; grid-row:4;">
+      <svg width="20" height="40" viewBox="0 0 20 40"><path d="M10 2V38M10 2L3 10M10 2L17 10M10 38L3 30M10 38L17 30" stroke="#9BA0A3" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <div class="card coral" style="grid-column:3; grid-row:5;">
+      <div class="step-num">6</div>
+      <div class="card-name">Senior</div>
+      <div class="age-badge">AGE 15 &amp; OLDER</div>
+      <div class="card-body">
+        <div class="req">At Least 1 Year in Surge (or Similar)</div>
+        <div class="desc">Commitment to NSEA as primary activity — training and racing at a regional and national level</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="legend-item"><span class="dot teal"></span> Development Path</div>
+    <div class="legend-item"><span class="dot coral"></span> Competitive Track</div>
+  </div>
+
+</div>
+</body>
+</html>
