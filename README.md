@@ -1,6 +1,6 @@
 # NSEA Swim: new site (pre-production)
 
-A ground-up rebuild of nseaswimteam.com as a static Astro site for Cloudflare Pages. **The live BUILD site is untouched.** This runs beside it until you decide to switch.
+A ground-up rebuild of nseaswimteam.com as a static Astro site on Cloudflare (Workers static assets). **The live BUILD site is untouched.** This runs beside it until you decide to switch.
 
 ## How it is organised
 
@@ -36,28 +36,37 @@ Preview builds show a "PREVIEW BUILD" bar and status chips on every card (Ready 
 
 The BUILD pages we did not build ourselves (About, Coaching Staff, FAQ and so on) can only be read from the live site. `scripts/pull-build-pages.browser.js` does that in your own browser in about a minute. Instructions are at the top of the file. Drop the downloaded `nsea-build-pages.json` into `legacy/` and the content can be converted page by page.
 
+## Deploying on Cloudflare
+
+Cloudflare now creates new projects as **Workers with static assets** (the old Pages flow is folded into it). That is what this repo is set up for:
+
+- `wrangler.jsonc` names the project `nsea-site` and points `assets.directory` at `./dist`, so there is no output-directory field to fill in on the dashboard.
+- `.node-version` pins Node 22 (Cloudflare's default is newer; 22 is what this was built and tested on).
+- In the project's **Settings > Build**: build command `npm run build`, deploy command `npx wrangler deploy` (the default). Leave root directory blank.
+- Every push to `main` builds and deploys.
+
 ## Staying live while this is built (parallel run)
 
 **Do not recreate the existing repos.** `nsea-swim-boards` and `nsea-events` keep serving exactly what BUILD embeds today, and this site embeds the same URLs, so there is one copy of the data and one update workflow. Don't rename or move files in those repos, or change their Pages settings, until after go-live.
 
-**The new site gets its own new repo (`nsea-site`) and its own Cloudflare Pages project.**
+**The new site gets its own new repo (`nsea-site`) and its own Cloudflare project.**
 
 | Stage | URL | Needs DNS? |
 |---|---|---|
-| Building | `nsea-site.pages.dev` (automatic) | No |
+| Building | `nsea-site.<your-account>.workers.dev` (automatic) | No |
 | Sharing with the board | `next.nseaswimteam.com` (optional friendly URL) | One CNAME |
 | Live | `www.nseaswimteam.com` | Switch the record from BUILD |
 
-A subdomain is optional. Use the free `pages.dev` address while you build, and add `next.` only if you want a nicer address to share. To keep it private, put Cloudflare Access in front of it; the free tier covers you and the board.
+A subdomain is optional. Use the free `workers.dev` address Cloudflare assigns while you build, and add `next.` only if you want a nicer address to share. To keep it private, put Cloudflare Access in front of it; the free tier covers you and the board.
 
 **Go-live checklist**
 
 1. Lower the DNS TTL on `www` a day ahead.
 2. Set `PUBLIC_LIVE=true` on the production build and replace `public/robots.txt`.
-3. Add `www.nseaswimteam.com` as the Pages custom domain and switch the DNS record.
+3. Add `www.nseaswimteam.com` as a custom domain on the Worker and switch the DNS record.
 4. Keep the BUILD subscription for a couple of weeks. Rollback is pointing the record back.
 5. **Leave `events.nseaswimteam.com` where it is.** Families subscribe to its calendar feeds; moving it would silently break their calendars.
-6. Apex domain (`nseaswimteam.com`): Pages needs Cloudflare DNS for a bare domain. Either move the nameservers to Cloudflare at go-live or keep `www` as the canonical address.
+6. Apex domain (`nseaswimteam.com`): a bare domain needs Cloudflare DNS. Either move the nameservers to Cloudflare at go-live or keep `www` as the canonical address.
 
 **Gated pages** (carpool board for now) are listed in `gated-paths.txt`; point one Cloudflare Access policy at those paths. Check the free tier's user cap against your ~60 families first.
 

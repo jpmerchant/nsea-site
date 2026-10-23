@@ -1,0 +1,10 @@
+---
+import Base from '../layouts/Base.astro';
+import HubGrid from '../components/HubGrid.astro';
+import { topLevel } from '../lib/nav.mjs';
+---
+<Base title="Page not found" path="/404/">
+  <h1>Page not found</h1>
+  <p class="lede">That page doesn't exist (or has moved). Try one of these.</p>
+  <HubGrid items={topLevel} cta="Explore" />
+</Base>
