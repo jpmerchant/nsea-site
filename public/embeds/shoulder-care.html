@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shoulder Care Guide | NSEA Swim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#008675;
+  --teal-dark:#006A5C;
+  --coral:#ee492f;
+  --coral-light:#FCE7E3;
+  --gray:#676d70;
+  --gray-light:#9BA0A3;
+  --line:#E4E7E8;
+  --ink:#1B2325;
+  --panel:#FAFBFB;
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--panel);color:var(--ink);font:15px/1.55 'Inter',Arial,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+h2,h3{font-family:'Oswald',Arial,sans-serif;font-weight:600;line-height:1.15;margin:0}
+h2{font-size:22px;margin:32px 0 12px;color:var(--ink)}
+
+/* intro + callout (canonical guide patterns) */
+.intro{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--teal);border-radius:6px;padding:18px 22px;margin-bottom:20px;max-width:900px}
+.intro p{margin:0;color:var(--gray);font-size:15px;line-height:1.55}
+.note{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--coral);border-radius:6px;padding:16px 22px;font-size:14px;line-height:1.6;max-width:900px}
+.note strong{color:var(--coral)}
+.note ul{margin:6px 0 0;padding-left:20px}
+
+/* dose tiles */
+.dose{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:12px 0 20px}
+.dose>div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.dose .k{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray)}
+.dose .v{font-family:'Oswald',sans-serif;font-size:22px;color:var(--teal);margin-top:2px}
+.dose p{margin:4px 0 0;font-size:14px;color:var(--gray)}
+
+/* clock explainer */
+.clockbox{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:24px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+@media (max-width:720px){.clockbox{grid-template-columns:1fr}.clockbox svg{max-width:280px;margin:0 auto;display:block}}
+.clockbox p{margin:0 0 10px;font-size:14px;line-height:1.6}
+.pos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pos button{font:600 13px 'Inter',sans-serif;border:1px solid var(--line);background:var(--white);color:var(--ink);padding:7px 11px;border-radius:999px;cursor:pointer}
+.pos button[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:var(--white)}
+
+/* toolbar */
+.toolbar{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 0;margin-top:8px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:wrap;background:var(--white)}
+.seg button{font:600 13px 'Inter',sans-serif;border:0;background:transparent;color:var(--gray);padding:8px 14px;cursor:pointer;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--teal);color:var(--white)}
+.lbl{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-right:6px}
+.prog{flex:1 1 220px;display:flex;align-items:center;gap:10px;min-width:0}
+.bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--coral);transition:width .25s}
+.prog .mono{font:12px 'Space Mono',monospace;color:var(--gray);white-space:nowrap}
+.reset{font:600 12px 'Inter',sans-serif;background:var(--white);border:1px solid var(--line);color:var(--gray);border-radius:6px;padding:6px 10px;cursor:pointer}
+
+/* exercise cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:18px;margin-top:18px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;overflow:hidden}
+.card.done{border-color:var(--teal);box-shadow:inset 4px 0 0 var(--teal),0 2px 8px rgba(0,0,0,0.05)}
+.head{display:flex;gap:12px;padding:18px 20px 8px;align-items:flex-start}
+.num{flex:0 0 36px;height:36px;border-radius:50%;background:var(--teal);color:var(--white);font:600 17px 'Oswald',sans-serif;display:grid;place-items:center}
+.head h3{font-size:17px;color:var(--teal-dark)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:700 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--panel);border:1px solid var(--line);color:var(--teal-dark)}
+.tag.c{background:var(--coral-light);border-color:var(--coral-light);color:var(--coral)}
+.body{padding:0 20px 12px;display:grid;grid-template-columns:1fr auto;gap:12px}
+.body.noclock{grid-template-columns:1fr}
+.body ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
+.body ol li{margin:2px 0}
+.mini{width:92px;text-align:center}
+.mini svg{width:92px;height:92px}
+.mini .mono{font:11px 'Space Mono',monospace;color:var(--gray);display:block}
+.cue{margin:0 20px 10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;font-size:14px}
+.cue b{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal-dark);margin-right:4px}
+.cue.upd{border-left-color:var(--coral)}
+.cue.upd b{color:var(--coral)}
+.works{margin:2px 20px 12px;font-size:13px;color:var(--gray)}
+.vid{margin:0 20px 12px;border-radius:8px;overflow:hidden;background:#000;aspect-ratio:16/9;position:relative}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.play{position:absolute;inset:0;width:100%;border:0;cursor:pointer;background:linear-gradient(135deg,#0b3a34,#006A5C);color:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:600 14px 'Inter',sans-serif;padding:12px;text-align:center}
+.play .tri{width:56px;height:56px;border-radius:50%;background:var(--coral);display:grid;place-items:center}
+.play small{font:400 11px 'Space Mono',monospace;opacity:.8}
+.extlink{margin:0 20px 12px;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px dashed var(--line);border-radius:8px;font-size:14px;color:var(--gray)}
+.extlink a{color:var(--teal-dark);font-weight:600;text-decoration:none}
+.extlink a:hover{text-decoration:underline}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px 16px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.foot a{font-size:13px;color:var(--teal-dark);font-weight:600;text-decoration:none}
+.foot a:hover{text-decoration:underline}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer;min-height:36px}
+.chk input{width:20px;height:20px;accent-color:var(--teal)}
+.still{margin:0 20px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 6px 8px}
+.still svg{display:block;width:100%;height:auto;max-height:190px}
+.cap{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;font:400 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gray)}
+.cap i{display:inline-block;width:18px;height:0;border-top:3px dashed var(--gray-light);vertical-align:middle;margin-right:5px}
+.cap i.c{border-top:3px solid var(--coral)}
+.cap i.t{border-top:2px solid var(--teal)}
+.src{font-size:13px;color:var(--gray);max-width:900px;margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.src a{color:var(--teal-dark)}
+@media (max-width:600px){.toolbar{position:static}}
+[hidden]{display:none!important}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+@media print{
+  @page{size:letter;margin:0.5in}
+  body{background:var(--white);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .toolbar,.pos,.foot,.vid,.extlink{display:none}
+  .card,.intro,.note,.dose>div,.src,.clockbox{break-inside:avoid}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+
+
+<main>
+  <div class="intro"><p>Rotator cuff and deltoid strengthening for NSEA swimmers. Swimmers make hundreds of thousands of arm strokes each season, and these small, stabilizing muscles keep the shoulder centered and healthy through all of them. Choose a program, watch the demo, and check off each exercise as you go.</p></div>
+
+  <div class="note">
+    <strong>Before you start</strong>
+    <ul>
+      <li>Only do these when your shoulder is <b>pain-free</b>. If you have current shoulder pain or tendinitis, talk to your coach and an athletic trainer or physical therapist first.</li>
+      <li>Move slowly and with control. Lowering the weight should be as controlled as lifting it.</li>
+      <li>Stop if something pinches or hurts. Mild muscle fatigue is normal; sharp pain is not.</li>
+    </ul>
+  </div>
+
+  <h2>How to train</h2>
+  <div class="dose">
+    <div><div class="k">Sets × reps</div><div class="v">2 × 10</div><p>Build up as you can handle it.</p></div>
+    <div><div class="k">Resistance</div><div class="v">Light</div><p>Light band or 1–3 lb dumbbell. Finish every rep with good form.</p></div>
+    <div><div class="k">Tempo</div><div class="v">2 up · 2 down</div><p>No swinging or jerking.</p></div>
+    <div><div class="k">Adjust</div><div class="v">Band tension</div><p>Step farther from the anchor or choke up on the band to make it harder.</p></div>
+  </div>
+
+  <h2>Reading the clock</h2>
+  <div class="clockbox">
+    <svg id="bigclock" viewBox="0 0 240 240" role="img" aria-label="Top-down clock face around the swimmer showing arm direction"></svg>
+    <div>
+      <p>The band exercises use a <b>clock face</b> seen from above. You stand in the center facing <b>12:00</b>. Your right side is 3:00 and your left side is 9:00. Each exercise tells you where to lift your arm, with separate positions for the right (R) and left (L) arm.</p>
+      <p>Raise the arm to <b>shoulder height</b>. As you get tired you won't reach as high. That's fine.</p>
+      <div class="lbl">Try a position</div>
+      <div class="pos" id="posbtns"></div>
+    </div>
+  </div>
+
+  <h2>Exercises</h2>
+  <div class="toolbar" role="region" aria-label="Filters and progress">
+    <div><span class="lbl">Program</span>
+      <div class="seg" id="filt">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="band" aria-pressed="false">Band</button>
+        <button data-f="db" aria-pressed="false">Dumbbell</button>
+        <button data-f="partner" aria-pressed="false">Partner</button>
+      </div>
+    </div>
+    <div><span class="lbl">Arm</span>
+      <div class="seg" id="side">
+        <button data-s="R" aria-pressed="true">Right</button>
+        <button data-s="L" aria-pressed="false">Left</button>
+      </div>
+    </div>
+    <div class="prog"><div class="bar"><i id="barfill"></i></div><span class="mono" id="count">0 / 0 today</span><button class="reset" id="reset">Reset</button></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="src">
+    <p><b>Source.</b> Adapted from two classic athletic-training handouts: <i>Surgical Tubing Exercises for the Shoulder</i> and a rotator cuff prevention and rehabilitation exercise series published in <i>Athletic Training</i>. Two cues have been updated to current practice (marked <span style="color:var(--coral);font-weight:600">Updated cue</span>). Original tubing spec: 3/32″ wall, 3/16″ bore. Any light resistance band works the same way.</p>
+    <p><b>Videos</b> are third-party demonstrations on YouTube and Physitrack, chosen to match each movement. They are not produced or endorsed by NSEA. When a video differs from this guide, follow the written steps and cues here.</p>
+    <p>NSEA Swim dryland reference, updated Oct 2026. This guide is for injury <i>prevention</i> in healthy swimmers and is not medical advice. Rehab after an injury should be guided by a licensed athletic trainer or physical therapist.</p>
+  </div>
+</main>
+
+<script>
+(function(){
+const EX=[
+ {id:"b1",f:"band",name:"Anterior Deltoid Raise",tags:["Band","Front of shoulder"],clock:{R:1,L:11},
+  steps:["Stand on the band with your foot on the same side as the working arm.","Thumb up, arm straight.","Raise to shoulder height toward the clock position."],
+  cue:"Keep your shoulders down away from your ears. Stop at shoulder height.",works:"Anterior deltoid",
+  v:{yt:"IzTFCZv0--E",t:"Shoulder strengthening with a resistive band (Ask Doctor Jo)"}},
+ {id:"b2",f:"band",name:"Supraspinatus Raise",tags:["Band","Rotator cuff"],clock:{R:2,L:10},
+  steps:["Stand on the band.","Thumb <b>up</b> (a \"full can\").","Raise to shoulder height toward the clock position, slightly in front of your body."],
+  upd:"The original handout used thumb <i>down</i>. Current guidance prefers thumb <i>up</i>, which works the supraspinatus just as well with less pinching at the top of the shoulder.",
+  works:"Supraspinatus (rotator cuff)",v:{yt:"kVgKYPKyHYM",t:"Dumbbell scaption / full can demo. Same motion with a band."}},
+ {id:"b3",f:"band",name:"Middle Deltoid Raise",tags:["Band","Side of shoulder"],clock:{R:3,L:9},
+  steps:["Stand on the band.","Thumb forward, palm down.","Raise straight out to the side to shoulder height."],
+  cue:"The back of your hand points to the ceiling. Don't shrug.",works:"Middle deltoid",
+  v:{yt:"BW0OlzzotBI",t:"Shoulder abduction with a resistance band"}},
+ {id:"b4",f:"band",name:"Posterior Deltoid Raise",tags:["Band","Back of shoulder"],clock:{R:5,L:7},
+  steps:["Stand on the band.","Thumb down.","Lift back and slightly out toward the clock position."],
+  cue:"Keep your chest tall. Don't lean forward to get more range.",works:"Posterior deltoid",
+  v:{yt:"JvauW9ZAUSQ",t:"Resistance band shoulder extension"}},
+ {id:"b5",f:"band",name:"Internal Rotation",tags:["Band","Rotator cuff"],
+  steps:["Anchor the band at elbow height beside you, on the working-arm side.","Elbow at your side, bent 90°, hand forward.","Rotate your hand in across your stomach, then return slowly."],
+  cue:"Put a rolled towel between your elbow and ribs so the elbow stays put.",works:"Subscapularis (rotator cuff)",
+  v:{yt:"ZXncuZKonas",t:"Internal rotation shoulder strengthening with band"}},
+ {id:"b6",f:"band",name:"External Rotation",tags:["Band","Rotator cuff"],
+  steps:["Anchor the band at elbow height on the opposite side.","Elbow at your side, bent 90°, hand near your body.","Rotate your hand out away from your stomach, then return slowly."],
+  cue:"This is the most important one for swimmers. Keep the elbow pinned and the wrist straight.",works:"Infraspinatus and teres minor (rotator cuff)",
+  v:{yt:"_UvmPNGtlPM",t:"Shoulder external rotation with resistive band (Ask Doctor Jo)"}},
+ {id:"b7",f:"band",name:"Adduction",tags:["Band","Chest / lats"],
+  steps:["Anchor the band at shoulder height out to your side.","Start with the arm straight and out at shoulder level.","Pull the arm down and across the front of your body."],
+  cue:"Keep your arm straight and your body still. Don't twist.",works:"Pectoralis major, latissimus dorsi",
+  v:{yt:"t7jXZeUGhrY",t:"Banded shoulder adduction tutorial"}},
+
+ {id:"d4",f:"db",name:"Side-Lying External Rotation",fig:4,tags:["Dumbbell","Rotator cuff"],
+  steps:["Lie on your side with the working arm on top.","Elbow bent 90° and held against your ribs.","Rotate the weight up until your forearm points at the ceiling, then lower slowly."],
+  cue:"The elbow never leaves your side. A small towel roll under it helps.",works:"Infraspinatus, teres minor",
+  v:{yt:"YvNMmBZ-8dY",t:"Side-lying dumbbell external rotation demo"}},
+ {id:"d5",f:"db",name:"Supine Internal Rotation",fig:5,tags:["Dumbbell","Rotator cuff"],
+  steps:["Lie on your back with your arm at your side and your elbow bent 90°.","Start with the forearm resting out to the side.","Rotate the weight up until it points at the ceiling, then lower slowly."],
+  cue:"Keep the back of your upper arm on the floor the whole time.",works:"Subscapularis",
+  v:{yt:"mJC_HOQOVPs",t:"Dumbbell shoulder internal and external rotation tutorial"}},
+ {id:"d6",f:"db",name:"Prone Shoulder Extension",fig:6,tags:["Dumbbell","Back of shoulder"],
+  steps:["Lie face down on a bench with your arm hanging straight down.","Keep the elbow straight and the arm close to your body.","Raise the arm back toward your hip as high as it goes comfortably, then lower slowly."],
+  cue:"Squeeze your shoulder blade back first, then lift the arm.",works:"Posterior deltoid, latissimus dorsi, lower trapezius",
+  v:{yt:"SXsZpsJnhGc",t:"Shoulder extension in prone with dumbbell"}},
+ {id:"d7",f:"db",name:"Prone Horizontal Abduction",fig:7,tags:["Dumbbell","Upper back"],
+  steps:["Lie face down on a bench with your arm hanging straight down.","Raise the weight straight out to the side until your arm is level with your body (a \"T\").","Lower slowly back to the start."],
+  cue:"Think \"shoulder blade to spine.\" Stop at bench level and don't arch your neck.",works:"Rhomboids (major and minor), posterior deltoid",
+  v:{yt:"_ipVLm6NZ-s",t:"Horizontal abduction in prone for rehabilitation"}},
+ {id:"d8",f:"db",name:"Shoulder Abduction",fig:8,tags:["Dumbbell","Side of shoulder"],
+  steps:["Stand with the weight at your side.","Lift out to the side until your arm is level with the ground (90°).","Lower slowly to the start."],
+  cue:"Stop at shoulder height. Palm faces down, thumb slightly forward.",works:"Middle deltoid, rotator cuff stabilizers",
+  v:{url:"https://us.physitrack.com/home-exercise-video/shoulder-abductions-with-weight-standing",t:"Shoulder abduction with weight, standing (Physitrack)"}},
+ {id:"d9",f:"db",name:"Shoulder Flexion",fig:9,tags:["Dumbbell","Front of shoulder"],
+  steps:["Stand with the weight at your side.","Raise it straight in front of you until your arm is level with the ground.","Lower slowly."],
+  cue:"Keep your ribs down. No leaning back to finish the rep.",works:"Anterior deltoid",
+  v:{url:"https://us.physitrack.com/home-exercise-video/shoulder-flexion-with-weight-standing",t:"Shoulder flexion with weight, standing (Physitrack)"}},
+ {id:"d10",f:"db",name:"Supraspinatus (Scaption)",fig:10,tags:["Dumbbell","Rotator cuff"],
+  steps:["Stand with your elbow straight.","Angle your arm about 30° forward of straight out to the side.","Raise to just below shoulder height, then lower slowly."],
+  upd:"The original figure used thumb <i>toward the floor</i>. Use thumb <i>up</i> (\"full can\") instead. It targets the same muscle with less impingement risk, which matters for swimmers.",
+  works:"Supraspinatus",v:{yt:"kVgKYPKyHYM",t:"Dumbbell scaption (full can) demo"}},
+
+ {id:"p11",f:"partner",name:"Rhythmic Stabilization",fig:11,tags:["Partner","Stability"],
+  steps:["Lie on your back with your arm straight up toward the ceiling.","A partner (or coach) pushes on your hand randomly in any of four directions.","Hold the arm still and react to each push. Work in 30-second rounds."],
+  cue:"Partners: start with gentle pushes and change direction often. The goal is quick reactions, not a strength contest.",works:"Whole rotator cuff and shoulder-girdle stabilizers",
+  v:{yt:"TPwNvAD79n4",t:"Shoulder PNF rhythmic stabilization: supine"}}
+];
+
+const $=s=>document.querySelector(s);
+const grid=$("#grid");
+let filter="all",side="R";
+const today=new Date().toISOString().slice(0,10);
+const KEY="nsea-shoulder-"+today;
+let done={};
+try{done=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){done={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}}
+
+const NS="http://www.w3.org/2000/svg";
+function clockSVG(svg,hour,size,opts){
+  opts=opts||{};
+  const c=size/2,r=size*0.42;
+  svg.setAttribute("viewBox",`0 0 ${size} ${size}`);
+  let h=`<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${size>150?2:1.5}"/>`;
+  for(let i=1;i<=12;i++){
+    const a=(i/12)*2*Math.PI-Math.PI/2;
+    const on=i===hour;
+    if(size>150||[12,3,6,9].includes(i)||on){
+      const tx=c+Math.cos(a)*(r+(size>150?0:0)), ty=c+Math.sin(a)*r;
+      const lr=size>150?r-16:r-9;
+      h+=`<text x="${c+Math.cos(a)*lr}" y="${c+Math.sin(a)*lr}" text-anchor="middle" dominant-baseline="central" font-family="Space Mono,monospace" font-size="${size>150?12:9}" font-weight="${on?700:400}" fill="${on?'var(--coral)':'var(--gray-light)'}">${i}</text>`;
+    }
+  }
+  // body top view: shoulders ellipse + head, facing 12
+  const s=size/240;
+  h+=`<ellipse cx="${c}" cy="${c}" rx="${34*s}" ry="${13*s}" fill="var(--panel)" stroke="var(--teal)" stroke-width="1.5"/>`;
+  h+=`<circle cx="${c}" cy="${c-2*s}" r="${11*s}" fill="var(--teal)"/>`;
+  h+=`<path d="M${c-4*s} ${c-12*s} L${c} ${c-18*s} L${c+4*s} ${c-12*s}" fill="var(--teal)"/>`;
+  if(hour){
+    const a=(hour/12)*2*Math.PI-Math.PI/2;
+    const onRight=hour<=6&&hour>0;
+    const sx=c+(onRight?30:-30)*s, sy=c;
+    const ex=c+Math.cos(a)*(r-(size>150?30:20)), ey=c+Math.sin(a)*(r-(size>150?30:20));
+    h+=`<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="var(--coral)" stroke-width="${size>150?7:5}" stroke-linecap="round"/>`;
+    h+=`<circle cx="${ex}" cy="${ey}" r="${size>150?8:5}" fill="var(--coral)"/>`;
+  }
+  if(size>150){
+    h+=`<text x="${c}" y="${size-6}" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="var(--gray)">TOP VIEW · FACING 12</text>`;
+  }
+  svg.innerHTML=h;
+}
+
+// big clock + position buttons
+const big=$("#bigclock");
+const bandClock=EX.filter(e=>e.clock);
+const posb=$("#posbtns");
+let bigSel=bandClock[0].id;
+function drawBig(){
+  const e=EX.find(x=>x.id===bigSel);
+  clockSVG(big,e.clock[side],240);
+  big.setAttribute("aria-label",`${e.name}: ${side==="R"?"right":"left"} arm to ${e.clock[side]}:00`);
+  posb.querySelectorAll("button").forEach(b=>{
+    const x=EX.find(y=>y.id===b.dataset.id);
+    b.setAttribute("aria-pressed",String(b.dataset.id===bigSel));
+    b.textContent=`${x.name.replace(" Raise","")} · ${x.clock[side]}:00`;
+  });
+}
+bandClock.forEach(e=>{const b=document.createElement("button");b.dataset.id=e.id;b.onclick=()=>{bigSel=e.id;drawBig()};posb.appendChild(b)});
+
+/* ---------- Quick-reference stills (original line drawings) ---------- */
+const POSE={
+ b1:{v:"side",a:[0,90],eq:"band"},
+ b2:{v:"front",a:[10,88],eq:"band",fs:.84,note:"30° forward"},
+ b3:{v:"front",a:[10,90],eq:"band"},
+ b4:{v:"side",a:[0,-45],eq:"band"},
+ b5:{v:"top",a:[180,240],eq:"band",anchor:[188,52]},
+ b6:{v:"top",a:[240,150],eq:"band",anchor:[14,52]},
+ b7:{v:"front",a:[90,-22],eq:"band",anchor:[190,48]},
+ d4:{v:"sidelie",a:[30,180],eq:"db"},
+ d5:{v:"supine",a:[90,180],eq:"db"},
+ d6:{v:"prone",a:[0,72],eq:"db"},
+ d7:{v:"proneEnd",a:[0,90],eq:"db"},
+ d8:{v:"front",a:[10,90],eq:"db"},
+ d9:{v:"side",a:[0,90],eq:"db"},
+ d10:{v:"front",a:[10,88],eq:"db",fs:.84,note:"30° forward"},
+ p11:{v:"rs"}
+};
+const VIEWNAME={front:"Front view",side:"Side view",top:"Top view",sidelie:"View from head end",supine:"View from head end",prone:"Side view",proneEnd:"View from head end",rs:"Side view"};
+const BODY='fill="var(--white)" stroke="var(--gray)" stroke-width="2" stroke-linejoin="round"';
+const LN='stroke="var(--gray)" stroke-width="3" stroke-linecap="round" fill="none"';
+function floor(y){return `<line x1="8" y1="${y}" x2="192" y2="${y}" stroke="var(--line)" stroke-width="2"/>`}
+const VIEWS={
+ front:()=>({svg:`${floor(152)}<path d="M92 98 L90 148 M108 98 L110 148 M84 48 L77 94" ${LN}/><path d="M84 46 L116 46 L112 98 L88 98 Z" ${BODY}/><circle cx="100" cy="24" r="11" ${BODY}/>`,p:[116,49],L:44,foot:[110,150]}),
+ side:()=>({svg:`${floor(152)}<path d="M100 98 L100 148 L112 148" ${LN}/><path d="M94 46 L106 46 L105 98 L95 98 Z" ${BODY}/><circle cx="100" cy="24" r="11" ${BODY}/><path d="M110 22 l4 3 -4 1" ${LN} stroke-width="2"/>`,p:[100,50],L:44,foot:[104,150]}),
+ top:()=>({svg:`<ellipse cx="100" cy="104" rx="42" ry="14" ${BODY}/><circle cx="100" cy="104" r="11" ${BODY}/><path d="M95 94 L100 86 L105 94" fill="var(--gray)"/><text x="100" y="150" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="var(--gray-light)">STANDING · ELBOW AT SIDE · FACING ↑</text><circle cx="132" cy="100" r="3.5" fill="var(--gray)"/>`,p:[132,100],L:34}),
+ sidelie:()=>({svg:`${floor(138)}<ellipse cx="100" cy="107" rx="17" ry="30" ${BODY}/><circle cx="112" cy="84" r="3.5" fill="var(--gray)"/><text x="100" y="152" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="var(--gray-light)">LYING ON SIDE · ELBOW ON RIBS</text>`,p:[112,84],L:34}),
+ supine:()=>({svg:`${floor(131)}<ellipse cx="100" cy="119" rx="40" ry="12" ${BODY}/><circle cx="100" cy="112" r="10" ${BODY}/><circle cx="140" cy="119" r="3.5" fill="var(--gray)"/><text x="100" y="148" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="var(--gray-light)">ON BACK · ELBOW AT SIDE</text>`,p:[140,119],L:34}),
+ prone:()=>({svg:`${floor(142)}<path d="M40 100 L40 142 M150 100 L150 142" ${LN}/><rect x="30" y="92" width="130" height="8" rx="2" fill="var(--line)" stroke="var(--gray)" stroke-width="1.5"/><path d="M124 85 L186 88" ${LN}/><rect x="38" y="78" width="88" height="14" rx="7" ${BODY}/><circle cx="25" cy="84" r="10" ${BODY}/>`,p:[48,88],L:42,top:true}),
+ proneEnd:()=>({svg:`${floor(142)}<path d="M100 104 L100 142" ${LN}/><rect x="76" y="96" width="48" height="8" rx="2" fill="var(--line)" stroke="var(--gray)" stroke-width="1.5"/><ellipse cx="100" cy="88" rx="30" ry="8" ${BODY}/><circle cx="100" cy="80" r="10" ${BODY}/>`,p:[127,89],L:42}),
+ rs:()=>({svg:`${floor(131)}<path d="M128 119 L186 122" ${LN}/><rect x="38" y="112" width="92" height="14" rx="7" ${BODY}/><circle cx="26" cy="118" r="10" ${BODY}/>`,p:[50,114],L:52})
+};
+const pt=(p,a,L)=>[p[0]+L*Math.sin(a*Math.PI/180),p[1]+L*Math.cos(a*Math.PI/180)];
+const f1=n=>n.toFixed(1);
+function arrowHead(x,y,dx,dy,col){const m=Math.hypot(dx,dy);dx/=m;dy/=m;const s=7;
+  return `<path d="M${f1(x)} ${f1(y)} L${f1(x-dx*s-dy*s*.55)} ${f1(y-dy*s+dx*s*.55)} L${f1(x-dx*s+dy*s*.55)} ${f1(y-dy*s-dx*s*.55)} Z" fill="${col}"/>`}
+function arc(p,a0,a1,r){
+  const [x0,y0]=pt(p,a0,r),[x1,y1]=pt(p,a1,r),inc=a1>a0,rad=a1*Math.PI/180;
+  const tx=(inc?1:-1)*Math.cos(rad),ty=(inc?-1:1)*Math.sin(rad);
+  return `<path d="M${f1(x0)} ${f1(y0)} A${r} ${r} 0 0 ${inc?0:1} ${f1(x1)} ${f1(y1)}" fill="none" stroke="var(--coral)" stroke-width="1.8" stroke-dasharray="3 3"/>`+arrowHead(x1,y1,tx,ty,"var(--coral)");
+}
+function dumbbell(x,y,a){const deg=-a;return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${deg})"><rect x="-8" y="-1.8" width="16" height="3.6" fill="var(--ink)"/><rect x="-11" y="-5" width="5" height="10" rx="1" fill="var(--ink)"/><rect x="6" y="-5" width="5" height="10" rx="1" fill="var(--ink)"/></g>`}
+function stillSVG(id){
+  const s=POSE[id];const V=VIEWS[s.v]();let g=V.svg;
+  if(s.v==="rs"){
+    const h=pt(V.p,180,V.L);
+    g+=`<line x1="${V.p[0]}" y1="${V.p[1]}" x2="${h[0]}" y2="${h[1]}" stroke="var(--coral)" stroke-width="7" stroke-linecap="round"/><circle cx="${h[0]}" cy="${h[1]}" r="5" fill="var(--coral)"/>`;
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx,dy])=>{const x1=h[0]+dx*26,y1=h[1]+dy*22,x2=h[0]+dx*10,y2=h[1]+dy*8;
+      g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--teal)" stroke-width="2.5"/>`+arrowHead(x2,y2,x2-x1,y2-y1,"var(--teal)")});
+    g+=`<text x="120" y="50" font-family="Space Mono,monospace" font-size="9" fill="var(--teal-dark)">partner pushes</text><text x="120" y="62" font-family="Space Mono,monospace" font-size="9" fill="var(--teal-dark)">at random</text><text x="120" y="80" font-family="Space Mono,monospace" font-size="9" fill="var(--coral)">arm holds still</text>`;
+  } else {
+    const [a0,a1]=s.a,fs=s.fs||1;
+    const st=pt(V.p,a0,V.L),en=pt(V.p,a1,V.L*fs);
+    g+=`<line x1="${V.p[0]}" y1="${V.p[1]}" x2="${f1(st[0])}" y2="${f1(st[1])}" stroke="var(--gray-light)" stroke-width="6" stroke-linecap="round" stroke-dasharray="1 9" opacity=".9"/>`;
+    if(s.eq==="db")g+=`<g opacity=".45">${dumbbell(st[0],st[1],a0)}</g>`;
+    g+=arc(V.p,a0,a1,V.L*0.62);
+    if(s.eq==="band"){const an=s.anchor||V.foot;
+      g+=`<line x1="${an[0]}" y1="${an[1]}" x2="${f1(en[0])}" y2="${f1(en[1])}" stroke="var(--teal)" stroke-width="2"/>`;
+      if(s.anchor)g+=`<rect x="${an[0]-4}" y="${an[1]-4}" width="8" height="8" fill="var(--teal)"/>`;}
+    g+=`<line x1="${V.p[0]}" y1="${V.p[1]}" x2="${f1(en[0])}" y2="${f1(en[1])}" stroke="var(--coral)" stroke-width="7" stroke-linecap="round"/>`;
+    g+=s.eq==="db"?dumbbell(en[0],en[1],a1):`<circle cx="${f1(en[0])}" cy="${f1(en[1])}" r="4.5" fill="var(--coral)"/>`;
+    if(s.note)g+=`<text x="162" y="${f1(en[1]-12)}" text-anchor="middle" font-family="Space Mono,monospace" font-size="9" fill="var(--coral)">${s.note}</text>`;
+  }
+  return `<svg viewBox="0 0 200 160" role="img" aria-label="Quick reference drawing: start and finish position">${g}</svg>`;
+}
+function stillHTML(e){
+  const s=POSE[e.id];if(!s)return"";
+  const leg=s.v==="rs"?`<span><i class="t"></i>Partner pushes</span><span><i class="c"></i>Arm holds</span>`
+    :`<span><i></i>Start</span><span><i class="c"></i>Finish</span>${s.eq==="band"?'<span><i class="t"></i>Band</span>':''}`;
+  return `<div class="still">${stillSVG(e.id)}<div class="cap">${leg}<span>${VIEWNAME[s.v]}</span></div></div>`;
+}
+
+function vidHTML(v){
+  if(v.yt){
+    return `<div class="vid"><button class="play" data-yt="${v.yt}" aria-label="Play video: ${v.t}"><span class="tri"><svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 1l17 10L2 21z" fill="#fff"/></svg></span>Play demo<small>${v.t}</small></button></div>`;
+  }
+  return `<div class="extlink"><span>▶</span><span>Demo: <a href="${v.url}" target="_blank" rel="noopener">${v.t}</a></span></div>`;
+}
+
+function render(){
+  grid.innerHTML="";
+  let n=0;
+  EX.forEach((e,i)=>{
+    if(filter!=="all"&&e.f!==filter)return;
+    n++;
+    const card=document.createElement("article");
+    card.className="card"+(done[e.id]?" done":"");
+    const tags=e.tags.map((t,j)=>`<span class="tag${j===0?' c':''}">${t}</span>`).join("")+(e.fig?`<span class="tag">Fig ${e.fig}</span>`:"");
+    const clockPart=e.clock?`<div class="mini"><svg aria-hidden="true"></svg><span class="mono">${side}: ${e.clock[side]}:00</span></div>`:"";
+    const cue=e.upd?`<div class="cue upd"><b>Updated cue</b>${e.upd}</div>`:`<div class="cue"><b>Coach cue</b>${e.cue}</div>`;
+    const link=e.v.yt?`<a href="https://www.youtube.com/watch?v=${e.v.yt}" target="_blank" rel="noopener">Open on YouTube ↗</a>`:"";
+    card.innerHTML=`
+      <div class="head"><div class="num">${i+1}</div><div><h3>${e.name}</h3><div class="tags">${tags}</div></div></div>
+      ${stillHTML(e)}
+      <div class="body${e.clock?'':' noclock'}"><ol>${e.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${clockPart}</div>
+      ${cue}
+      <div class="works"><b>Works:</b> ${e.works}</div>
+      ${vidHTML(e.v)}
+      <div class="foot"><label class="chk"><input type="checkbox" ${done[e.id]?"checked":""} data-id="${e.id}"> Done today</label>${link}</div>`;
+    if(e.clock)clockSVG(card.querySelector(".mini svg"),e.clock[side],100);
+    grid.appendChild(card);
+  });
+  updateProg();
+}
+function updateProg(){
+  const vis=EX.filter(e=>filter==="all"||e.f===filter);
+  const d=vis.filter(e=>done[e.id]).length;
+  $("#barfill").style.width=(vis.length?d/vis.length*100:0)+"%";
+  $("#count").textContent=`${d} / ${vis.length} today`;
+}
+
+grid.addEventListener("click",ev=>{
+  const p=ev.target.closest(".play");
+  if(p){
+    const f=document.createElement("iframe");
+    f.src=`https://www.youtube-nocookie.com/embed/${p.dataset.yt}?autoplay=1&rel=0`;
+    f.title=p.getAttribute("aria-label");
+    f.allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture";
+    f.allowFullscreen=true;
+    p.replaceWith(f);
+  }
+});
+grid.addEventListener("change",ev=>{
+  const c=ev.target.closest("input[type=checkbox]");if(!c)return;
+  if(c.checked)done[c.dataset.id]=1;else delete done[c.dataset.id];
+  c.closest(".card").classList.toggle("done",c.checked);
+  save();updateProg();
+});
+document.querySelectorAll("#filt button").forEach(b=>b.onclick=()=>{
+  filter=b.dataset.f;
+  document.querySelectorAll("#filt button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  render();
+});
+document.querySelectorAll("#side button").forEach(b=>b.onclick=()=>{
+  side=b.dataset.s;
+  document.querySelectorAll("#side button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  render();drawBig();
+});
+$("#reset").onclick=()=>{done={};save();render();};
+render();drawBig();
+})();
+</script>
+
+</body>
+</html>

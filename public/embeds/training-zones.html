@@ -1,0 +1,374 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base target="_top"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style></style></head><body style="margin:0"><style>:root {
+    --teal: #008675;
+    --teal-dark: #006A5C;
+    --coral: #ee492f;
+    --coral-light: #FCE7E3;
+    --gray: #676d70;
+    --gray-light: #9BA0A3;
+    --line: #E4E7E8;
+    --ink: #1B2325;
+    --panel: #FAFBFB;
+    --white: #FFFFFF;
+    --z-clear-bg:#F2F4F4; --z-clear-fg:#4A5254;
+    --z-white-bg:#EAF6F4; --z-white-fg:#00554A;
+    --z-pink-bg:#FBD9E6;  --z-pink-fg:#8A1F4D;
+    --z-red-bg:#F6B3AC;   --z-red-fg:#7A1B10;
+    --z-orange-bg:#FBD3A6;--z-orange-fg:#7A3E05;
+    --z-blue-bg:#B7D6F5;  --z-blue-fg:#0B3B70;
+    --z-purple-bg:#D9C7F0;--z-purple-fg:#3E1B70;
+    --z-green-bg:#C3E6C0; --z-green-fg:#1E4D1B;
+    --z-gold-bg:#F5E29B;  --z-gold-fg:#5C4A05;
+    --tw5-bg:#8CC63F; --tw5-fg:#1E4D1B;
+    --tw4-bg:#7B4FA6; --tw4-fg:#FFFFFF;
+    --tw3-bg:#5B9BD5; --tw3-fg:#0B3B70;
+    --tw2-bg:#EE6C55; --tw2-fg:#FFFFFF;
+    --tw1-bg:#F6C7D9; --tw1-fg:#8A1F4D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Inter', Arial, sans-serif;
+    color: var(--ink);
+    background: var(--white);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: 'Oswald', Arial, sans-serif; font-weight: 600; letter-spacing: 0.01em; margin: 0; }
+  a { color: var(--teal); }
+  /* ---- Compact top note (replaces hero header — BUILD supplies page title/breadcrumb) ---- */
+  .top-note {
+    max-width: 1560px;
+    margin: 0 auto;
+    padding: 14px 24px 0;
+    font-size: 12.5px;
+    color: var(--gray);
+    line-height: 1.5;
+    border-top: 3px solid var(--coral);
+  }
+  .top-note strong { color: var(--teal-dark); }
+  /* ---- Content shell ---- */
+  .content { max-width: 1560px; margin: 0 auto; padding: 8px 24px 40px; }
+  .intro-line {
+    max-width: 1560px;
+    margin: 0 auto 22px;
+    padding: 0 24px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .intro-line strong { color: var(--teal-dark); }
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--teal);
+    padding: 4px 11px;
+    border-radius: 3px;
+  }
+  .section-tag.alt { background: var(--coral); }
+  .section-heading h2 { font-size: 20px; }
+  /* ---- Chart scroll wrapper (handles small screens) ---- */
+  .chart-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scroll-hint {
+    display: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--gray);
+    text-align: center;
+    padding: 6px 0 0;
+  }
+  @media (max-width: 1560px) {
+    .scroll-hint { display: block; }
+  }
+  /* ---- Shared grid: one grid so rows line up across both panels ---- */
+  .zone-grid {
+    display: grid;
+    grid-template-columns:
+      152px 46px minmax(110px,1fr) minmax(160px,1.3fr) minmax(100px,0.9fr) minmax(92px,0.8fr) minmax(190px,1.6fr)
+      18px
+      130px minmax(190px,1.5fr) 62px 54px 62px 62px;
+    min-width: 1430px;
+  }
+  .g-cell {
+    padding: 10px 10px;
+    font-size: 13px;
+    line-height: 1.35;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+  }
+  /* header row */
+  .g-head {
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gray);
+    border-bottom: 2px solid var(--ink);
+    padding: 8px 10px 8px;
+    align-items: flex-end;
+  }
+  .g-head.tw-head-block {
+    background: var(--ink);
+    color: #fff;
+    border-bottom: none;
+    align-items: center;
+  }
+  /* Rushton zone chip */
+  .zone-chip {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: 'Oswald', Arial, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+  .zone-chip .feel {
+    display: block;
+    font-family: 'Inter', Arial, sans-serif;
+    font-weight: 400;
+    font-size: 9.5px;
+    margin-top: 2px;
+    letter-spacing: 0;
+  }
+  .rpe-num { font-family: 'Oswald', Arial, sans-serif; font-weight: 600; font-size: 14px; }
+  /* TritonWear block cells (may span multiple grid rows) */
+  .tw-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .tw-name { font-family: 'Oswald', Arial, sans-serif; font-weight: 700; font-size: 14px; flex: none; width: 108px; }
+  .tw-name .cat { display: block; font-family: 'Inter', Arial, sans-serif; font-weight: 400; font-size: 9px; margin-top: 2px; opacity: 0.9; }
+  .tw-name .covers { display: block; font-family: 'Space Mono', monospace; font-weight: 400; font-size: 8px; margin-top: 4px; opacity: 0.85; letter-spacing: 0.02em; }
+  .tw-focus { flex: 1; }
+  .tw-metric { flex: none; width: 54px; text-align: center; font-family: 'Oswald', Arial, sans-serif; font-weight: 600; font-size: 13px; }
+  .tw-empty {
+    grid-column: 9 / 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    border-bottom: 1px dashed var(--line);
+    font-size: 11.5px;
+    color: var(--gray-light);
+    font-style: italic;
+  }
+  /* zone row backgrounds */
+  .z-clear  { background: var(--z-clear-bg);  color: var(--z-clear-fg); }
+  .z-white  { background: var(--z-white-bg);  color: var(--z-white-fg); }
+  .z-pink   { background: var(--z-pink-bg);   color: var(--z-pink-fg); }
+  .z-red    { background: var(--z-red-bg);    color: var(--z-red-fg); }
+  .z-orange { background: var(--z-orange-bg); color: var(--z-orange-fg); }
+  .z-blue   { background: var(--z-blue-bg);   color: var(--z-blue-fg); }
+  .z-purple { background: var(--z-purple-bg); color: var(--z-purple-fg); }
+  .z-green  { background: var(--z-green-bg);  color: var(--z-green-fg); }
+  .z-gold   { background: var(--z-gold-bg);   color: var(--z-gold-fg); }
+  .tw1 { background: var(--tw1-bg); color: var(--tw1-fg); }
+  .tw2 { background: var(--tw2-bg); color: var(--tw2-fg); }
+  .tw3 { background: var(--tw3-bg); color: var(--tw3-fg); }
+  .tw4 { background: var(--tw4-bg); color: var(--tw4-fg); }
+  .tw5 { background: var(--tw5-bg); color: var(--tw5-fg); }
+  /* ---- Callout ---- */
+  .callout {
+    background: var(--coral-light);
+    border-left: 4px solid var(--coral);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #6b241a;
+    margin-top: 18px;
+  }
+  .callout strong { color: var(--coral); }
+  /* ---- Compact footer (credit + sources, no heavy card) ---- */
+  .compact-footer {
+    margin-top: 32px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--gray-light);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+  @media (max-width: 640px) {
+    .top-note { padding: 12px 16px 0; }
+    .content { padding: 20px 16px 40px; }
+    .compact-footer { flex-direction: column; }
+  }</style><div style="padding:0 4px"> <div class="intro-line"> <strong>Primary system:</strong> 
+Tom Rushton's nine-zone ladder (CLEAR → GOLD) — RPE, race pace, stroke rate, heart rate, and lactate targets by zone, plus what each zone is for in a set. <strong>Secondary system:</strong> 
+TritonWear's five-zone device readout (Zone 1–5), shown to the right of its closest Rushton equivalent(s) so a swimmer's device data can be translated onto the zone language coaches use on deck.</div> 
+ <div class="section-heading"> <span class="section-tag">Rushton Zones — Primary</span> 
+ <span class="section-tag alt">TritonWear Zones — Secondary</span> 
+</div> 
+ <div class="chart-scroll"> <div class="zone-grid"><!-- Header row --> <div class="g-cell g-head" style="grid-column:1; grid-row:1;">Zone</div> 
+ <div class="g-cell g-head" style="grid-column:2; grid-row:1;">RPE</div> 
+ <div class="g-cell g-head" style="grid-column:3; grid-row:1;">Race Pace</div> 
+ <div class="g-cell g-head" style="grid-column:4; grid-row:1;">Stroke Rate (cyc/min) F / Ba / Br / Fl</div> 
+ <div class="g-cell g-head" style="grid-column:5; grid-row:1;">Heart Rate</div> 
+ <div class="g-cell g-head" style="grid-column:6; grid-row:1;">Lactate</div> 
+ <div class="g-cell g-head" style="grid-column:7; grid-row:1;">Set Design</div> 
+ <div style="grid-column:8; grid-row:1;"></div> 
+ <div class="g-cell g-head tw-head-block" style="grid-column:9; grid-row:1;">TW Zone</div> 
+ <div class="g-cell g-head tw-head-block" style="grid-column:10; grid-row:1;">Focus</div> 
+ <div class="g-cell g-head tw-head-block" style="grid-column:11; grid-row:1; justify-content:center;">HR %max</div> 
+ <div class="g-cell g-head tw-head-block" style="grid-column:12; grid-row:1; justify-content:center;">RPE</div> 
+ <div class="g-cell g-head tw-head-block" style="grid-column:13; grid-row:1; justify-content:center;">×CSS</div> 
+ <div class="g-cell g-head tw-head-block" style="grid-column:14; grid-row:1; justify-content:center;">Energy</div> 
+<!-- Row 2: CLEAR --> <div class="g-cell z-clear" style="grid-column:1; grid-row:2;"> <span class="zone-chip z-clear">CLEAR <span class="feel">Easy / Recovery</span> 
+</span> 
+</div> 
+ <div class="g-cell z-clear rpe-num" style="grid-column:2; grid-row:2;">0–2</div> 
+ <div class="g-cell z-clear" style="grid-column:3; grid-row:2;">n/a</div> 
+ <div class="g-cell z-clear" style="grid-column:4; grid-row:2;">n/a</div> 
+ <div class="g-cell z-clear" style="grid-column:5; grid-row:2;">n/a</div> 
+ <div class="g-cell z-clear" style="grid-column:6; grid-row:2;">n/a</div> 
+ <div class="g-cell z-clear" style="grid-column:7; grid-row:2;">Easy movement, relaxing. No training effect.</div> 
+ <div class="tw-empty" style="grid-row:2;">No TritonWear zone below Zone 1 (RPE &lt; 2)</div> 
+<!-- Row 3: WHITE / TW Zone 1 --> <div class="g-cell z-white" style="grid-column:1; grid-row:3;"> <span class="zone-chip z-white">WHITE <span class="feel">Aerobic Capacity</span> 
+</span> 
+</div> 
+ <div class="g-cell z-white rpe-num" style="grid-column:2; grid-row:3;">1–3</div> 
+ <div class="g-cell z-white" style="grid-column:3; grid-row:3;">PB +17–25″</div> 
+ <div class="g-cell z-white" style="grid-column:4; grid-row:3;">&lt;30 / &lt;28 / &lt;24 / &lt;33</div> 
+ <div class="g-cell z-white" style="grid-column:5; grid-row:3;">&lt;140; &gt;50bbm</div> 
+ <div class="g-cell z-white" style="grid-column:6; grid-row:3;">&lt;2.5 mmol</div> 
+ <div class="g-cell z-white" style="grid-column:7; grid-row:3;">High volume, low intensity, short rest. WHITE+PINK = 60–70% of training.</div> 
+ <div class="tw-block tw1" style="grid-column:9 / 15; grid-row:3;"> <div class="tw-name">ZONE 1 <span class="cat">Easy / Moderate</span> 
+ <span class="covers">↔ WHITE</span> 
+</div> 
+ <div class="tw-focus">Slow and Steady — base aerobic volume; improves lactate removal &amp; cardio-respiratory systems.</div> 
+ <div class="tw-metric">60–74</div> 
+ <div class="tw-metric">2–3</div> 
+ <div class="tw-metric">&lt;0.91</div> 
+ <div class="tw-metric">0–77</div> 
+</div> 
+<!-- Row 4: PINK / TW Zone 2 --> <div class="g-cell z-pink" style="grid-column:1; grid-row:4;"> <span class="zone-chip z-pink">PINK <span class="feel">Aerobic Cap. (Mod.)</span> 
+</span> 
+</div> 
+ <div class="g-cell z-pink rpe-num" style="grid-column:2; grid-row:4;">4–5</div> 
+ <div class="g-cell z-pink" style="grid-column:3; grid-row:4;">PB +15–20″</div> 
+ <div class="g-cell z-pink" style="grid-column:4; grid-row:4;">29–33 / 27–31 / 23–27 / 32–36</div> 
+ <div class="g-cell z-pink" style="grid-column:5; grid-row:4;">130–160; 30–60bbm</div> 
+ <div class="g-cell z-pink" style="grid-column:6; grid-row:4;">2.0–4.0 mmol</div> 
+ <div class="g-cell z-pink" style="grid-column:7; grid-row:4;">Watch underwaters/breathing. Negative split. Coach technique here.</div> 
+ <div class="tw-block tw2" style="grid-column:9 / 15; grid-row:4;"> <div class="tw-name">ZONE 2 <span class="cat">Endurance</span> 
+ <span class="covers">↔ PINK</span> 
+</div> 
+ <div class="tw-focus">Just Keep Swimming — heavy, little rest; lactate steady state, technique focus.</div> 
+ <div class="tw-metric">74–79</div> 
+ <div class="tw-metric">3–5</div> 
+ <div class="tw-metric">.92–.97</div> 
+ <div class="tw-metric">78–82</div> 
+</div> 
+<!-- Row 5: RED / TW Zone 3 --> <div class="g-cell z-red" style="grid-column:1; grid-row:5;"> <span class="zone-chip z-red">RED <span class="feel">Aerobic Cap. (Strong)</span> 
+</span> 
+</div> 
+ <div class="g-cell z-red rpe-num" style="grid-column:2; grid-row:5;">6–8</div> 
+ <div class="g-cell z-red" style="grid-column:3; grid-row:5;">Open water; PB +12–15″</div> 
+ <div class="g-cell z-red" style="grid-column:4; grid-row:5;">33–38 / 31–36 / 27–32 / 36–41</div> 
+ <div class="g-cell z-red" style="grid-column:5; grid-row:5;">150–170; 20–40bbm</div> 
+ <div class="g-cell z-red" style="grid-column:6; grid-row:5;">4.0–7.5 mmol</div> 
+ <div class="g-cell z-red" style="grid-column:7; grid-row:5;">High volume, moderate intensity. 24h between major sessions.</div> 
+ <div class="tw-block tw3" style="grid-column:9 / 15; grid-row:5;"> <div class="tw-name">ZONE 3 <span class="cat">Threshold up to CSS</span> 
+ <span class="covers">↔ RED</span> 
+</div> 
+ <div class="tw-focus">Swim. Rest. Repeat. — very heavy, normal rest; improves VO2max/aerobic power.</div> 
+ <div class="tw-metric">80–89</div> 
+ <div class="tw-metric">6–7</div> 
+ <div class="tw-metric">0.97–0</div> 
+ <div class="tw-metric">83–85</div> 
+</div> 
+<!-- Row 6: ORANGE (part of TW Zone 4) --> <div class="g-cell z-orange" style="grid-column:1; grid-row:6;"> <span class="zone-chip z-orange">ORANGE <span class="feel">Aerobic Power</span> 
+</span> 
+</div> 
+ <div class="g-cell z-orange rpe-num" style="grid-column:2; grid-row:6;">8–10</div> 
+ <div class="g-cell z-orange" style="grid-column:3; grid-row:6;">400 / 800 / 1500m</div> 
+ <div class="g-cell z-orange" style="grid-column:4; grid-row:6;">36–45 / 34–43 / 30–43 / 43–49</div> 
+ <div class="g-cell z-orange" style="grid-column:5; grid-row:6;">160+; &lt;30bbm</div> 
+ <div class="g-cell z-orange" style="grid-column:6; grid-row:6;">6.0–9.0 mmol</div> 
+ <div class="g-cell z-orange" style="grid-column:7; grid-row:6;">Moderate volume, high intensity, short rest. 24h to recover.</div> 
+<!-- Row 7: BLUE (part of TW Zone 4) --> <div class="g-cell z-blue" style="grid-column:1; grid-row:7;"> <span class="zone-chip z-blue">BLUE <span class="feel">Anaerobic Capacity</span> 
+</span> 
+</div> 
+ <div class="g-cell z-blue rpe-num" style="grid-column:2; grid-row:7;">8–10</div> 
+ <div class="g-cell z-blue" style="grid-column:3; grid-row:7;">400 / 200 / 100m BEP</div> 
+ <div class="g-cell z-blue" style="grid-column:4; grid-row:7;">42–52 / 40–49 / 36–49 / 49–57</div> 
+ <div class="g-cell z-blue" style="grid-column:5; grid-row:7;">Maximum</div> 
+ <div class="g-cell z-blue" style="grid-column:6; grid-row:7;">8.0+ mmol</div> 
+ <div class="g-cell z-blue" style="grid-column:7; grid-row:7;">Short intervals (15–150m), first half of workout. 36h recovery.</div> 
+<!-- TW Zone 4 spans rows 6-7 (ORANGE + BLUE) --> <div class="tw-block tw4" style="grid-column:9 / 15; grid-row: 6 / 8;"> <div class="tw-name">ZONE 4 <span class="cat">Best Average</span> 
+ <span class="covers">↔ ORANGE + BLUE</span> 
+</div> 
+ <div class="tw-focus">I'm Not Sweating, You Are — severe intensity, a little extra rest; fast lactate buildup, enhances glycolytic energy production.</div> 
+ <div class="tw-metric">90–95</div> 
+ <div class="tw-metric">8–9</div> 
+ <div class="tw-metric">0–1.1</div> 
+ <div class="tw-metric">86–94</div> 
+</div> 
+<!-- Row 8: PURPLE (part of TW Zone 5) --> <div class="g-cell z-purple" style="grid-column:1; grid-row:8;"> <span class="zone-chip z-purple">PURPLE <span class="feel">Anaerobic Power</span> 
+</span> 
+</div> 
+ <div class="g-cell z-purple rpe-num" style="grid-column:2; grid-row:8;">9–10</div> 
+ <div class="g-cell z-purple" style="grid-column:3; grid-row:8;">200 FEP / 100 / 50m</div> 
+ <div class="g-cell z-purple" style="grid-column:4; grid-row:8;">40–60+ / 41–56+ / 36–62+ / 51–65+</div> 
+ <div class="g-cell z-purple" style="grid-column:5; grid-row:8;">Maximum</div> 
+ <div class="g-cell z-purple" style="grid-column:6; grid-row:8;">12.0+ mmol</div> 
+ <div class="g-cell z-purple" style="grid-column:7; grid-row:8;">Max effort, short repeats. 56h recovery. Swim at/above race pace.</div> 
+<!-- Row 9: GREEN (part of TW Zone 5) --> <div class="g-cell z-green" style="grid-column:1; grid-row:9;"> <span class="zone-chip z-green">GREEN <span class="feel">Anaer. Alactic Cap.</span> 
+</span> 
+</div> 
+ <div class="g-cell z-green rpe-num" style="grid-column:2; grid-row:9;">n/a</div> 
+ <div class="g-cell z-green" style="grid-column:3; grid-row:9;">50m and faster</div> 
+ <div class="g-cell z-green" style="grid-column:4; grid-row:9;">&gt;54 / &gt;50 / &gt;55 / &gt;59</div> 
+ <div class="g-cell z-green" style="grid-column:5; grid-row:9;">n/a</div> 
+ <div class="g-cell z-green" style="grid-column:6; grid-row:9;">n/a</div> 
+ <div class="g-cell z-green" style="grid-column:7; grid-row:9;">Very short (5–30m), max speed only. 36h recovery. Monitor SR.</div> 
+<!-- Row 10: GOLD (part of TW Zone 5) --> <div class="g-cell z-gold" style="grid-column:1; grid-row:10; border-bottom:none;"> <span class="zone-chip z-gold">GOLD <span class="feel">Anaer. Alactic Power</span> 
+</span> 
+</div> 
+ <div class="g-cell z-gold rpe-num" style="grid-column:2; grid-row:10; border-bottom:none;">n/a</div> 
+ <div class="g-cell z-gold" style="grid-column:3; grid-row:10; border-bottom:none;">Faster than 50m speed</div> 
+ <div class="g-cell z-gold" style="grid-column:4; grid-row:10; border-bottom:none;">n/a</div> 
+ <div class="g-cell z-gold" style="grid-column:5; grid-row:10; border-bottom:none;">n/a</div> 
+ <div class="g-cell z-gold" style="grid-column:6; grid-row:10; border-bottom:none;">n/a</div> 
+ <div class="g-cell z-gold" style="grid-column:7; grid-row:10; border-bottom:none;">Explosive, ≤8s bouts (5–15m). Starts/turns/resistance work. 36h recovery.</div> 
+<!-- TW Zone 5 spans rows 8-10 (PURPLE + GREEN + GOLD) --> <div class="tw-block tw5" style="grid-column:9 / 15; grid-row: 8 / 11;"> <div class="tw-name">ZONE 5 <span class="cat">Lactate Prod. &amp; Tolerance</span> 
+ <span class="covers">↔ PURPLE + GREEN + GOLD</span> 
+</div> 
+ <div class="tw-focus">All-Out &amp; Chill — extreme intensity, extra rest; rapid lactate increase and fast fatigue; develops lactate/acidity tolerance.</div> 
+ <div class="tw-metric">96–100</div> 
+ <div class="tw-metric">9–10</div> 
+ <div class="tw-metric">&gt;1.1</div> 
+ <div class="tw-metric">95+</div> 
+</div> 
+</div> 
+</div> 
+ <p class="scroll-hint">← Swipe to see TritonWear zones →</p> 
+ <div class="callout"> <strong>Reading this chart:</strong> 
+TritonWear rows are sized to line up with their closest Rushton zone(s) — Zone 4 spans ORANGE+BLUE, Zone 5 spans PURPLE+GREEN+GOLD. This is a rough, RPE-based alignment, not a 1:1 metric equivalence — Rushton is built on stroke rate/tempo/lactate, TritonWear on %HRmax/×CSS/Energy Score. The ×CSS ranges are transcribed exactly as shown on TritonWear's own infographic — Zones 3 &amp; 4 overlap/invert rather than forming a clean ladder, so don't use ×CSS alone for a threshold calculation.</div> 
+ <div class="compact-footer"> <span>NSEA SWIM · NORTHSIDE ELITE AQUATICS — QUESTIONS ABOUT A SET OR ZONE READING? ASK YOUR COACH.</span> 
+ <span>SOURCES: RUSHTON "WORKOUT CHEAT SHEET" (2016) · TRITONWEAR "WHAT ZONE IS THIS?"</span> 
+</div> 
+</div></body></html>

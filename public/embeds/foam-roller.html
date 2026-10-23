@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Foam Roller Guide | NSEA Swim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#008675;
+  --teal-dark:#006A5C;
+  --coral:#ee492f;
+  --coral-light:#FCE7E3;
+  --gray:#676d70;
+  --gray-light:#9BA0A3;
+  --line:#E4E7E8;
+  --ink:#1B2325;
+  --panel:#FAFBFB;
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--panel);color:var(--ink);font:15px/1.55 'Inter',Arial,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+h2,h3{font-family:'Oswald',Arial,sans-serif;font-weight:600;line-height:1.15;margin:0}
+h2{font-size:22px;margin:32px 0 12px;color:var(--ink)}
+
+/* intro + callout (canonical guide patterns) */
+.intro{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--teal);border-radius:6px;padding:18px 22px;margin-bottom:20px;max-width:900px}
+.intro p{margin:0;color:var(--gray);font-size:15px;line-height:1.55}
+.note{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--coral);border-radius:6px;padding:16px 22px;font-size:14px;line-height:1.6;max-width:900px}
+.note strong{color:var(--coral)}
+.note ul{margin:6px 0 0;padding-left:20px}
+.updnote{background:var(--white);border:1px solid var(--line);border-left:4px solid var(--coral);border-radius:6px;padding:10px 14px;font-size:14px;max-width:900px;margin:0 0 8px}
+.updnote b{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--coral);margin-right:4px}
+
+/* dose tiles */
+.dose{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:12px 0 20px}
+.dose>div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.dose .k{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray)}
+.dose .v{font-family:'Oswald',sans-serif;font-size:22px;color:var(--teal);margin-top:2px}
+.dose p{margin:4px 0 0;font-size:14px;color:var(--gray)}
+
+/* body map */
+.mapbox{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:24px;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+@media (max-width:720px){.mapbox{grid-template-columns:1fr}.mapbox svg{max-width:320px;margin:0 auto;display:block}}
+.mapbox p{margin:0 0 10px;font-size:14px;line-height:1.6}
+#bodymap .rg{fill:var(--teal);fill-opacity:.28;stroke:var(--teal);stroke-width:1;cursor:pointer;transition:fill-opacity .15s}
+#bodymap .rg:hover{fill-opacity:.5}
+#bodymap .rg.on{fill:var(--coral);stroke:var(--coral);fill-opacity:.85}
+.pos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pos button{font:600 13px 'Inter',sans-serif;border:1px solid var(--line);background:var(--white);color:var(--ink);padding:7px 11px;border-radius:999px;cursor:pointer}
+.pos button[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:var(--white)}
+.pick{margin-top:12px;min-height:44px;font-size:14px;color:var(--gray)}
+.pick b{color:var(--ink)}
+.pick button{font:600 13px 'Inter',sans-serif;background:var(--teal);color:var(--white);border:0;border-radius:6px;padding:7px 12px;cursor:pointer;margin-left:8px}
+
+/* toolbar */
+.toolbar{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 0;margin-top:8px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:wrap;background:var(--white)}
+.seg button{font:600 13px 'Inter',sans-serif;border:0;background:transparent;color:var(--gray);padding:8px 14px;cursor:pointer;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--teal);color:var(--white)}
+.lbl{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-right:6px}
+.prog{flex:1 1 220px;display:flex;align-items:center;gap:10px;min-width:0}
+.bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--coral);transition:width .25s}
+.prog .mono{font:12px 'Space Mono',monospace;color:var(--gray);white-space:nowrap}
+.reset{font:600 12px 'Inter',sans-serif;background:var(--white);border:1px solid var(--line);color:var(--gray);border-radius:6px;padding:6px 10px;cursor:pointer}
+
+/* exercise cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:18px;margin-top:18px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;overflow:hidden;scroll-margin-top:90px}
+.card.done{border-color:var(--teal);box-shadow:inset 4px 0 0 var(--teal),0 2px 8px rgba(0,0,0,0.05)}
+.card.flash{animation:flash 1.2s ease}
+@keyframes flash{0%,40%{box-shadow:0 0 0 4px var(--coral)}100%{box-shadow:0 2px 8px rgba(0,0,0,0.05)}}
+.head{display:flex;gap:12px;padding:18px 20px 8px;align-items:flex-start}
+.num{flex:0 0 36px;height:36px;border-radius:50%;background:var(--teal);color:var(--white);font:600 17px 'Oswald',sans-serif;display:grid;place-items:center}
+.card.bal .num{background:var(--coral)}
+.head h3{font-size:17px;color:var(--teal-dark)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:700 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--panel);border:1px solid var(--line);color:var(--teal-dark)}
+.tag.c{background:var(--coral-light);border-color:var(--coral-light);color:var(--coral)}
+.tag.w{background:var(--ink);border-color:var(--ink);color:var(--white)}
+.body{padding:0 20px 12px}
+.body ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
+.body ol li{margin:2px 0}
+.levels{margin:0 20px 12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.levels .lh{font:700 11px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);padding:8px 12px;background:var(--panel);display:flex;justify-content:space-between;gap:8px}
+.levels button{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:var(--white);color:var(--ink);font:400 14px/1.4 'Inter',sans-serif;padding:8px 12px;cursor:pointer}
+.levels button .lv{flex:0 0 22px;height:22px;border-radius:50%;border:1.5px solid var(--gray-light);display:grid;place-items:center;font:700 11px 'Space Mono',monospace;color:var(--gray)}
+.levels button.past .lv{background:var(--panel);border-color:var(--teal);color:var(--teal-dark)}
+.levels button[aria-pressed="true"]{background:var(--panel)}
+.levels button[aria-pressed="true"] .lv{background:var(--teal);border-color:var(--teal);color:var(--white)}
+.cue{margin:0 20px 10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;font-size:14px}
+.cue b{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal-dark);margin-right:4px}
+.cue.upd{border-left-color:var(--coral)}
+.cue.upd b{color:var(--coral)}
+.works{margin:2px 20px 12px;font-size:13px;color:var(--gray)}
+.vid{margin:0 20px 12px;border-radius:8px;overflow:hidden;background:#000;aspect-ratio:16/9;position:relative}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.play{position:absolute;inset:0;width:100%;border:0;cursor:pointer;background:linear-gradient(135deg,#0b3a34,#006A5C);color:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:600 14px 'Inter',sans-serif;padding:12px;text-align:center}
+.play .tri{width:56px;height:56px;border-radius:50%;background:var(--coral);display:grid;place-items:center}
+.play small{font:400 11px 'Space Mono',monospace;opacity:.8}
+.extlink{margin:0 20px 12px;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px dashed var(--line);border-radius:8px;font-size:14px;color:var(--gray)}
+.extlink a{color:var(--teal-dark);font-weight:600;text-decoration:none}
+.extlink a:hover{text-decoration:underline}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px 16px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.foot a{font-size:13px;color:var(--teal-dark);font-weight:600;text-decoration:none}
+.foot a:hover{text-decoration:underline}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer;min-height:36px}
+.chk input{width:20px;height:20px;accent-color:var(--teal)}
+.timer{font:700 13px 'Space Mono',monospace;border:1px solid var(--teal);color:var(--teal-dark);background:var(--white);border-radius:999px;padding:7px 12px;cursor:pointer;min-height:36px;min-width:92px}
+.timer.run{background:var(--teal);color:var(--white)}
+.timer.end{background:var(--coral);border-color:var(--coral);color:var(--white)}
+.still{margin:0 20px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 6px 8px}
+.still svg{display:block;width:100%;height:auto;max-height:190px}
+.cap{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;font:400 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gray)}
+.cap i{display:inline-block;width:18px;height:0;border-top:3px dashed var(--coral);vertical-align:middle;margin-right:5px}
+.cap i.r{width:12px;height:12px;border:2px solid var(--teal);border-radius:50%;background:var(--white)}
+.cap i.t{width:14px;height:8px;border:0;border-radius:50%;background:var(--coral);opacity:.55}
+.cap i.m{border-top:4px solid var(--coral)}
+.src{font-size:13px;color:var(--gray);max-width:900px;margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.src a{color:var(--teal-dark)}
+@media (max-width:600px){.toolbar{position:static}}
+[hidden]{display:none!important}
+button:focus-visible,a:focus-visible,input:focus-visible,.rg:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+@media print{
+  @page{size:letter;margin:0.5in}
+  body{background:var(--white);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .toolbar,.mapbox,.foot,.vid,.extlink{display:none}
+  .card,.intro,.note,.dose>div,.src,.updnote{break-inside:avoid}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+
+<main>
+  <div class="intro"><p>Self-massage and balance training for NSEA swimmers. Rolling before practice helps you move more freely, and rolling after helps you feel less sore. The balance work builds the core and body control that keep you long and tight in a streamline. Pick an area on the body map, set the timer, and check off each exercise as you go.</p></div>
+
+  <div class="note">
+    <strong>Before you start</strong>
+    <ul>
+      <li>Roll <b>muscle, not bone or joints</b>. Skip the lower back, neck, kneecap, back of the knee, and the bony point of the hip.</li>
+      <li>Some discomfort is fine. <b>Sharp pain, numbness, or tingling</b> means stop and move the roller. Don't roll a fresh injury, bruise, or swollen area.</li>
+      <li>Balance work: go barefoot if you can, stay near a wall on a non-slip floor, and master each level on the floor first. Standing on full-round rollers is <b>coach-supervised only</b>.</li>
+      <li>This is for healthy swimmers. If something hurts during swimming, talk to your coach and an athletic trainer or physical therapist.</li>
+    </ul>
+  </div>
+
+  <h2>How to roll</h2>
+  <div class="dose">
+    <div><div class="k">Time per area</div><div class="v">30–90 sec</div><p>Shorter before practice, longer after.</p></div>
+    <div><div class="k">Pressure</div><div class="v">5–7 out of 10</div><p>Firm but you can still breathe normally. Use a hand or foot to take weight off.</p></div>
+    <div><div class="k">Speed</div><div class="v">Slow</div><p>About an inch per second. Pause on tight spots and breathe.</p></div>
+    <div><div class="k">When</div><div class="v">Before &amp; after</div><p>Before: a quick pass, then your normal warm-up. After: slower, as part of the cool-down.</p></div>
+  </div>
+  <div class="updnote"><b>Updated cue</b>The original handout said to hold each tender spot until the discomfort drops by 50–75%, however long that takes. Current practice uses a time limit instead: 30–90 seconds per area. Rolling longer doesn't add much, and grinding on one spot can leave it more sore.</div>
+
+  <h2>Balance training</h2>
+  <div class="dose">
+    <div><div class="k">Sets</div><div class="v">2–3 × 20–30 sec</div><p>Or 8–10 slow reps for squats, reaches, and push-ups.</p></div>
+    <div><div class="k">Progression</div><div class="v">Floor → flat → round</div><p>Floor first, then half roller flat side down, then flat side up, then full round.</p></div>
+    <div><div class="k">Posture</div><div class="v">Core tight</div><p>Keep your joints lined up. When you bend, use your hips, knees, and ankles together.</p></div>
+    <div><div class="k">Move up when</div><div class="v">It's easy</div><p>Tap your level on each card. Only move up when the current one is steady.</p></div>
+  </div>
+
+  <h2>Pick an area</h2>
+  <div class="mapbox">
+    <svg id="bodymap" viewBox="0 0 240 250" role="group" aria-label="Body map. Choose an area to find its rolling exercise."></svg>
+    <div>
+      <p>Tap a highlighted area on the front or back of the body to find the exercise that rolls it. Rolling works best on the big muscles swimmers use most: the <b>lats</b> and <b>upper back</b> for the pull, and the <b>hips, quads, and calves</b> for kicks and walls.</p>
+      <div class="lbl">Or choose an area</div>
+      <div class="pos" id="areabtns"></div>
+      <div class="pick" id="pick" aria-live="polite">No area selected.</div>
+    </div>
+  </div>
+
+  <h2>Exercises</h2>
+  <div class="toolbar" role="region" aria-label="Filters, timer and progress">
+    <div><span class="lbl">Program</span>
+      <div class="seg" id="filt">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="upper" aria-pressed="false">Upper body</button>
+        <button data-f="lower" aria-pressed="false">Hips &amp; legs</button>
+        <button data-f="bal" aria-pressed="false">Balance &amp; core</button>
+      </div>
+    </div>
+    <div><span class="lbl">Timer</span>
+      <div class="seg" id="tlen">
+        <button data-t="30" aria-pressed="false">30s</button>
+        <button data-t="60" aria-pressed="true">60s</button>
+        <button data-t="90" aria-pressed="false">90s</button>
+      </div>
+    </div>
+    <div class="prog"><div class="bar"><i id="barfill"></i></div><span class="mono" id="count">0 / 0 today</span><button class="reset" id="reset">Reset</button></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="src">
+    <p><b>Source.</b> Adapted from the M-F Athletic Company handout <i>Multiple Uses of Biofoam Rollers</i> (Perform Better), which covers self-myofascial release with 1-ft and 3-ft round rollers and balance training with half-round and full-round rollers. Figure numbers on the balance cards match that handout. Three cues have been updated to current practice (marked <span style="color:var(--coral);font-weight:600">Updated cue</span>).</p>
+    <p><b>Why rolling works.</b> The handout says rolling relaxes muscle through the Golgi tendon organ. Current research points more to the nervous system: rolling lowers how much tension and soreness you feel and gives a short-term gain in range of motion, without hurting performance. It doesn't physically stretch or "break up" fascia. See Behm &amp; Wilke (2019), <i>Sports Medicine</i>; Wiewelhove et al. (2019), <i>Frontiers in Physiology</i>; Chaudhry et al. (2008), <i>Journal of the American Osteopathic Association</i>.</p>
+    <p><b>Videos</b> are third-party demonstrations on YouTube and Physitrack, chosen to match each movement. They are not produced or endorsed by NSEA. When a video differs from this guide, follow the written steps and cues here. The advanced standing exercises have no video on purpose; learn them from a coach at practice.</p>
+    <p>NSEA Swim dryland reference, updated Oct 2026. This guide is for injury <i>prevention</i> and recovery in healthy swimmers and is not medical advice. Rehab after an injury should be guided by a licensed athletic trainer or physical therapist.</p>
+  </div>
+</main>
+
+<script>
+(function(){
+const EX=[
+ /* ---------- Rolling ---------- */
+ {id:"r1",f:"upper",k:"roll",name:"Thoracic Spine",tags:["Roll","Upper back"],area:"Upper back",
+  steps:["Lie on your back with the roller across your mid-back, knees bent, feet flat.","Put your hands behind your head to support your neck.","Slowly roll up to the top of your shoulder blades and back. Lean a little right or left to work one side."],
+  cue:"Stay on the ribcage. Stop before you reach the lower back. A mobile upper back makes a tighter streamline and easier breathing rotation.",
+  works:"Thoracic spine extensors, rhomboids, mid trapezius",v:{yt:"wrNZpECSE18",t:"Foam roll thoracic spine extension"}},
+ {id:"r4",f:"upper",k:"roll",name:"Lats & Teres Minor",tags:["Roll","Back of shoulder","Each side"],area:"Lats",
+  steps:["Lie on one side with the roller under your armpit, body turned slightly up.","Arm bent: roll the back of the shoulder (teres minor).","Arm straight overhead: roll the lat from the bottom of your ribs up toward the armpit."],
+  cue:"The lats are the main engine of your pull. Turn your chest slightly toward the ceiling or floor to find different parts.",
+  works:"Latissimus dorsi, teres major and minor",v:{url:"https://us.physitrack.com/home-exercise-video/lat-dorsi-foam-roll",t:"Lat dorsi foam roll, side lying (Physitrack)"}},
+
+ {id:"r2",f:"lower",k:"roll",name:"Piriformis & Glute Medius",tags:["Roll","Hips","Each side"],area:"Glutes",
+  steps:["Sit on the roller and lean to one side.","Cross that ankle over the opposite knee (a figure 4).","Balance on one hand and one foot. Roll from the top of the glute to the middle and pause on tight spots."],
+  cue:"Lean more toward the crossed-leg side to find the deep hip muscles.",
+  works:"Piriformis, gluteus medius, other deep hip rotators",v:{yt:"C8_nA3mpRYQ",t:"Piriformis foam roll (figure 4)"}},
+ {id:"r3",f:"lower",k:"roll",name:"Outer Thigh (IT Band)",tags:["Roll","Outer thigh","Each side"],area:"Outer thigh",
+  steps:["Lie on your side with the roller just below the hip bone.","Balance on your forearm. Cross the top leg over and put that foot on the floor to control the pressure.","Roll slowly toward the knee, then tilt slightly forward and back."],
+  upd:"The original handout rolls the IT band itself to find \"hot spots.\" The IT band is too stiff to stretch with a roller, and rolling it hard mostly hurts. Tilt slightly forward to roll the <i>outer quad</i> and use lighter pressure. Also roll the glutes (card 3), quads (card 8), and hip flexors (card 9).",
+  works:"Vastus lateralis, tensor fasciae latae (TFL)",v:{yt:"aiD6Ki597aA",t:"Lateral quad foam roll"}},
+ {id:"r5",f:"lower",k:"roll",name:"Upper Hamstring",tags:["Roll","Back of thigh","Each side"],area:"Upper hamstring",
+  steps:["Sit with the roller just below your glutes.","Balance on your hands and feet.","Roll the top of the hamstring, close to the sit bone."],
+  cue:"Shift weight onto one leg to target that side.",
+  works:"Hamstring origin (biceps femoris, semitendinosus, semimembranosus)",v:{url:"https://us.physitrack.com/home-exercise-video/hamstring-foam-roll",t:"Hamstring foam rolling (Physitrack)"}},
+ {id:"r6",f:"lower",k:"roll",name:"Hamstrings",tags:["Roll","Back of thigh","Each side"],area:"Hamstrings",
+  steps:["Sit with the roller under your thighs and your legs straight.","Balance on your hands and lift your hips.","Roll from the glute to just above the knee."],
+  cue:"Cross one foot over the other to add pressure to one side.",
+  works:"Hamstrings",v:{yt:"FK6jYoQtGiI",t:"Hamstring foam roll"}},
+ {id:"r7",f:"lower",k:"roll",name:"Calves",tags:["Roll","Lower leg","Each side"],area:"Calves",
+  steps:["Sit with the roller under your calves and your hands behind you.","Lift your hips and roll from just below the knee to the ankle.","Turn your toes out, then up, to reach different parts of the calf."],
+  cue:"Cross one leg over the other for more pressure. Tight calves limit ankle flexibility, and a floppy ankle is what makes a strong kick.",
+  works:"Gastrocnemius, soleus",v:{yt:"6JEQSXt4y1o",t:"Foam rolling calf"}},
+ {id:"r8",f:"lower",k:"roll",name:"Quads",tags:["Roll","Front of thigh"],area:"Quads",
+  steps:["Lie face down on your elbows with the roller under your thighs.","Keep your stomach tight so your lower back doesn't sag.","Walk yourself up and down the roller from hip to just above the knee."],
+  cue:"To focus on one leg, cross it over the back of the other or shift your weight to that side.",
+  works:"Quadriceps (rectus femoris, vastus muscles)",v:{url:"https://us.physitrack.com/home-exercise-video/quadriceps-foam-roll",t:"Quadriceps foam roll, prone (Physitrack)"}},
+ {id:"r9",f:"lower",k:"roll",name:"Hip Flexors",tags:["Roll","Front of hip","Each side"],area:"Hip flexors",
+  steps:["Lie face down with the end of the roller under the front of one hip.","Roll slowly up and down a few inches.","Turn slightly onto that side to reach the outer front of the hip."],
+  cue:"Stay below the bony point at the front of the hip. Tight hip flexors pull you out of a flat body line.",
+  works:"Rectus femoris, TFL, upper hip flexors",v:{yt:"nc5trc4Gd-A",t:"Using the foam roller: TFL and quads"}},
+ {id:"r10",f:"lower",k:"roll",name:"Adductors",tags:["Roll","Inner thigh","Each side"],area:"Inner thigh",
+  steps:["Lie face down on your elbow and hand. Put the roller beside you, lined up with your body.","Bring one leg out to the side, knee bent, with the inner thigh on the roller.","Roll from just above the knee toward the groin. Shift toward the roller for more pressure."],
+  cue:"Change the knee angle a little to find different spots. Breaststrokers: this one's for you.",
+  works:"Adductor magnus, longus and brevis, gracilis",v:{yt:"h1xQabdHdes",t:"Foam roller: adductors"}},
+ {id:"r11",f:"lower",k:"roll",name:"Shins & Peroneals",tags:["Roll","Lower leg","Each side"],area:"Shins",
+  steps:["Get on all fours with one shin on the roller (or on its far end).","Shift your weight forward to press the front of the shin muscle. Roll from knee to ankle.","Turn the leg in so the roller moves to the outside of the shin."],
+  cue:"Stay on the muscle just outside the shin bone, not on the bone itself. Helps with pointing your toes for a flat, fast kick.",
+  works:"Tibialis anterior, peroneals",v:{yt:"oKutSpF5s-c",t:"Foam rolling tibialis anterior and peroneals"}},
+
+ /* ---------- Balance & core ---------- */
+ {id:"q1",f:"bal",k:"bal",name:"Quadruped Balance",fig:"1, 9, 10",tags:["Balance","Basic"],
+  steps:["Get on all fours with your hands on one 3-ft half roller and your knees on another, flat side down.","Raise one arm or one leg and hold your balance.","Keep your back flat. Don't let your hips rotate."],
+  levels:["On the floor, no rollers","Half rollers, flat side down: raise one arm or one leg","Raise opposite arm and leg together","Full round rollers under hands and knees (Fig 9–10)"],
+  cue:"Reach long like a streamline. Imagine a glass of water on your lower back.",works:"Deep core, glutes, shoulder stabilizers",
+  v:{yt:"TD6iV0m6Ft0",t:"Bird dog balance with foam roller"}},
+ {id:"q6",f:"bal",k:"bal",name:"Supine Roller Balance",fig:"7, 8, 11, 12",tags:["Balance","Basic","Core"],
+  steps:["Lie along a 3-ft full roller from head to tailbone, feet on the floor.","Find your balance with your arms relaxed.","Progress through the levels below, moving slowly."],
+  levels:["One roller, both feet on the floor (Fig 7)","Raise one leg while you stay balanced (Fig 8)","Two rollers side by side: lift both legs (Fig 11)","Two rollers: move arms and legs in opposite directions (Fig 12)"],
+  cue:"Press your lower back gently into the roller the whole time. If it arches, go back a level.",works:"Deep abdominals, obliques",
+  v:{yt:"8UHqKvo6IbI",t:"Supine dead bug on roller"}},
+ {id:"q7",f:"bal",k:"bal",name:"Roller Push-Up",fig:"13",tags:["Balance","Basic","Upper body"],
+  steps:["Kneel on a 3-ft half roller.","Put your hands on a 1-ft full roller under your shoulders.","Lower your chest with control, then press back up."],
+  levels:["Knees on the floor, hands on the roller","Knees on a half roller, hands on a 1-ft full roller"],
+  cue:"Keep a straight line from knees to head. Elbows about 45° from your sides.",works:"Chest, triceps, serratus anterior, core",
+  v:{yt:"Z59N183WMy0",t:"Push-up on foam roller"}},
+ {id:"q2",f:"bal",k:"bal",name:"Split-Stance Squat & Reach",fig:"2",tags:["Balance","Basic","Legs"],
+  steps:["Stand on a 3-ft half roller with one foot in front of the other.","Do a slow squat, or reach forward with both hands.","Return to standing and hold your balance."],
+  levels:["On the floor","Half roller, flat side down","Half roller, flat side up"],
+  cue:"Front knee tracks over your toes. Bend at the hips, knees, and ankles together.",works:"Glutes, quads, ankle stabilizers",
+  v:{yt:"7X2bKoGQAgs",t:"Offset stance squat to single leg balance on foam roller"}},
+ {id:"q4",f:"bal",k:"bal",name:"Two-Roller Squat",fig:"4, 5",tags:["Balance","Basic","Legs"],
+  steps:["Stand with each foot on a 1-ft half roller.","Stabilize, then add a slow squat or reach.","Stand tall between reps."],
+  levels:["Stand and stabilize, flat side down (Fig 4)","Add a squat or reach (Fig 5)","Flat side up"],
+  cue:"Knees stay in line with your feet. Good practice for a balanced start and turn push-off.",works:"Glutes, quads, feet and ankles",
+  v:{yt:"A2in1y0JNgQ",t:"Squat balance with foam roller"}},
+ {id:"q5",f:"bal",k:"bal",name:"Single-Leg Balance",fig:"6",tags:["Balance","Basic","Legs"],
+  steps:["Stand on a 1-ft half roller with one foot.","Lift the other foot and hold.","Switch legs."],
+  levels:["On the floor, one foot","Half roller, flat side down","Half roller, flat side up"],
+  cue:"Hip level, knee soft, eyes forward. Aim for 30 seconds without touching down.",works:"Hip stabilizers, ankle and foot",
+  v:{yt:"Taag7roAwJs",t:"Single leg balance on half foam roller"}},
+ {id:"q8",f:"bal",k:"bal",name:"Kneeling Roll-Out",fig:"14",tags:["Balance","Advanced","Core"],
+  steps:["Kneel on a 3-ft half roller with your hands on a 3-ft full roller (or two 1-ft rollers).","Roll your hands out as far as you can control.","Hold briefly, then pull back to the start."],
+  levels:["Short range on the floor","Knees on a half roller, full range you can control"],
+  cue:"Ribs down, glutes squeezed. Stop before your lower back sags. It's the same body line as a streamline.",works:"Abdominals, lats, shoulder stabilizers",
+  v:{yt:"9jWXxgtNS2k",t:"Kneeling foam roller rollout"}},
+ {id:"q3",f:"bal",k:"bal",name:"Overhead Wall Throw",fig:"3",tags:["Balance","Advanced","Power"],
+  steps:["Stand on a 3-ft half roller 1–2 feet from a solid wall.","Throw a light medicine ball overhead into the wall.","Catch the rebound overhead and throw again right away. Stay balanced."],
+  levels:["On the floor, throw and catch","On a half roller, flat side down"],
+  cue:"Use a light ball (1–2 kg). Brace your core so your lower back doesn't arch as you throw.",works:"Core, lats, triceps, balance under load",
+  v:{none:"Coach demo at practice"}},
+ {id:"q9",f:"bal",k:"bal",name:"Wall-Assisted Roller Stand",fig:"21–23",tags:["Balance","Advanced","Coach-supervised"],w:true,
+  steps:["Stand on a 3-ft full roller facing a wall, both hands on the wall (or a chair).","When that's easy, take one hand away.","Then take both hands away and hold your balance."],
+  levels:["Both hands on the wall (Fig 21)","One hand (Fig 22)","No hands (Fig 23)"],
+  cue:"Step off to the side if you lose it. Don't try to ride the roller.",works:"Ankle and foot stabilizers, whole-body balance",
+  v:{none:"Coach demo at practice"}},
+ {id:"q10",f:"bal",k:"bal",name:"Full-Roller Stand & Squat",fig:"15–18",tags:["Balance","Advanced","Coach-supervised"],w:true,
+  steps:["Stand on a 3-ft full roller with both feet and stabilize.","When that's steady, add a slow squat.","Hardest version: one full roller under each foot."],
+  levels:["Both feet on one roller (Fig 15)","Add a squat (Fig 16)","Two rollers, one under each foot (Fig 17–18)"],
+  upd:"The handout adds a caution to the two-roller version. For swimmers we treat every full-roller standing drill as coach-supervised: the fall risk is real, and single-leg work on a half roller gives most of the balance benefit.",
+  works:"Legs, core, ankle stabilizers",v:{none:"Coach demo at practice"}},
+ {id:"q11",f:"bal",k:"bal",name:"Single-Leg Full-Roller Stand",fig:"19, 20",tags:["Balance","Advanced","Coach-supervised"],w:true,
+  steps:["Stand on a full round roller with one foot.","Lift the other foot and maintain balance.","Switch legs."],
+  levels:["Next to a wall, fingertips touching","No support (Fig 19–20)"],
+  cue:"Only after Single-Leg Balance on a half roller, flat side up, is easy.",works:"Hip and ankle stabilizers",
+  v:{none:"Coach demo at practice"}},
+ {id:"q12",f:"bal",k:"bal",name:"Roller Dumbbell Press",fig:"24, 25",tags:["Balance","Advanced","Coach-supervised"],w:true,
+  steps:["Stand on a full round roller holding light dumbbells at your shoulders.","Press one arm overhead as you lower the other.","Keep alternating smoothly."],
+  cue:"Keep the weights light and your ribs down. Skip this one if pressing overhead bothers your shoulder.",works:"Shoulders, core, balance under load",
+  v:{none:"Coach demo at practice"}}
+];
+
+const $=s=>document.querySelector(s);
+const grid=$("#grid");
+let filter="all",tlen=60;
+const today=new Date().toISOString().slice(0,10);
+const KEY="nsea-foam-"+today, LKEY="nsea-foam-levels";
+let done={},lvl={};
+try{done=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){done={}}
+try{lvl=JSON.parse(localStorage.getItem(LKEY)||"{}")||{}}catch(e){lvl={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(done));localStorage.setItem(LKEY,JSON.stringify(lvl))}catch(e){}}
+const f1=n=>(+n).toFixed(1);
+
+/* ---------- Line drawings ---------- */
+function cap(pts,w,col,op){return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${op?` opacity="${op}"`:""}/>`}
+function limb(pts,w){return cap(pts,w+3,"var(--gray)")+cap(pts,w,"var(--white)")}
+function toPts(a){const o=[];for(let i=0;i<a.length;i++)o.push(a[i]);return o}
+function arrowHead(x,y,dx,dy){const m=Math.hypot(dx,dy);dx/=m;dy/=m;const s=6;
+  return `<path d="M${f1(x)} ${f1(y)} L${f1(x-dx*s-dy*s*.6)} ${f1(y-dy*s+dx*s*.6)} L${f1(x-dx*s+dy*s*.6)} ${f1(y-dy*s-dx*s*.6)} Z" fill="var(--coral)"/>`}
+function dbl(x1,y1,x2,y2){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--coral)" stroke-width="2" stroke-dasharray="4 3"/>`+arrowHead(x2,y2,x2-x1,y2-y1)+arrowHead(x1,y1,x1-x2,y1-y2)}
+const RS='fill="var(--white)" stroke="var(--teal)" stroke-width="2"';
+function roller(r){
+  const t=r[0],FL=118;
+  if(t==="c")return `<circle cx="${r[1]}" cy="${r[2]}" r="${r[3]}" ${RS}/><circle cx="${r[1]}" cy="${r[2]}" r="${r[3]*.35}" fill="none" stroke="var(--teal)" stroke-width="1" opacity=".5"/>`;
+  if(t==="h")return `<path d="M${r[1]-r[2]} ${FL} A${r[2]} ${r[2]} 0 0 1 ${r[1]+r[2]} ${FL} Z" ${RS}/>`;
+  if(t==="bar")return `<rect x="${r[1]}" y="${FL-r[3]}" width="${r[2]-r[1]}" height="${r[3]}" rx="${r[3]/2}" ${RS}/>`;
+  if(t==="hbar")return `<path d="M${r[1]} ${FL} L${r[1]} ${FL-r[3]+3} Q${r[1]} ${FL-r[3]} ${r[1]+4} ${FL-r[3]} L${r[2]-4} ${FL-r[3]} Q${r[2]} ${FL-r[3]} ${r[2]} ${FL-r[3]+3} L${r[2]} ${FL} Z" ${RS}/>`;
+  if(t==="v")return `<rect x="${r[1]-r[4]/2}" y="${r[2]}" width="${r[4]}" height="${r[3]-r[2]}" rx="${r[4]/2}" ${RS}/>`;
+  return "";
+}
+/* pose: R rollers, T torso [x1,y1,x2,y2], tw torso width, H head, L near limbs, F far limbs, C movement limbs, A arrows, G target areas */
+const POSE={
+ r1:{R:[["c",70,109,9]],T:[56,94,100,104],H:[41,87],F:[[[100,104],[120,82],[132,116]]],L:[[[56,93],[48,76],[39,83]],[[100,104],[124,80],[138,116],[150,116]]],A:[[52,128,88,128]],G:[[68,98,14,5]]},
+ r4:{R:[["c",120,109,9]],T:[72,106,120,99],H:[137,87],F:[[[72,106],[56,94],[44,114]]],L:[[[122,99],[148,100],[172,100]],[[72,106],[46,104],[22,112]]],A:[[104,128,136,128]],G:[[119,100,13,5]]},
+ r2:{R:[["c",95,109,9]],T:[95,99,80,62],H:[76,52],F:[[[95,99],[124,82],[134,116],[144,116]]],L:[[[80,64],[72,88],[64,116]],[[95,99],[112,86],[126,80]]],A:[[80,128,110,128]],G:[[95,101,13,5]]},
+ r3:{R:[["c",90,109,9]],T:[110,98,150,80],H:[162,72],F:[],L:[[[110,98],[80,101],[46,112]],[[150,82],[150,112],[170,114]],[[110,98],[95,80],[102,116]]],A:[[72,128,108,128]],G:[[88,100,14,5]]},
+ r5:{R:[["c",98,109,9]],T:[88,99,76,62],H:[72,52],F:[[[88,99],[120,86],[136,114]]],L:[[[76,64],[68,88],[60,116]],[[88,99],[124,82],[134,116],[144,116]]],A:[[84,128,114,128]],G:[[99,100,12,5]]},
+ r6:{R:[["c",112,109,9]],T:[74,96,60,62],H:[58,51],F:[[[74,96],[118,95],[160,90]]],L:[[[60,64],[52,88],[44,116]],[[74,96],[118,99],[162,101],[166,94]]],A:[[96,128,128,128]],G:[[112,100,14,5]]},
+ r7:{R:[["c",140,109,9]],T:[74,98,58,62],H:[56,51],F:[[[74,98],[114,95],[158,92]]],L:[[[58,64],[50,88],[42,116]],[[74,98],[114,99],[160,99],[164,90]]],A:[[124,128,156,128]],G:[[140,100,12,5]]},
+ r8:{R:[["c",114,109,9]],T:[48,92,96,97],H:[30,86],F:[[[96,97],[132,95],[168,100]]],L:[[[48,92],[50,114],[30,116]],[[96,97],[134,99],[170,106]]],A:[[98,128,130,128]],G:[[114,100,14,5]]},
+ r9:{R:[["c",96,109,9]],T:[48,92,96,99],H:[30,86],F:[[[96,99],[126,90],[146,104]]],L:[[[48,92],[50,114],[30,116]],[[96,99],[134,110],[172,114]]],A:[[82,128,110,128]],G:[[96,100,12,5]]},
+ r10:{top:true,R:[["v",128,58,122,16]],T:[100,34,100,82],tw:15,H:[100,22],F:[],L:[[[93,40],[80,32],[84,14]],[[107,40],[120,32],[116,14]],[[96,82],[94,124]],[[104,82],[148,92],[152,124]]],A:[[108,66,146,74]],G:[[128,88,12,5]]},
+ r11:{R:[["c",140,109,9]],T:[58,80,110,80],H:[44,74],F:[[[110,80],[116,112],[150,116]]],L:[[[58,80],[58,98],[60,116]],[[110,80],[118,100],[162,100],[168,95]]],A:[[124,128,158,128]],G:[[140,100,14,5]]},
+ q1:{R:[["h",60,8],["h",125,8]],T:[60,78,120,80],H:[44,70],L:[[[60,78],[60,94],[60,110]],[[120,80],[125,110],[160,114]]],C:[[[60,78],[38,74],[16,72]],[[120,80],[148,78],[176,76]]]},
+ q6:{R:[["bar",34,128,18]],T:[54,96,116,96],H:[40,91],F:[[[56,96],[60,64]]],L:[[[116,96],[126,70],[152,70]]],C:[[[54,96],[40,72],[26,58]],[[116,96],[148,90],[180,88]]]},
+ q7:{R:[["h",132,8],["c",50,109,9]],T:[56,76,102,90],H:[40,70],L:[[[56,76],[54,90],[50,100]],[[102,90],[130,110],[160,96]]],A:[[80,48,80,72]]},
+ q2:{R:[["hbar",60,150,8]],T:[110,68,106,32],tw:12,H:[104,20],F:[[[110,68],[124,92],[134,104],[140,110]]],L:[[[110,68],[92,84],[84,108],[76,108]],[[106,34],[92,52],[80,64]]],A:[[165,40,165,78]]},
+ q4:{R:[["h",80,9],["h",120,9]],T:[100,32,100,62],tw:18,H:[100,18],L:[[[92,64],[80,86],[80,109]],[[108,64],[120,86],[120,109]],[[90,34],[76,52],[72,64]],[[110,34],[124,52],[128,64]]],A:[[160,40,160,78]]},
+ q5:{R:[["h",100,9]],T:[100,32,100,62],tw:18,H:[100,18],L:[[[96,64],[98,88],[100,109]],[[104,64],[112,84],[120,92]],[[90,34],[74,48],[62,56]],[[110,34],[126,48],[138,56]]]},
+ q8:{R:[["h",132,8],["c",34,109,9]],T:[62,92,104,97],H:[48,84],L:[[[62,92],[48,96],[34,100]],[[104,97],[130,110],[160,100]]],A:[[18,128,56,128]]},
+ q3:{R:[["hbar",80,140,8]],wall:172,T:[110,68,108,36],tw:12,H:[110,24],F:[[[110,68],[106,90],[104,110]]],L:[[[110,68],[112,90],[110,110]],[[108,38],[104,22],[102,14]]],ball:[102,8,6],A:[[114,10,166,16]]},
+ q9:{R:[["c",100,109,9]],wall:152,T:[100,62,103,30],tw:12,H:[105,18],F:[[[103,32],[124,40],[150,42]]],L:[[[100,62],[101,82],[100,100]],[[103,32],[126,34],[150,34]]]},
+ q10:{R:[["bar",52,148,18]],T:[100,30,100,60],tw:18,H:[100,16],L:[[[92,60],[78,78],[82,100]],[[108,60],[122,78],[118,100]],[[90,32],[74,44],[66,52]],[[110,32],[126,44],[134,52]]],A:[[165,34,165,70]]},
+ q11:{R:[["c",100,109,9]],T:[100,32,100,62],tw:18,H:[100,18],L:[[[96,64],[98,84],[100,100]],[[104,64],[112,82],[120,88]],[[90,34],[74,48],[62,56]],[[110,34],[126,48],[138,56]]]},
+ q12:{R:[["bar",52,148,18]],T:[100,30,100,62],tw:18,H:[100,16],L:[[[93,62],[90,82],[86,100]],[[107,62],[110,82],[114,100]],[[90,32],[78,44],[82,30]]],C:[[[110,32],[114,18],[116,6]]],db:[[82,28],[116,6]],A:[[160,20,160,50]]}
+};
+const VIEW={r10:"Top view",q4:"Front view",q5:"Front view",q10:"Front view",q11:"Front view",q12:"Front view"};
+function dbell(x,y){return `<g transform="translate(${x} ${y})"><rect x="-7" y="-1.6" width="14" height="3.2" fill="var(--ink)"/><rect x="-10" y="-4.5" width="4.5" height="9" rx="1" fill="var(--ink)"/><rect x="5.5" y="-4.5" width="4.5" height="9" rx="1" fill="var(--ink)"/></g>`}
+function stillSVG(id){
+  const P=POSE[id];let g="";
+  if(!P.top)g+=`<line x1="4" y1="118" x2="196" y2="118" stroke="var(--line)" stroke-width="2"/>`;
+  if(P.wall)g+=`<rect x="${P.wall}" y="4" width="8" height="114" fill="var(--line)"/>`;
+  (P.R||[]).forEach(r=>g+=roller(r));
+  (P.F||[]).forEach(l=>g+=`<g opacity=".5">${limb(l,6)}</g>`);
+  g+=limb([[P.T[0],P.T[1]],[P.T[2],P.T[3]]],P.tw||11);
+  (P.L||[]).forEach(l=>g+=limb(l,6));
+  g+=`<circle cx="${P.H[0]}" cy="${P.H[1]}" r="8" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`;
+  (P.C||[]).forEach(l=>g+=cap(l,6,"var(--coral)"));
+  if(P.ball)g+=`<circle cx="${P.ball[0]}" cy="${P.ball[1]}" r="${P.ball[2]}" fill="var(--ink)"/>`;
+  (P.db||[]).forEach(d=>g+=dbell(d[0],d[1]));
+  (P.G||[]).forEach(e=>g+=`<ellipse cx="${e[0]}" cy="${e[1]}" rx="${e[2]}" ry="${e[3]}" fill="var(--coral)" opacity=".55"/>`);
+  (P.A||[]).forEach(a=>g+=dbl(...a));
+  if(P.top)g+=`<text x="100" y="132" text-anchor="middle" font-family="Space Mono,monospace" font-size="8.5" fill="var(--gray-light)">FACE DOWN · SEEN FROM ABOVE</text>`;
+  return `<svg viewBox="0 0 200 135" role="img" aria-label="Quick reference drawing of the position">${g}</svg>`;
+}
+function stillHTML(e){
+  const P=POSE[e.id];if(!P)return "";
+  const bits=[`<span><i class="r"></i>Roller</span>`];
+  if(P.G)bits.push(`<span><i class="t"></i>Target</span>`);
+  if(P.A)bits.push(`<span><i></i>${e.k==="roll"?"Roll":"Move"}</span>`);
+  if(P.C)bits.push(`<span><i class="m"></i>Lift / reach</span>`);
+  bits.push(`<span>${VIEW[e.id]||"Side view"}</span>`);
+  return `<div class="still">${stillSVG(e.id)}<div class="cap">${bits.join("")}</div></div>`;
+}
+
+/* ---------- Body map ---------- */
+const MAP=[ /* [id, view, cx-offset list, cy, rx, ry] mirrored left/right when offset != 0 */
+ ["r9","F",9,120,6,6],["r8","F",10,146,4.5,15],["r3","F",17,146,2.4,15],["r10","F",3.2,134,2.2,10],["r11","F",11,196,3.5,15],
+ ["r1","B",0,64,7,14],["r4","B",12,80,4.5,14],["r2","B",8,120,8,8],["r5","B",10,137,5.5,5],["r6","B",10,154,5.5,9],["r7","B",11,192,5.5,14]
+];
+function figure(cx){
+  let g="";
+  g+=limb([[cx-10,118],[cx-11,170],[cx-12,224]],15);
+  g+=limb([[cx+10,118],[cx+11,170],[cx+12,224]],15);
+  g+=limb([[cx-19,44],[cx-26,90],[cx-30,128]],8);
+  g+=limb([[cx+19,44],[cx+26,90],[cx+30,128]],8);
+  g+=limb([[cx,44],[cx,112]],30);
+  g+=`<circle cx="${cx}" cy="22" r="12" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`;
+  return g;
+}
+const bm=$("#bodymap");
+(function drawMap(){
+  let g=figure(65)+figure(175);
+  g+=`<text x="65" y="246" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="var(--gray)">FRONT</text><text x="175" y="246" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="var(--gray)">BACK</text>`;
+  MAP.forEach(m=>{
+    const cx=m[1]==="F"?65:175, e=EX.find(x=>x.id===m[0]);
+    const xs=m[2]?[cx-m[2],cx+m[2]]:[cx];
+    xs.forEach(x=>g+=`<ellipse class="rg" data-id="${m[0]}" cx="${x}" cy="${m[3]}" rx="${m[4]}" ry="${m[5]}" tabindex="0" role="button" aria-label="${e.area}"><title>${e.area}</title></ellipse>`);
+  });
+  bm.innerHTML=g;
+})();
+let sel=null;
+const ab=$("#areabtns");
+EX.filter(e=>e.area).forEach(e=>{const b=document.createElement("button");b.dataset.id=e.id;b.textContent=e.area;b.setAttribute("aria-pressed","false");b.onclick=()=>pickArea(e.id);ab.appendChild(b)});
+function pickArea(id){
+  sel=(sel===id)?null:id;
+  bm.querySelectorAll(".rg").forEach(r=>r.classList.toggle("on",r.dataset.id===sel));
+  ab.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.id===sel)));
+  const p=$("#pick");
+  if(!sel){p.textContent="No area selected.";return}
+  const e=EX.find(x=>x.id===sel),n=EX.indexOf(e)+1;
+  p.innerHTML=`<b>${e.area}</b> → card ${n}, ${e.name}<button type="button" id="goto">Go to exercise</button>`;
+  $("#goto").onclick=()=>{
+    if(filter!=="all"&&filter!==e.f){setFilter("all")}
+    const c=document.getElementById("card-"+e.id);
+    c.scrollIntoView({behavior:"smooth",block:"start"});
+    c.classList.remove("flash");void c.offsetWidth;c.classList.add("flash");
+  };
+}
+bm.addEventListener("click",ev=>{const r=ev.target.closest(".rg");if(r)pickArea(r.dataset.id)});
+bm.addEventListener("keydown",ev=>{const r=ev.target.closest(".rg");if(r&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();pickArea(r.dataset.id)}});
+
+/* ---------- Cards ---------- */
+function vidHTML(v){
+  if(v.yt)return `<div class="vid"><button class="play" data-yt="${v.yt}" aria-label="Play video: ${v.t}"><span class="tri"><svg width="20" height="22" viewBox="0 0 20 22"><path d="M2 1l17 10L2 21z" fill="#fff"/></svg></span>Play demo<small>${v.t}</small></button></div>`;
+  if(v.url)return `<div class="extlink"><span>▶</span><span>Demo: <a href="${v.url}" target="_blank" rel="noopener">${v.t}</a></span></div>`;
+  return `<div class="extlink"><span>●</span><span>${v.none}. Learn this one in person before trying it on your own.</span></div>`;
+}
+function levelsHTML(e){
+  if(!e.levels)return "";
+  const cur=lvl[e.id]??-1;
+  return `<div class="levels" data-id="${e.id}"><div class="lh"><span>Progression</span><span>${cur<0?"Tap your level":"My level: "+(cur+1)}</span></div>`+
+    e.levels.map((l,i)=>`<button type="button" data-l="${i}" aria-pressed="${i===cur}" class="${i<cur?"past":""}"><span class="lv">${i+1}</span><span>${l}</span></button>`).join("")+`</div>`;
+}
+const timers={};
+function render(){
+  Object.values(timers).forEach(t=>clearInterval(t.iv));
+  for(const k in timers)delete timers[k];
+  grid.innerHTML="";
+  EX.forEach((e,i)=>{
+    if(filter!=="all"&&e.f!==filter)return;
+    const card=document.createElement("article");
+    card.id="card-"+e.id;
+    card.className="card"+(e.k==="bal"?" bal":"")+(done[e.id]?" done":"");
+    const tags=e.tags.map((t,j)=>`<span class="tag${j===0?" c":""}${t==="Coach-supervised"?" w":""}">${t}</span>`).join("")+(e.fig?`<span class="tag">Fig ${e.fig}</span>`:"");
+    const cue=e.upd?`<div class="cue upd"><b>Updated cue</b>${e.upd}</div>`:`<div class="cue"><b>Coach cue</b>${e.cue}</div>`;
+    const link=e.v.yt?`<a href="https://www.youtube.com/watch?v=${e.v.yt}" target="_blank" rel="noopener">Open on YouTube ↗</a>`:"";
+    const timer=e.k==="roll"?`<button type="button" class="timer" data-id="${e.id}" aria-label="Start ${tlen} second timer">▶ ${tlen}s</button>`:"";
+    card.innerHTML=`
+      <div class="head"><div class="num">${i+1}</div><div><h3>${e.name}</h3><div class="tags">${tags}</div></div></div>
+      ${stillHTML(e)}
+      <div class="body"><ol>${e.steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+      ${levelsHTML(e)}
+      ${cue}
+      <div class="works"><b>Works:</b> ${e.works}</div>
+      ${vidHTML(e.v)}
+      <div class="foot"><label class="chk"><input type="checkbox" ${done[e.id]?"checked":""} data-id="${e.id}"> Done today</label>${timer}${link}</div>`;
+    grid.appendChild(card);
+  });
+  updateProg();
+}
+function updateProg(){
+  const vis=EX.filter(e=>filter==="all"||e.f===filter);
+  const d=vis.filter(e=>done[e.id]).length;
+  $("#barfill").style.width=(vis.length?d/vis.length*100:0)+"%";
+  $("#count").textContent=`${d} / ${vis.length} today`;
+}
+function beep(){try{const A=window.AudioContext||window.webkitAudioContext;const c=new A();const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(.15,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.5);o.start();o.stop(c.currentTime+.5)}catch(e){}}
+function runTimer(b){
+  const id=b.dataset.id,t=timers[id];
+  if(t){clearInterval(t.iv);delete timers[id];b.className="timer";b.textContent=`▶ ${tlen}s`;return}
+  let left=tlen;b.className="timer run";b.textContent=`■ ${left}s`;
+  const iv=setInterval(()=>{
+    left--;
+    if(left<=0){clearInterval(iv);delete timers[id];b.className="timer end";b.textContent="Switch ✓";beep();
+      setTimeout(()=>{if(!timers[id]){b.className="timer";b.textContent=`▶ ${tlen}s`}},4000);return}
+    b.textContent=`■ ${left}s`;
+  },1000);
+  timers[id]={iv};
+}
+grid.addEventListener("click",ev=>{
+  const p=ev.target.closest(".play");
+  if(p){
+    const f=document.createElement("iframe");
+    f.src=`https://www.youtube-nocookie.com/embed/${p.dataset.yt}?autoplay=1&rel=0`;
+    f.title=p.getAttribute("aria-label");
+    f.allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture";
+    f.allowFullscreen=true;
+    p.replaceWith(f);return;
+  }
+  const tb=ev.target.closest(".timer");if(tb){runTimer(tb);return}
+  const lb=ev.target.closest(".levels button");
+  if(lb){
+    const box=lb.closest(".levels"),id=box.dataset.id,i=+lb.dataset.l;
+    if(lvl[id]===i)delete lvl[id];else lvl[id]=i;save();
+    const cur=lvl[id]??-1;
+    box.querySelectorAll("button").forEach((b,j)=>{b.setAttribute("aria-pressed",String(j===cur));b.classList.toggle("past",j<cur)});
+    box.querySelector(".lh span:last-child").textContent=cur<0?"Tap your level":"My level: "+(cur+1);
+  }
+});
+grid.addEventListener("change",ev=>{
+  const c=ev.target.closest("input[type=checkbox]");if(!c)return;
+  if(c.checked)done[c.dataset.id]=1;else delete done[c.dataset.id];
+  c.closest(".card").classList.toggle("done",c.checked);
+  save();updateProg();
+});
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll("#filt button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.f===f)));
+  render();
+}
+document.querySelectorAll("#filt button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
+document.querySelectorAll("#tlen button").forEach(b=>b.onclick=()=>{
+  tlen=+b.dataset.t;
+  document.querySelectorAll("#tlen button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  document.querySelectorAll(".timer").forEach(t=>{if(!timers[t.dataset.id]){t.className="timer";t.textContent=`▶ ${tlen}s`;t.setAttribute("aria-label",`Start ${tlen} second timer`)}});
+});
+$("#reset").onclick=()=>{done={};save();render();};
+render();
+})();
+</script>
+
+</body>
+</html>

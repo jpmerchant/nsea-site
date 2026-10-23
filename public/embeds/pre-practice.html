@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pre-Practice Mobility | NSEA Swim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#008675;
+  --teal-dark:#006A5C;
+  --coral:#ee492f;
+  --coral-light:#FCE7E3;
+  --gray:#676d70;
+  --gray-light:#9BA0A3;
+  --line:#E4E7E8;
+  --ink:#1B2325;
+  --panel:#FAFBFB;
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--panel);color:var(--ink);font:15px/1.55 'Inter',Arial,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+h2,h3{font-family:'Oswald',Arial,sans-serif;font-weight:600;line-height:1.15;margin:0}
+h2{font-size:22px;margin:32px 0 12px;color:var(--ink)}
+
+/* intro + callout (canonical guide patterns) */
+.intro{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--teal);border-radius:6px;padding:18px 22px;margin-bottom:20px;max-width:900px}
+.intro p{margin:0;color:var(--gray);font-size:15px;line-height:1.55}
+.note{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--coral);border-radius:6px;padding:16px 22px;font-size:14px;line-height:1.6;max-width:900px}
+.note strong{color:var(--coral)}
+.note ul{margin:6px 0 0;padding-left:20px}
+
+/* dose tiles */
+.dose{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:12px 0 20px}
+.dose>div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.dose .k{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray)}
+.dose .v{font-family:'Oswald',sans-serif;font-size:22px;color:var(--teal);margin-top:2px}
+.dose p{margin:4px 0 0;font-size:14px;color:var(--gray)}
+
+/* flow strip */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 8px}
+.flow .st{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 6px;font:600 14px 'Inter',sans-serif;cursor:pointer;color:var(--ink)}
+.flow .st .n{width:24px;height:24px;border-radius:50%;background:var(--teal);color:var(--white);display:grid;place-items:center;font:600 13px 'Oswald',sans-serif}
+.flow .st.done{border-color:var(--teal);color:var(--teal-dark)}
+.flow .st.done .n{background:var(--teal-dark)}
+.flow .ar{color:var(--gray-light);font-family:'Space Mono',monospace}
+.flow .pos{font:700 11px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);width:100%;margin-top:4px}
+
+/* toolbar */
+.toolbar{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 0;margin-top:8px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:wrap;background:var(--white)}
+.seg button{font:600 13px 'Inter',sans-serif;border:0;background:transparent;color:var(--gray);padding:8px 14px;cursor:pointer;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--teal);color:var(--white)}
+.lbl{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-right:6px}
+.prog{flex:1 1 220px;display:flex;align-items:center;gap:10px;min-width:0}
+.bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--coral);transition:width .25s}
+.prog .mono{font:12px 'Space Mono',monospace;color:var(--gray);white-space:nowrap}
+.reset{font:600 12px 'Inter',sans-serif;background:var(--white);border:1px solid var(--line);color:var(--gray);border-radius:6px;padding:6px 10px;cursor:pointer}
+
+/* exercise cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(310px,100%),1fr));gap:18px;margin-top:18px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;overflow:hidden;scroll-margin-top:90px}
+.card.done{border-color:var(--teal);box-shadow:inset 4px 0 0 var(--teal),0 2px 8px rgba(0,0,0,0.05)}
+.card.flash{animation:flash 1.2s ease}
+@keyframes flash{0%,40%{box-shadow:0 0 0 4px var(--coral)}100%{box-shadow:0 2px 8px rgba(0,0,0,0.05)}}
+.head{display:flex;gap:12px;padding:18px 20px 8px;align-items:flex-start}
+.num{flex:0 0 36px;height:36px;border-radius:50%;background:var(--teal);color:var(--white);font:600 17px 'Oswald',sans-serif;display:grid;place-items:center}
+.head h3{font-size:17px;color:var(--teal-dark)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:700 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--panel);border:1px solid var(--line);color:var(--teal-dark)}
+.tag.c{background:var(--coral-light);border-color:var(--coral-light);color:var(--coral)}
+.rx{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 20px 10px;font:700 12px 'Space Mono',monospace;color:var(--ink)}
+.rx span{color:var(--gray);font-weight:400;margin-right:4px;text-transform:uppercase;font-size:10.5px;letter-spacing:.06em}
+.body{padding:0 20px 12px}
+.body ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
+.body ol li{margin:2px 0}
+.cue{margin:0 20px 10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;font-size:14px}
+.cue b{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal-dark);margin-right:4px}
+.cue.why{border-left-color:var(--coral)}
+.cue.why b{color:var(--coral)}
+.works{margin:2px 20px 12px;font-size:13px;color:var(--gray)}
+.still{margin:0 20px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 6px 8px}
+.still svg{display:block;width:100%;height:auto;max-height:190px}
+.cap{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;font:400 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gray)}
+.cap i{display:inline-block;width:18px;height:0;border-top:3px dashed var(--coral);vertical-align:middle;margin-right:5px}
+.cap i.t{width:14px;height:8px;border:0;border-radius:50%;background:var(--coral);opacity:.55}
+.cap i.m{border-top:4px solid var(--coral)}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 20px 16px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.sets{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.set{font:700 13px 'Space Mono',monospace;border:1px solid var(--teal);color:var(--teal-dark);background:var(--white);border-radius:999px;padding:7px 12px;cursor:pointer;min-height:36px;min-width:72px}
+.set[aria-pressed="true"]{background:var(--teal);color:var(--white)}
+.foot a{font-size:13px;color:var(--teal-dark);font-weight:600;text-decoration:none}
+.foot a:hover{text-decoration:underline}
+.src{font-size:13px;color:var(--gray);max-width:900px;margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:600px){.toolbar{position:static}}
+[hidden]{display:none!important}
+button:focus-visible,a:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+@media print{
+  @page{size:letter;margin:0.5in}
+  body{background:var(--white);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .toolbar,.flow,.foot{display:none}
+  .card,.intro,.note,.dose>div,.src{break-inside:avoid}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+
+<main>
+  <div class="intro"><p>Six floor exercises to do on deck before you get in the water. They wake up the shoulder blades and upper back for the pull and breathing, and open the hips for kicks, walls, and breaststroke. Follow the order below so you move from all fours to kneeling to lying down without wasted time, and tap each set as you finish it.</p></div>
+
+  <div class="note">
+    <strong>Before you start</strong>
+    <ul>
+      <li>Use a mat or folded towel under your knees. Pool decks are hard and wet.</li>
+      <li>Move <b>slowly and with control</b>. These are mobility drills, not a race. You should feel a stretch or muscles working, never pinching or sharp pain.</li>
+      <li>Keep your lower back <b>flat</b> in every exercise. If it arches or sags, make the movement smaller.</li>
+      <li>This is a warm-up for healthy swimmers. If something hurts during swimming, talk to your coach and an athletic trainer or physical therapist.</li>
+    </ul>
+  </div>
+
+  <h2>How much</h2>
+  <div class="dose">
+    <div><div class="k">Quick (most days)</div><div class="v">1 set · ~6 min</div><p>One set of each exercise before practice.</p></div>
+    <div><div class="k">Full program</div><div class="v">2 sets · ~12 min</div><p>The full program: 2 sets of 10. Use it on days with extra time or at home.</p></div>
+    <div><div class="k">Reps</div><div class="v">10 per set</div><p>Do 10 on each side for anything marked "Each side".</p></div>
+    <div><div class="k">Speed</div><div class="v">Slow</div><p>About 2–3 seconds each way. Quality beats quantity.</p></div>
+  </div>
+
+  <h2>The flow</h2>
+  <div class="flow" id="flow"></div>
+
+  <h2>Exercises</h2>
+  <div class="toolbar" role="region" aria-label="Filters, dose and progress">
+    <div><span class="lbl">Show</span>
+      <div class="seg" id="filt">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="upper" aria-pressed="false">Shoulders &amp; upper back</button>
+        <button data-f="hip" aria-pressed="false">Hips</button>
+      </div>
+    </div>
+    <div><span class="lbl">Dose</span>
+      <div class="seg" id="dose">
+        <button data-s="1" aria-pressed="true">Quick · 1 set</button>
+        <button data-s="2" aria-pressed="false">Full · 2 sets</button>
+      </div>
+    </div>
+    <div class="prog"><div class="bar"><i id="barfill"></i></div><span class="mono" id="count">0 / 6 today</span><button class="reset" id="reset">Reset</button></div>
+  </div>
+
+  <div class="cards" id="grid"></div>
+
+  <div class="src">
+    <p><b>Source.</b> Adapted from a HEP2go home exercise program (Oct 2025) with six exercises: quadruped scapular retraction/protraction, prone row Ws, thread the needle to reach up, hip flexor rocker, adductor rockback, and kneeling hip CARs. The sets, reps, and holds match that program. The exercise order, coach cues, and swimming notes were added by NSEA.</p>
+    <p><b>Demo videos.</b> The "Find a demo" links open a YouTube search, not a specific video. NSEA doesn't produce or endorse these videos. When a video differs from this guide, follow the written steps here.</p>
+    <p>NSEA Swim dryland reference, updated Sept 2026. This guide is a warm-up for healthy swimmers and is not medical advice. Rehab after an injury should be guided by a licensed athletic trainer or physical therapist.</p>
+  </div>
+</main>
+
+<script>
+(function(){
+const EX=[
+ {id:"p1",f:"upper",pos:"All fours",name:"Quadruped Scap Push",full:"Quadruped Scapular Retraction/Protraction",tags:["Shoulder blades"],
+  rx:{Reps:"10"},
+  steps:["Start on hands and knees, hands under shoulders, arms straight.","Let your chest sink between your arms so your shoulder blades come together.","Push the floor away so your upper back rounds up and your shoulder blades spread apart.","Keep your elbows locked the whole time. The movement comes only from your shoulder blades."],
+  cue:"Think of your chest moving and your arms staying still. Push all the way through at the top.",
+  why:"Shoulder blades that glide freely give your arm a stable base for the catch. It's the same muscle (serratus) that helps you reach long at the front of the stroke.",
+  works:"Serratus anterior, rhomboids, middle trapezius",q:"quadruped scapular protraction retraction"},
+ {id:"p2",f:"upper",pos:"All fours",name:"Thread the Needle to Reach Up",full:"Thread the Needle to Reach Up (Thoracic Rotation)",tags:["Upper back","Each side"],
+  rx:{Reps:"10 each side"},
+  steps:["Start on hands and knees.","Slide one arm along the floor under your body as you drop down onto that shoulder. Feel the stretch across your upper back.","Bring the same arm back out and reach up toward the ceiling, looking up at your hand.","Repeat, then switch sides."],
+  cue:"Keep your hips stacked over your knees. The twist should come from your upper back, not your hips.",
+  why:"Upper-back rotation is what lets you breathe to the side without lifting your head or crossing over.",
+  works:"Thoracic spine rotators, rear shoulder, lats",q:"thread the needle reach up thoracic rotation"},
+ {id:"p3",f:"hip",pos:"All fours",name:"Adductor Rockback",full:"Adductor Rockback",tags:["Inner thigh","Each side"],
+  rx:{Reps:"10 each side"},
+  steps:["Start on hands and knees, then straighten one leg out to the side with that foot flat on the floor.","Breathe in as you rock your hips back toward your heel into a deeper stretch.","Relax the inner thigh and the back of the hip as you stretch.","Rock forward to the start. Switch sides after 10."],
+  cue:"Keep your back flat as you rock. Only go as far back as you can without your back rounding.",
+  why:"Breaststrokers need open inner thighs for a wide, powerful kick. Everyone gets a better push-off from the walls.",
+  works:"Adductors (inner thigh), deep hip muscles",q:"adductor rockback"},
+ {id:"p4",f:"hip",pos:"Kneeling",name:"Hip Flexor Rocker",full:"Hip Flexor Rocker",tags:["Front of hip","Each side"],
+  rx:{Reps:"10 each side",Hold:"1 sec"},
+  steps:["Come to a half-kneeling position: one knee down, the other foot flat in front.","Rock your hips forward until you feel a slight stretch in the front of the back hip.","Hold 1 second, then return to the start.","Switch sides after 10."],
+  cue:"Squeeze the glute on the kneeling side and keep your ribs down. Stay tall. Don't lean back or arch.",
+  why:"Tight hip flexors pull your hips down and out of a flat body line. Opening them helps you kick from the hip, not the knee.",
+  works:"Hip flexors (iliopsoas, rectus femoris)",q:"half kneeling hip flexor rocker"},
+ {id:"p5",f:"hip",pos:"Kneeling",name:"Kneeling Hip CARs",full:"Kneeling Hip CARs (controlled articular rotations)",tags:["Hip circles","Each side"],
+  rx:{Reps:"10 each side",Limit:"Once a day"},
+  steps:["Start half-kneeling next to a wall, hands on the wall for balance.","Lift the front knee and slowly draw the biggest circle you can: out to the side and around toward the back of your body.","Reverse the circle and return the front foot to the ground.","Switch sides after 10."],
+  cue:"Slow and controlled. Keep your lower back flat the entire time. Only the hip moves.",
+  why:"Moves the hip through its full range, the same range you use in breaststroke kick, flip turns, and dolphin kick.",
+  works:"Hip rotators, glutes, hip flexors",q:"kneeling hip CARs"},
+ {id:"p6",f:"upper",pos:"Face down",name:"Prone Row Ws",full:"Prone Row – Ws",tags:["Shoulder blades"],
+  rx:{Reps:"10"},
+  steps:["Lie on your stomach with a rolled towel under your forehead (or your head off the edge of the mat).","Bend your elbows and lift your arms into a W shape.","Squeeze your shoulder blades toward the middle and down toward your back pockets.","Lower slowly and repeat."],
+  cue:"Focus on the shoulder blades, not the arms. Thumbs up, chin tucked, forehead stays down.",
+  why:"Builds the muscles that hold your shoulder blades in place, which balances out all the pulling you do in the water.",
+  works:"Lower and middle trapezius, rhomboids, rotator cuff",q:"prone W shoulder exercise"}
+];
+
+const $=s=>document.querySelector(s);
+const grid=$("#grid");
+let filter="all",sets=1;
+const today=new Date().toISOString().slice(0,10);
+const KEY="nsea-prepractice-"+today, DKEY="nsea-prepractice-dose";
+let log={};
+try{log=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){log={}}
+try{const d=+localStorage.getItem(DKEY);if(d===1||d===2)sets=d}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(log));localStorage.setItem(DKEY,String(sets))}catch(e){}}
+const isDone=id=>(log[id]||[]).filter(Boolean).length>=sets;
+
+/* ---------- Line drawings ---------- */
+const f1=n=>(+n).toFixed(1);
+function cap(pts,w,col){return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`}
+function limb(pts,w){return cap(pts,w+3,"var(--gray)")+cap(pts,w,"var(--white)")}
+function head(x,y){return `<circle cx="${x}" cy="${y}" r="8" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`}
+function ah(x,y,dx,dy){const m=Math.hypot(dx,dy);dx/=m;dy/=m;const s=6;
+  return `<path d="M${f1(x)} ${f1(y)} L${f1(x-dx*s-dy*s*.6)} ${f1(y-dy*s+dx*s*.6)} L${f1(x-dx*s+dy*s*.6)} ${f1(y-dy*s-dx*s*.6)} Z" fill="var(--coral)"/>`}
+const DASH='stroke="var(--coral)" stroke-width="2" stroke-dasharray="4 3" fill="none"';
+function dbl(x1,y1,x2,y2){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${DASH}/>`+ah(x2,y2,x2-x1,y2-y1)+ah(x1,y1,x1-x2,y1-y2)}
+function one(x1,y1,x2,y2){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${DASH}/>`+ah(x2,y2,x2-x1,y2-y1)}
+function tgt(x,y,rx,ry){return `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="var(--coral)" opacity=".55"/>`}
+const floor=`<line x1="4" y1="118" x2="196" y2="118" stroke="var(--line)" stroke-width="2"/>`;
+const faded=s=>`<g opacity=".45">${s}</g>`;
+const DRAW={
+ p1:()=>floor+faded(limb([[62,78],[64,97],[66,116]],6)+limb([[120,80],[128,116],[164,114]],6))
+   +limb([[60,78],[120,80]],11)+limb([[60,78],[60,97],[60,116]],6)+limb([[120,80],[122,116],[160,116]],6)+head(44,70)
+   +tgt(80,74,12,5)+dbl(80,48,80,68),
+ p2:()=>floor+faded(limb([[60,80],[40,106],[18,114]],6))
+   +limb([[60,80],[120,80]],11)+limb([[60,80],[58,98],[56,116]],6)+limb([[120,80],[122,116],[160,116]],6)+head(44,72)
+   +cap([[60,80],[62,54],[64,28]],6,"var(--coral)")
+   +`<path d="M28 104 Q14 60 52 26" ${DASH}/>`+ah(52,26,38,-34),
+ p3:()=>floor+faded(limb([[118,84],[120,116],[146,116]],6))
+   +limb([[54,84],[118,84]],11)+limb([[54,84],[44,100],[34,116]],6)+limb([[118,84],[152,100],[186,114]],6)+head(40,76)
+   +tgt(126,90,10,5)+dbl(98,60,138,60),
+ p4:()=>floor+faded(limb([[110,44],[100,64],[96,80]],6))
+   +limb([[112,80],[110,42]],12)+limb([[112,80],[80,84],[78,116],[66,116]],6)+limb([[112,80],[122,116],[156,116]],6)
+   +limb([[110,44],[96,62],[84,80]],6)+head(108,28)+tgt(116,88,6,5)+dbl(96,58,130,58),
+ p5:()=>floor+`<rect x="12" y="4" width="8" height="114" fill="var(--line)"/>`
+   +limb([[112,84],[78,50]],12)+limb([[78,52],[52,54],[22,48]],6)+limb([[112,84],[114,116],[150,116]],6)+head(68,40)
+   +cap([[112,84],[142,74],[150,100]],6,"var(--coral)")
+   +`<ellipse cx="136" cy="86" rx="30" ry="20" ${DASH}/>`+ah(160,74,6,5),
+ p6:()=>limb([[96,86],[94,118]],7)+limb([[104,86],[106,118]],7)
+   +limb([[100,38],[100,86]],18)+limb([[92,42],[70,58],[62,30]],6)+limb([[108,42],[130,58],[138,30]],6)+head(100,24)
+   +tgt(94,54,4,7)+tgt(106,54,4,7)+one(72,76,90,64)+one(128,76,110,64)
+   +`<text x="100" y="132" text-anchor="middle" font-family="Space Mono,monospace" font-size="8.5" fill="var(--gray-light)">FACE DOWN · SEEN FROM ABOVE</text>`
+};
+const CAP={p1:["t","Shoulder blades","a","Sink / push"],p2:["m","Reach up","a","Thread under, then up"],p3:["t","Stretch","a","Rock back"],p4:["t","Stretch","a","Rock forward"],p5:["m","Moving leg","a","Circle"],p6:["t","Shoulder blades","a","Squeeze in"]};
+const VIEW={p6:"Top view"};
+function stillHTML(e){
+  const c=CAP[e.id],bits=[];
+  for(let i=0;i<c.length;i+=2)bits.push(`<span><i class="${c[i]==="a"?"":c[i]}"></i>${c[i+1]}</span>`);
+  bits.push(`<span>${VIEW[e.id]||"Side view"}</span>`);
+  return `<div class="still"><svg viewBox="0 0 200 135" role="img" aria-label="Line drawing of ${e.name}">${DRAW[e.id]()}</svg><div class="cap">${bits.join("")}</div></div>`;
+}
+
+/* ---------- Flow strip ---------- */
+function renderFlow(){
+  $("#flow").innerHTML=EX.map((e,i)=>`${i?'<span class="ar">→</span>':""}<button type="button" class="st ${isDone(e.id)?"done":""}" data-id="${e.id}"><span class="n">${i+1}</span>${e.name}</button>`).join("")
+    +`<div class="pos">All fours (1–3) → Half-kneeling (4–5) → Face down (6)</div>`;
+}
+$("#flow").addEventListener("click",ev=>{
+  const b=ev.target.closest(".st");if(!b)return;
+  const e=EX.find(x=>x.id===b.dataset.id);
+  if(filter!=="all"&&filter!==e.f)setFilter("all");
+  const c=document.getElementById("card-"+e.id);
+  c.scrollIntoView({behavior:"smooth",block:"start"});
+  c.classList.remove("flash");void c.offsetWidth;c.classList.add("flash");
+});
+
+/* ---------- Cards ---------- */
+function render(){
+  grid.innerHTML="";
+  EX.forEach((e,i)=>{
+    if(filter!=="all"&&e.f!==filter)return;
+    const s=log[e.id]||[];
+    const card=document.createElement("article");
+    card.id="card-"+e.id;
+    card.className="card"+(isDone(e.id)?" done":"");
+    const tags=`<span class="tag c">${e.pos}</span>`+e.tags.map(t=>`<span class="tag">${t}</span>`).join("");
+    const rx=`<span>Sets</span>${sets}`+Object.entries(e.rx).map(([k,v])=>`&nbsp;&nbsp;<span>${k}</span>${v}`).join("");
+    let btns="";for(let k=0;k<sets;k++)btns+=`<button type="button" class="set" data-id="${e.id}" data-k="${k}" aria-pressed="${!!s[k]}">${s[k]?"✓ ":""}Set ${k+1}</button>`;
+    card.innerHTML=`
+      <div class="head"><div class="num">${i+1}</div><div><h3>${e.name}</h3><div class="tags">${tags}</div></div></div>
+      ${stillHTML(e)}
+      <div class="rx">${rx}</div>
+      <div class="body"><ol>${e.steps.map(x=>`<li>${x}</li>`).join("")}</ol></div>
+      <div class="cue"><b>Coach cue</b>${e.cue}</div>
+      <div class="cue why"><b>Why swimmers</b>${e.why}</div>
+      <div class="works"><b>Works:</b> ${e.works}</div>
+      <div class="foot"><div class="sets">${btns}</div><a href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.q)}" target="_blank" rel="noopener">Find a demo ↗</a></div>`;
+    grid.appendChild(card);
+  });
+  updateProg();
+}
+function updateProg(){
+  const vis=EX.filter(e=>filter==="all"||e.f===filter);
+  const d=vis.filter(e=>isDone(e.id)).length;
+  $("#barfill").style.width=(vis.length?d/vis.length*100:0)+"%";
+  $("#count").textContent=`${d} / ${vis.length} today`;
+  renderFlow();
+}
+grid.addEventListener("click",ev=>{
+  const b=ev.target.closest(".set");if(!b)return;
+  const id=b.dataset.id,k=+b.dataset.k;
+  const s=log[id]||(log[id]=[]);s[k]=!s[k];save();
+  b.setAttribute("aria-pressed",String(!!s[k]));b.textContent=(s[k]?"✓ ":"")+"Set "+(k+1);
+  b.closest(".card").classList.toggle("done",isDone(id));
+  updateProg();
+});
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll("#filt button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.f===f)));
+  render();
+}
+document.querySelectorAll("#filt button").forEach(b=>b.onclick=()=>setFilter(b.dataset.f));
+document.querySelectorAll("#dose button").forEach(b=>{
+  b.setAttribute("aria-pressed",String(+b.dataset.s===sets));
+  b.onclick=()=>{sets=+b.dataset.s;save();document.querySelectorAll("#dose button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));render();};
+});
+$("#reset").onclick=()=>{log={};save();render();};
+render();
+})();
+</script>
+
+</body>
+</html>

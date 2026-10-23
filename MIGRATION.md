@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 107 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 109 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 56 · pull 7 · ready 16 · new 12
+Counts: rebuild 16 · done 66 · pull 1 · ready 14 · new 12
 
 ## 1. Live page -> new location
 
@@ -22,7 +22,7 @@ Counts: rebuild 16 · done 56 · pull 7 · ready 16 · new 12
 | `/FAQ` | `/families/new-families/faq/` | done |
 | `/privacy-policy` | `/privacy/` | pull |
 | `/fee-structure` | `/programs/fees/` | pull |
-| `/shoulder-strength` | `/training/same/strength/` | pull |
+| `/shoulder-strength` | `/training/same/strength/` | done |
 | `/alumni` | `/about/alumni/` | done |
 | `/2022---23-achievements` | `/times/achievements/2022-23/` | done |
 | `/books` | `/families/new-families/books/` | done |
@@ -67,20 +67,20 @@ Counts: rebuild 16 · done 56 · pull 7 · ready 16 · new 12
 | `/team-records---scy` | `/times/records/individual/` | ready |
 | `/team-record-holders` | `/times/records/holders/` | ready |
 | `/tech-suit-info` | `/families/team-store/tech-suit-guide/` | done |
-| `/training-zone-cheat-sheet` | `/training/zones/` | pull |
+| `/training-zone-cheat-sheet` | `/training/zones/` | done |
 | `/swim-suit-guide` | `/meets/uniform/` | done |
 | `/test-page` | _retired: Test page_ | retired |
 | `/imr-/-imx-progress` | `/times/standards/imx-imr/` + `/times/standards/imx-imr/progress/` | rebuild, ready |
-| `/agility` | `/training/same/agility/` | pull |
-| `/rpe-information` | `/training/rpe/` | pull |
-| `/caffeine---energy-drinks--a-quick-guide` | `/training/same/education/caffeine-guide/` | ready |
-| `/caffeine---energy-drinks--research` | `/training/same/education/caffeine-research/` | ready |
-| `/mobility` | `/training/same/mobility/` | pull |
-| `/strength` | `/training/same/strength/` | pull |
-| `/foam-rolling` | `/training/same/foam-rolling/` | pull |
+| `/agility` | `/training/same/agility/` | done |
+| `/rpe-information` | `/training/rpe/` | done |
+| `/caffeine---energy-drinks--a-quick-guide` | `/training/same/education/caffeine-guide/` | done |
+| `/caffeine---energy-drinks--research` | `/training/same/education/caffeine-research/` | done |
+| `/mobility` | `/training/same/mobility/` | done |
+| `/strength` | `/training/same/strength/` | done |
+| `/foam-rolling` | `/training/same/foam-rolling/` | done |
 | `/scy---comparison-by-age-group` | `/times/standards/compare-by-age-group/` | done |
 | `/scy---comparison-all-ages` | `/times/standards/compare-all-ages/` | done |
-| `/pre-practice-mobility` | `/training/same/mobility/` | pull |
+| `/pre-practice-mobility` | `/training/same/mobility/` + `/training/same/mobility/pre-practice/` | done |
 | `/coming-soon` | _retired: Placeholder; replaced by Coach’s Corner on the home page_ | retired |
 
 Merges worth noting: Top 10 Swimmers/Swims/Relays and Team Records collapse from 12 live pages to 6 (SCY/LCM become a toggle on one page). `/practice-groups` and `/offerings` anchors become real pages. The two IMX pages become one hub. `/mobility` + `/pre-practice-mobility` and `/strength` + `/shoulder-strength` each merge.
@@ -142,7 +142,7 @@ Deliberately **not** pulled: per-athlete biomechanics reports (individual swimme
 | `/families/` | Family Guide | hub | rebuild | - | - |
 | `/families/new-families/` | New to Swimming | hub | new | - | - |
 | `/families/new-families/faq/` | FAQ | page | done | `/FAQ` | - |
-| `/families/new-families/glossary/` | Glossary | tool | done | `/glossary` | - |
+| `/families/new-families/glossary/` | Glossary | page | done | `/glossary` | - |
 | `/families/new-families/water-safety/` | Fast Facts on Water Safety | page | done | `/fast-facts-on-water-safety` | - |
 | `/families/new-families/books/` | Books | page | done | `/books` | - |
 | `/families/new-families/usa-swimming-parents/` | USA Swimming Parents Page | link | ready | - | - |
@@ -201,16 +201,18 @@ Deliberately **not** pulled: per-athlete biomechanics reports (individual swimme
 | `/times/achievements/2023-24/` | 2023 – 2024 | tool | done | `/2023---2024` | - |
 | `/times/achievements/2022-23/` | 2022 – 2023 | tool | done | `/2022---23-achievements` | - |
 | `/training/` | Training | hub | rebuild | - | - |
-| `/training/zones/` | Training Zone Cheat Sheet | page | pull | `/training-zone-cheat-sheet` | NSEASwim-KB-Repo/NSEA_Training_Zones_Cheat_Sheet.pdf |
-| `/training/rpe/` | RPE & Session RPE | page | pull | `/rpe-information` | content/guides/rpe-session-rpe-handout.html; Project: claude/rpe-session-rpe-reference.md |
+| `/training/zones/` | Training Zone Cheat Sheet | tool | done | `/training-zone-cheat-sheet` | NSEASwim-KB-Repo/NSEA_Training_Zones_Cheat_Sheet.pdf |
+| `/training/rpe/` | RPE & Session RPE | tool | done | `/rpe-information` | content/guides/rpe-session-rpe-handout.html; Project: claude/rpe-session-rpe-reference.md |
 | `/training/same/` | S.A.M.E. | hub | rebuild | - | - |
-| `/training/same/strength/` | Strength | page | pull | `/strength`, `/shoulder-strength` | Project: claude/nsea-shoulder-care-guide.html |
-| `/training/same/agility/` | Agility | page | pull | `/agility` | - |
-| `/training/same/mobility/` | Mobility | page | pull | `/mobility`, `/pre-practice-mobility` | Project: claude/nsea-swimmer-mobility-routines.html; Project: claude/nsea-pre-practice-guide.html |
-| `/training/same/foam-rolling/` | Foam Rolling | page | pull | `/foam-rolling` | Project: claude/nsea-foam-roller-guide.html |
+| `/training/same/strength/` | Strength: Shoulder Care | tool | done | `/strength`, `/shoulder-strength` | Project: claude/nsea-shoulder-care-guide.html |
+| `/training/same/agility/` | Agility | page | done | `/agility` | - |
+| `/training/same/mobility/` | Mobility | hub | done | `/mobility`, `/pre-practice-mobility` | Project: claude/nsea-swimmer-mobility-routines.html; Project: claude/nsea-pre-practice-guide.html |
+| `/training/same/mobility/pre-practice/` | Pre-Practice Mobility | tool | done | `/pre-practice-mobility` | Project: claude/nsea-pre-practice-guide.html |
+| `/training/same/mobility/routines/` | Mobility Routines | tool | done | - | Project: claude/nsea-swimmer-mobility-routines.html |
+| `/training/same/foam-rolling/` | Foam Rolling | tool | done | `/foam-rolling` | Project: claude/nsea-foam-roller-guide.html |
 | `/training/same/education/` | Education | hub | rebuild | `/education` | - |
-| `/training/same/education/caffeine-guide/` | Caffeine & Energy Drinks: A Quick Guide | page | ready | `/caffeine---energy-drinks--a-quick-guide` | content/guides/caffeine-guide-for-nsea-families_1.html |
-| `/training/same/education/caffeine-research/` | Caffeine & Energy Drinks: The Research | page | ready | `/caffeine---energy-drinks--research` | content/guides/caffeine-youth-athletes-research.html; Project: claude/nsea-research-caffeine-and-youth-athletes.html |
+| `/training/same/education/caffeine-guide/` | Caffeine & Energy Drinks: A Quick Guide | tool | done | `/caffeine---energy-drinks--a-quick-guide` | content/guides/caffeine-guide-for-nsea-families_1.html |
+| `/training/same/education/caffeine-research/` | Caffeine & Energy Drinks: The Research | tool | done | `/caffeine---energy-drinks--research` | content/guides/caffeine-youth-athletes-research.html; Project: claude/nsea-research-caffeine-and-youth-athletes.html |
 | `/training/same/education/specialization-ages/` | When to Specialize | page | new | - | Project: claude/specialization-ages-swimming-reference.md |
 | `/training/same/education/race-pacing/` | Race Pacing | page | new | - | Project: claude/race-pacing-synthesis.md |
 | `/training/same/education/sodium-bicarbonate/` | Sodium Bicarbonate & Young Swimmers | page | new | - | Project: claude/sodium-bicarbonate-youth-swimming-reference.md |

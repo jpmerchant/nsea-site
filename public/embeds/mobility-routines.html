@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Swimmer Mobility Routines | NSEA Swim</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#008675;
+  --teal-dark:#006A5C;
+  --coral:#ee492f;
+  --coral-light:#FCE7E3;
+  --gray:#676d70;
+  --gray-light:#9BA0A3;
+  --line:#E4E7E8;
+  --ink:#1B2325;
+  --panel:#FAFBFB;
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--panel);color:var(--ink);font:15px/1.55 'Inter',Arial,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
+h2,h3{font-family:'Oswald',Arial,sans-serif;font-weight:600;line-height:1.15;margin:0;text-wrap:balance}
+h2{font-size:22px;margin:32px 0 12px;color:var(--ink)}
+.intro{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--teal);border-radius:6px;padding:18px 22px;margin-bottom:20px;max-width:900px}
+.intro p{margin:0;color:var(--gray);font-size:15px;line-height:1.55}
+.note{background:var(--white);border:1px solid var(--line);border-left:6px solid var(--coral);border-radius:6px;padding:16px 22px;font-size:14px;line-height:1.6;max-width:900px}
+.note strong{color:var(--coral)}
+.note ul{margin:6px 0 0;padding-left:20px}
+.dose{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:12px 0 20px}
+.dose>div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.dose .k{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray)}
+.dose .v{font-family:'Oswald',sans-serif;font-size:22px;color:var(--teal);margin-top:2px}
+.dose p{margin:4px 0 0;font-size:14px;color:var(--gray)}
+
+/* screen */
+.screen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:12px;margin:12px 0}
+.screen>div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.screen .t{font:700 11px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.07em;color:var(--coral)}
+.screen b{display:block;margin:4px 0 4px;font-size:15px}
+.screen p{margin:0;font-size:14px;color:var(--gray)}
+.screen .go{margin-top:8px;font:600 13px 'Inter',sans-serif;color:var(--teal-dark)}
+.stepline{max-width:900px;font-size:14px;color:var(--gray);margin:0 0 6px}
+
+/* toolbar */
+.toolbar{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 0;margin-top:8px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:wrap;background:var(--white)}
+.seg button{font:600 13px 'Inter',sans-serif;border:0;background:transparent;color:var(--gray);padding:8px 14px;cursor:pointer;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--teal);color:var(--white)}
+.lbl{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-right:6px}
+.prog{flex:1 1 220px;display:flex;align-items:center;gap:10px;min-width:0}
+.bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--coral);transition:width .25s}
+.prog .mono{font:12px 'Space Mono',monospace;color:var(--gray);white-space:nowrap}
+.reset{font:600 12px 'Inter',sans-serif;background:var(--white);border:1px solid var(--line);color:var(--gray);border-radius:6px;padding:6px 10px;cursor:pointer}
+
+/* routine blocks */
+.routine{margin-top:28px;scroll-margin-top:80px}
+.rhead{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:grid;grid-template-columns:1fr auto;gap:8px 20px;align-items:start}
+@media (max-width:640px){.rhead{grid-template-columns:1fr}}
+.rhead h3{font-size:24px;color:var(--teal-dark)}
+.rhead p{margin:6px 0 0;font-size:14px;color:var(--gray);max-width:760px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px}
+.pill{font:700 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--teal-dark);background:var(--panel)}
+.pill.p{background:var(--coral-light);border-color:var(--coral-light);color:var(--coral)}
+.time{font:600 30px 'Oswald',sans-serif;color:var(--teal);text-align:right;line-height:1}
+.time small{display:block;font:400 11px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-top:4px}
+@media (max-width:640px){.time{text-align:left}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:18px;margin-top:16px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.card.done{border-color:var(--teal);box-shadow:inset 4px 0 0 var(--teal),0 2px 8px rgba(0,0,0,0.05)}
+.head{display:flex;gap:12px;padding:18px 20px 8px;align-items:flex-start}
+.num{flex:0 0 36px;height:36px;border-radius:50%;background:var(--teal);color:var(--white);font:600 17px 'Oswald',sans-serif;display:grid;place-items:center}
+.head h4{font:600 17px/1.15 'Oswald',sans-serif;color:var(--teal-dark);margin:0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag{font:700 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--panel);border:1px solid var(--line);color:var(--teal-dark)}
+.tag.c{background:var(--coral-light);border-color:var(--coral-light);color:var(--coral)}
+.rx{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 20px 10px;font:700 12px 'Space Mono',monospace;color:var(--ink)}
+.rx span{color:var(--gray);font-weight:400;margin-right:4px;text-transform:uppercase;font-size:10.5px;letter-spacing:.06em}
+.body{padding:0 20px 12px}
+.body ol{margin:0;padding-left:20px;font-size:14px;line-height:1.6}
+.body ol li{margin:2px 0}
+.cue{margin:0 20px 10px;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:6px;font-size:14px}
+.cue b{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal-dark);margin-right:4px}
+.cue.why{border-left-color:var(--coral)}
+.cue.why b{color:var(--coral)}
+.src1{margin:2px 20px 12px;font-size:12.5px;color:var(--gray)}
+.watch{margin:0 20px 12px;display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1px dashed var(--line);border-radius:8px;font-size:14px;color:var(--gray)}
+.watch .pl{flex:0 0 22px;height:22px;border-radius:50%;background:var(--coral);display:grid;place-items:center;margin-top:1px}
+.watch a{color:var(--teal-dark);font-weight:600;text-decoration:none}
+.watch a:hover{text-decoration:underline}
+.watch small{display:block;font-size:12px;color:var(--gray);font-weight:400}
+.still{margin:0 20px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 6px 8px}
+.still svg{display:block;width:100%;height:auto;max-height:190px}
+.cap{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;font:400 10.5px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--gray)}
+.cap i{display:inline-block;width:18px;height:0;border-top:3px dashed var(--coral);vertical-align:middle;margin-right:5px}
+.cap i.t{width:14px;height:8px;border:0;border-radius:50%;background:var(--coral);opacity:.55}
+.cap i.m{border-top:4px solid var(--coral)}
+.foot{margin-top:auto;display:flex;align-items:center;padding:12px 20px 16px;border-top:1px solid var(--line)}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer;min-height:36px}
+.chk input{width:20px;height:20px;accent-color:var(--teal)}
+
+.extras{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:12px;margin-top:14px}
+.extras>div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px 18px;font-size:14px;min-width:0}
+.extras h5{margin:0 0 6px;font:700 11px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--gray)}
+.extras ul{margin:0;padding-left:18px}
+.extras li{margin:3px 0}
+a{color:var(--teal-dark);font-weight:600}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--white)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:700 11px 'Space Mono',monospace;text-transform:uppercase;letter-spacing:.07em;color:var(--gray);background:var(--panel)}
+tr:last-child td{border-bottom:0}
+
+.src{font-size:13px;color:var(--gray);max-width:900px;margin-top:32px;border-top:1px solid var(--line);padding-top:16px}
+.src p{margin:0 0 10px}
+@media (max-width:600px){.toolbar{position:static}}
+[hidden]{display:none!important}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+@media print{
+  @page{size:letter;margin:0.5in}
+  body{background:var(--white);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .toolbar,.foot{display:none}
+  .card,.intro,.note,.dose>div,.src,.rhead,.extras>div{break-inside:avoid}
+  .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+
+<main>
+  <div class="intro"><p>Five mobility routines built for swimmers. Chest, shoulders, and hips come first because they set your streamline, your catch, and your kick. Ankles, wrists, and neck get their own short routine. The routines build on the NSEA Pre-Practice, Shoulder Care, and Foam Roller guides: those guides wake you up and build strength, and these routines open the range that strength then has to control.</p></div>
+
+  <div class="note">
+    <strong>Before you start</strong>
+    <ul>
+      <li>Move into a stretch until you feel a pull, then stop. <b>Pinching, sharp pain, numbness, or tingling</b> means back off or skip the move.</li>
+      <li>Many swimmers are already loose in the shoulders. If you are very flexible, do the <b>active</b> moves (circles, slides, reaches) and skip long passive holds at the end of your range. Mobility you can control beats mobility you only get into. GMB has a video on <a href="https://www.youtube.com/watch?v=XxZekPIeCzE" target="_blank" rel="noopener">stability work for hypermobile joints</a>.</li>
+      <li>Breaststrokers: keep knee twisting gentle. Open the hips and ankles first, and never force the knees.</li>
+      <li>This is for healthy swimmers. If something hurts in the water or keeps hurting after a week of easy work, talk to your coach and an athletic trainer or physical therapist.</li>
+    </ul>
+  </div>
+
+  <h2>Which routine do you need?</h2>
+  <p class="stepline">Try these checks on deck. They take about a minute and point you to the routine that matches what you find. The shoulder check is adapted from the overhead reach test in GMB's shoulder mobility article.</p>
+  <div class="screen">
+    <div><div class="t">Check 1 · Streamline reach</div><b>Reach both arms overhead, biceps by your ears.</b><p>Does your lower back arch or your ribs flare? That points to tight lats and a stiff upper back.</p><div class="go">→ Routines 3 and 2</div></div>
+    <div><div class="t">Check 2 · Pinch at the top</div><b>Same reach, slowly.</b><p>A pinch at the top of the shoulder suggests the shoulder blade is not moving freely.</p><div class="go">→ Routine 3</div></div>
+    <div><div class="t">Check 3 · Upper back and chest</div><b>Stand tall against a wall.</b><p>If your head or upper back will not touch the wall without lifting your chin or arching your low back, the chest and upper back are tight.</p><div class="go">→ Routine 2</div></div>
+    <div><div class="t">Check 4 · Hips</div><b>Sit with soles of feet together.</b><p>If your knees stay high above the floor or you cannot sit up tall, the hips need work.</p><div class="go">→ Routine 4</div></div>
+    <div><div class="t">Check 5 · Ankles</div><b>Sit back on your heels with the tops of your feet flat.</b><p>If you cannot sit back, or it hurts the front of the ankle, you have limited toe-pointing range for kick. This is close to the seiza sitting position GMB teaches.</p><div class="go">→ Routine 5</div></div>
+    <div><div class="t">Check 6 · Dorsiflexion</div><b>Kneeling lunge, front foot flat, knee toward wall.</b><p>If the heel lifts before your knee reaches about a hand's width from the wall, the ankle is tight for breaststroke.</p><div class="go">→ Routine 5</div></div>
+  </div>
+
+  <h2>How much</h2>
+  <div class="dose">
+    <div><div class="k">Daily 5</div><div class="v">Every day</div><p>Routine 1 on its own is enough on a busy day. It touches chest, shoulders, and hips.</p></div>
+    <div><div class="k">Focus routines</div><div class="v">3–4× a week</div><p>Pick Routine 2, 3, or 4 for what you found in the checks. Do them before dryland or after practice.</p></div>
+    <div><div class="k">Moving reps</div><div class="v">6–10 slow</div><p>About 2–3 seconds each way. Breathe out into the harder part of the move.</p></div>
+    <div><div class="k">Holds</div><div class="v">20–60 sec</div><p>20–30 seconds for younger swimmers. Up to 60 seconds for older swimmers who need it.</p></div>
+  </div>
+  <div class="dose">
+    <div><div class="k">Splash &amp; Tidepool</div><div class="v">Daily 5, short</div><p>Keep it playful. Fewer reps, shorter holds, and a coach watching form.</p></div>
+    <div><div class="k">Riptide &amp; Breakers</div><div class="v">Daily 5 + 1</div><p>Add one focus routine two or three times a week.</p></div>
+    <div><div class="k">Surge &amp; Senior</div><div class="v">Daily 5 + 2–3</div><p>Rotate focus routines across the week and add Routine 5 after practice.</p></div>
+  </div>
+
+  <h2>The routines</h2>
+  <div class="toolbar" role="region" aria-label="Routine filter and progress">
+    <div><span class="lbl">Show</span>
+      <div class="seg" id="filt"></div>
+    </div>
+    <div class="prog"><div class="bar"><i id="barfill"></i></div><span class="mono" id="count">0 / 0 today</span><button class="reset" id="reset" type="button">Reset</button></div>
+  </div>
+
+  <div id="routines"></div>
+
+  <h2>A sample week</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Day</th><th>Before practice</th><th>After practice or evening</th></tr></thead>
+    <tbody>
+      <tr><td>Mon</td><td>Routine 1 (Daily 5)</td><td>Routine 2, Chest &amp; Upper-Back Opener</td></tr>
+      <tr><td>Tue</td><td>Routine 1</td><td>Routine 4, Hip Unlock (breaststroke and kick days)</td></tr>
+      <tr><td>Wed</td><td>Routine 1</td><td>Routine 3, Shoulder Reset</td></tr>
+      <tr><td>Thu</td><td>Routine 1</td><td>Routine 5, Ankles, Wrists &amp; Neck</td></tr>
+      <tr><td>Fri</td><td>Routine 1</td><td>Routine 2 or 3, whichever the checks say you need most</td></tr>
+      <tr><td>Sat</td><td>Routine 1</td><td>Routine 4, then Routine 5 if you have time</td></tr>
+      <tr><td>Sun</td><td>Optional Routine 1</td><td>Rest, or an easy walk</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="src">
+    <p><b>Where this came from.</b> The routines start from NSEA's own <i>Pre-Practice Mobility</i>, <i>Shoulder Care</i>, and <i>Foam Roller</i> guides. Each card names its source. Many moves and the dosing (holds of 30–60 seconds for shoulder work, 15–30 seconds for the kneeling lunge, 5–10 contractions for targeted stretches, and the idea of practicing a new range with movement afterward) come from GMB Fitness articles on <a href="https://gmb.io/hip-mobility/" target="_blank" rel="noopener">hip mobility</a>, <a href="https://gmb.io/shoulder-mobility/" target="_blank" rel="noopener">shoulder mobility</a>, <a href="https://gmb.io/morning-mobility/" target="_blank" rel="noopener">morning mobility</a>, and <a href="https://gmb.io/stretching/" target="_blank" rel="noopener">stretching</a>. Moves marked "Standard practice" are common coaching and physical therapy drills added to cover ankles, wrists, neck, and chest, where those articles are thin. GMB's free mobility routine and its seiza article were not available in full, so nothing here depends on them.</p>
+    <p><b>GMB YouTube channel.</b> The <a href="https://www.youtube.com/@gmbfit" target="_blank" rel="noopener">GMB Fitness channel</a> is also a source for exercise names and order. The cue wording on the cards is NSEA's own. GMB teaches active adults, so treat its videos as a coach reference and not as athlete homework.</p>
+    <p><b>Watch links and drawings.</b> A "Watch" link opens a GMB video at the chapter named for that move, so you land on the right moment. A video can show a slightly different version than the written steps (the hip rotations, for example, are seated in the video), so follow the steps on the card. Cards with no matching video have an original line drawing instead. NSEA does not produce or endorse the videos.</p>
+    <p><b>Videos.</b> The coach-reference links come from the <a href="https://www.youtube.com/playlist?list=PLF7BEBB6AA253819E" target="_blank" rel="noopener">Mobility WOD playlist</a> (198 videos). The series is aimed at adult strength athletes, and some videos use bands, pain balls, or firm tissue work that is not right for youth swimmers. Use them to learn ideas as a coach. When a video differs from this page, follow the written steps and cues here. NSEA does not produce or endorse these videos.</p>
+    <p>NSEA Swim dryland reference, Oct 2026. This guide is for healthy swimmers and is not medical advice. Rehab after an injury should be guided by a licensed athletic trainer or physical therapist.</p>
+  </div>
+</main>
+
+<script>
+(function(){
+const YT=id=>"https://www.youtube.com/watch?v="+id;
+const R=[
+ {id:"r1",title:"1 · Daily 5",time:"5",pri:true,areas:["Chest","Shoulders","Hips"],
+  when:"Morning, before practice, or any time you have five minutes.",
+  desc:"One move for the upper back, one for the shoulders and hamstrings, one for the hips, one for the chest and front of the shoulder, and one for the ankles. Adapted from GMB's four-minute morning routine and its matching warm-up video.",
+  ex:[
+   {n:"Quadruped T-Spine Circles",w:["4kXCxpomK5c", 482, "Daily Full-Body Joint Mobility Routine (quadruped spinal circles)"],tags:["Upper back","Each direction"],rx:{Time:"30–45 sec"},
+    steps:["Start on hands and knees, hands under shoulders.","Put one hand behind your head.","Rotate that elbow down toward the opposite arm, then open it up toward the ceiling, and trace a slow circle.","Switch hands halfway through."],
+    cue:"Hips stay over your knees. The circle comes from the upper back.",
+    why:"Upper-back rotation is what lets you breathe to the side without crossing over or lifting your head.",src:"GMB morning routine · adapts NSEA Thread the Needle"},
+   {n:"A-Frame to Deep Squat",w:["yAJ_TobpRtE", 37, "Minimal Morning Mobility Routine (bare-minimum routine)"],tags:["Shoulders","Hamstrings","Calves"],rx:{Reps:"6–8",Time:"~45 sec"},
+    steps:["Stand and fold forward, hands on the floor, hips high (an upside-down V).","Walk your feet in and lower your hips into a deep squat, chest lifting.","Place elbows inside your knees if comfortable.","Push the hips back up to the A-frame. Repeat slowly."],
+    cue:"Press the floor away in the A-frame so your shoulders open. Heels may lift at first.",
+    why:"Combines overhead shoulder position, hamstring length, and ankle bend in one move.",src:"GMB morning routine"},
+   {n:"Kneeling Lunge",w:["2v6BKBOt9hM", 0, "Stop Stretching Your Hip Flexors (Kneeling Lunge)"],tags:["Front of hip","Each side"],rx:{Hold:"15–30 sec",Rounds:"2"},
+    steps:["Half-kneel with your front shin upright.","Squeeze the glute of the back leg and tuck your tailbone slightly.","Shift forward until the front of the back hip stretches.","Keep your hips square and chest tall."],
+    cue:"Ribs down. Squeeze the back glute first, then lean forward.",
+    why:"Tight hip flexors pull your hips down and out of a flat body line.",src:"GMB hip mobility · NSEA Hip Flexor Rocker"},
+   {n:"Clasped-Hands Reach Back",w:["t0OF52H6VYc", 343, "Daily Shoulder Mobility Routine (Seated Clasped Hands Extension)"],tags:["Chest","Front of shoulder"],rx:{Pulses:"5",Hold:"10–30 sec",Rounds:"up to 3"},
+    steps:["Stand tall and clasp your hands behind your back. Use a towel if your hands will not meet.","Squeeze shoulder blades back and down.","Lift your arms up behind you without bending forward.","Pulse 5 times, then hold."],
+    cue:"Chest tall, chin level. Do not let your ribs flare to gain height.",
+    why:"Opens the chest and front of the shoulder that tighten from hours of pulling and sitting.",src:"GMB shoulder mobility"},
+   {n:"Ankle Rocks",dr:"Ankle Rocks",tags:["Ankles","Each side"],rx:{Reps:"8–10",Hold:"2 sec"},
+    steps:["Half-kneel with the front foot flat on the floor.","Drive the front knee forward over the toes without lifting the heel.","Hold briefly, then rock back.","Switch sides."],
+    cue:"Knee tracks over the second toe. Heel stays glued down.",
+    why:"Bendable ankles help breaststroke kick and push-offs from the wall.",src:"Standard practice"}
+  ],
+  gmb:[["xyCtZm8Rccw", "This 4 Minute Routine Replaced My Entire Warmup"], ["yAJ_TobpRtE", "Minimal Morning Mobility Routine"], ["TlrD9HjYkGg", "I Cut My Daily Mobility Routine by 80%"]],
+  lock:"Follow with Pre-Practice Mobility exercise 6 (Prone Row Ws) or Shoulder Care external rotation (2 × 10) to put strength behind the new range.",
+  vids:[["-ZU3X59t7is","The 5 Way Shoulder"],["nboERV7j00E","Thoracic Extension"],["hzozw2Aso3M","Scapular Mobility"]]},
+
+ {id:"r2",title:"2 · Chest & Upper-Back Opener",time:"8",pri:true,areas:["Chest","Shoulders"],
+  when:"After practice, before dryland, or on days your streamline feels pinched.",
+  desc:"Freestyle, fly, and breaststroke pulls shorten the chest and round the upper back. This routine opens both so your arms can reach long and your head stays neutral.",
+  ex:[
+   {n:"Roller or Chair Thoracic Extension",dr:"Roller or Chair Thoracic Extension",tags:["Upper back"],rx:{Time:"45–60 sec"},
+    steps:["Option A: lie with a foam roller across your mid-back, hands behind your head, and extend gently over it.","Option B: kneel in front of a chair or bench with elbows on the seat. Breathe in, then sit your hips back and let your chest sink as you breathe out.","Move up and down a few inches. Skip the lower back."],
+    cue:"Support your head. Stay on the ribcage, not the low back.",
+    why:"A mobile upper back makes a tighter streamline and easier breathing rotation.",src:"NSEA Foam Roller guide (Thoracic Spine) · GMB shoulder mobility (Upper Thoracic Extension)"},
+   {n:"Doorway Pec Stretch",dr:"Doorway Pec Stretch",tags:["Chest","Each side"],rx:{Press:"5 sec × 3",Hold:"20–30 sec"},
+    steps:["Stand in a doorway, forearm on the frame, elbow bent 90° at shoulder height.","Step through until you feel a stretch across the chest.","Press gently into the frame for 5 seconds, relax, and step through a little more. Repeat 3 times.","Repeat with the elbow slightly lower, then slightly higher."],
+    cue:"Ribs down so your back does not arch. Lean from the legs.",
+    why:"Short chest muscles pull the shoulders forward and limit the overhead reach.",src:"Standard practice · contract-relax idea from GMB stretching"},
+   {n:"Prone Bent-Arm Chest Stretch",w:["t0OF52H6VYc", 235, "Daily Shoulder Mobility Routine (Prone Bent Arm Chest Stretch)"],tags:["Chest","Each side"],rx:{Pulses:"5",Hold:"15–20 sec"},
+    steps:["Lie face down with one arm out to the side, elbow bent, fingers pointing away.","Pull that elbow up toward your ear height and rock toward the hand, lowering the chest.","Pulse 5 times, then hold.","Switch sides."],
+    cue:"Go until you feel a stretch across the front of the shoulder, never a pinch.",
+    why:"Targets the pec and front shoulder with the arm in a swim-like position.",src:"GMB shoulder mobility"},
+   {n:"Lounge Chair",w:["t0OF52H6VYc", 542, "Daily Shoulder Mobility Routine (Lounge Chair)"],tags:["Chest","Front of shoulder"],rx:{Pulses:"5",Hold:"10–30 sec",Rounds:"2–3"},
+    steps:["Sit with hands behind you, fingers pointing back.","Lift your chest and draw your shoulders back and down.","Pulse gently 5 times, then hold.","Move hips closer to your heels between rounds to go deeper."],
+    cue:"Do not shrug. Keep the neck long and chin slightly tucked.",
+    why:"Active chest opening while you support your own weight.",src:"GMB shoulder mobility"},
+   {n:"Three-Point Bridge",w:["t0OF52H6VYc", 445, "Daily Shoulder Mobility Routine (3-Point Bridge)"],tags:["Chest","Shoulders","Each side"],rx:{Hold:"5–10 sec",Reps:"alternate sides"},
+    steps:["Sit with your hands behind you, fingers pointing away from you.","Press into one hand and lift your hips, opening the shoulder and chest on that side.","If you have the range, reach the free arm overhead.","Lower and switch sides."],
+    cue:"Press the floor away and keep your neck long. Go only as high as feels strong.",
+    why:"Opens the front of the shoulder while the arm supports your weight, which carries over better than a passive stretch.",src:"GMB shoulder mobility"},
+   {n:"Seated Rotation + Side-Bend",dr:"Seated Rotation + Side-Bend",tags:["Ribs","Each side"],rx:{Time:"30–45 sec"},
+    steps:["Sit tall on the floor or a chair.","Breathe out as you rotate to one side.","Breathe in as you lean away from the rotation.","Alternate emphasis between the twist and the side-bend."],
+    cue:"Let the ribs open on the inhale. Breathe into the side and back of your ribcage.",
+    why:"Stiff ribs make deep breathing and body rotation harder.",src:"GMB shoulder mobility (Seated Combined Motions)"},
+   {n:"Wall Angels",dr:"Wall Angels",tags:["Chest","Shoulder blades"],rx:{Reps:"8–10",Sets:"2"},
+    steps:["Stand with your back, hips, and head against a wall, feet a few inches out.","Bring arms into a goalpost (elbows and wrists touching the wall if you can).","Slide the arms up into a Y, then back down.","Keep ribs down and low back flat."],
+    cue:"Go only as high as your arms and back stay on the wall.",
+    why:"Practices the new range actively so it carries into your stroke.",src:"Standard practice"}
+  ],
+  gmb:[["t0OF52H6VYc", "Daily Shoulder Mobility Routine [updated]"], ["EyUIgmoId1o", "Do This Before Push Ups. Your Shoulders Will Thank You."]],
+  lock:"Finish with Shoulder Care Posterior Deltoid Raise or Prone Horizontal Abduction (2 × 10) so the back of the shoulder balances the chest.",
+  vids:[["nboERV7j00E","Thoracic Extension"],["jnluO-X8WIM","Oslo hip mob & Horizontal Thoracic"],["gOyGVHt4Qio","Unglue Yourself; Upper Body"]]},
+
+ {id:"r3",title:"3 · Shoulder Reset",time:"8",pri:true,areas:["Shoulders"],
+  when:"Before dryland or heavy pulling sets, and any time the shoulders feel tight.",
+  desc:"Opens the lats, frees the shoulder blade, and practices the streamline reach. It favors active moves over long passive stretches, which suits swimmers who are already loose.",
+  ex:[
+   {n:"Quadruped Shoulder Circles",w:["t0OF52H6VYc", 143, "Daily Shoulder Mobility Routine (Quadruped Shoulder Circles)"],tags:["Shoulder blades"],rx:{Circles:"5 each way",Sets:"2–3"},
+    steps:["On hands and knees, arms straight and hands pressing into the floor.","Make the widest circles you can by moving your shoulder blades around the ribcage.","Push down, forward, up, and back.","Reverse direction."],
+    cue:"Elbows stay locked. Only the shoulder blades move.",
+    why:"Shoulder blades that glide freely give the arm a stable base for the catch.",src:"GMB shoulder mobility · NSEA Quadruped Scap Push"},
+   {n:"Tall-Kneeling Lat Reach",dr:"Tall-Kneeling Lat Reach",tags:["Lats","Each side"],rx:{Hold:"30–45 sec"},
+    steps:["Kneel tall with knees, hips, and shoulders in line.","Put one hand on your hip and reach the other arm overhead.","Lean away from the reaching arm as you breathe out and lengthen.","Switch sides."],
+    cue:"Do not rotate or lean forward. Grow tall, then bend sideways.",
+    why:"The lats power your pull, and when they are short they pull the low back into an arch in streamline.",src:"GMB shoulder mobility"},
+   {n:"Wall Streamline Reach",dr:"Wall Streamline Reach",tags:["Overhead range"],rx:{Reps:"8",Hold:"5 sec"},
+    steps:["Stand with your back and head on a wall, ribs down, low back close to the wall.","Reach both arms overhead, biceps by your ears, and try to touch the wall with your hands.","Hold 5 seconds, then lower.","Stop the rep if your back leaves the wall."],
+    cue:"Ribs stay down. Squeeze your glutes lightly to keep your back flat.",
+    why:"This is the position you hold off every wall. Practice it until it is easy and flat.",src:"NSEA original, based on the GMB overhead reach check"},
+   {n:"Side-Lying Internal Rotation Stretch",dr:"Side-Lying Internal Rotation Stretch",tags:["Back of shoulder","Each side"],rx:{Hold:"20–30 sec"},
+    steps:["Lie on your side with the arm under you at shoulder height and the elbow bent 90°, forearm pointing up.","With your top hand, gently press the bottom forearm toward the floor.","Stop at a mild stretch in the back of the shoulder.","Switch sides."],
+    cue:"Gentle only. Keep your shoulder blade pinned back, not rolled forward. Skip this if you are very flexible.",
+    why:"Helps the hand reach up the back and the shoulder rotate for the catch.",src:"Standard practice"},
+   {n:"Band or Towel Pass-Through",dr:"Band or Towel Pass-Through",tags:["Chest","Shoulders"],rx:{Reps:"8–10"},
+    steps:["Hold a light band or towel wide in front of you.","Lift it overhead and behind you, keeping the elbows straight.","Come back over the top and down in front.","Use a wider grip if your shoulders pinch."],
+    cue:"Ribs down the whole way. Widen the grip rather than bend the elbows.",
+    why:"Moves the shoulder through overhead and behind-the-body positions together.",src:"Standard practice"},
+   {n:"Active and Passive Hang",w:["t0OF52H6VYc", 660, "Daily Shoulder Mobility Routine (Pulling Prep)"],tags:["Lats","Shoulders"],rx:{Reps:"5",Hold:"5–10 sec"},
+    steps:["Hang from a bar or the monkey bars, feet on the floor at first.","Relax into a passive hang for 5–10 seconds.","Gently pull your shoulder blades down without bending your arms (an active hang).","Alternate."],
+    cue:"Coach-supervised for younger swimmers. Keep your feet on the floor if you are unsure.",
+    why:"Lengthens the lats and teaches the shoulder blades to set before you pull.",src:"GMB shoulder mobility (Pulling Prep)"}
+  ],
+  gmb:[["jZwaH8RJnBw", "Can You Pass This Simple Shoulder Test?"], ["t0OF52H6VYc", "Daily Shoulder Mobility Routine [updated]"], ["AzFKyschJDk", "Frogger: The Best Shoulder Exercise You're NOT Doing"], ["HWrB8Xl3dlQ", "Shoulder Prehab for Rotator Cuff and Shoulder Impingement"], ["f4OLLQXmRQs", "Hanging Exercises for Shoulders"], ["XxZekPIeCzE", "Hypermobile Joints? Exercises for Stability and Control"]],
+  lock:"Pair with Shoulder Care External Rotation and Side-Lying External Rotation (2 × 10, light). Mobility without cuff strength is not what protects shoulders.",
+  vids:[["PxdtCVUv8f0","Water Polo Shoulder"],["jO95qcbOjNA","Thrower's Shoulder and Rib Cage Tilt"],["9RgIR74XTNI","Coast Guard Rescue Swimmer Internal Rotation"],["BzM3F6HAFD4","Unglue the Peri-Scapular Region"],["q0Elx93duAA","Best Shoulder Mob Ever"]]},
+
+ {id:"r4",title:"4 · Hip Unlock",time:"9",pri:true,areas:["Hips"],
+  when:"Before kick sets, breaststroke days, or after long sitting at school.",
+  desc:"Opens the front, inner, and back of the hip, then moves through them. Good hips give a flatter body line, a stronger breaststroke kick, and better turns.",
+  ex:[
+   {n:"Kneeling Lunge",w:["2v6BKBOt9hM", 0, "Stop Stretching Your Hip Flexors (Kneeling Lunge)"],tags:["Front of hip","Each side"],rx:{Hold:"15–30 sec",Rounds:"2–3"},
+    steps:["Half-kneel with your front shin upright.","Squeeze the back glute and tuck the tailbone slightly.","Shift forward until the front of the back hip stretches.","Optional: lift the back knee off the floor for a harder version."],
+    cue:"Keep the hips square and the chest tall.",
+    why:"Releases the hip flexors that tilt your pelvis and drop your hips in the water.",src:"GMB hip mobility · NSEA Hip Flexor Rocker"},
+   {n:"Lying Hip Rotations",w:["d54Ifhvchic", 48, "Unlock Your Hips (Seated Hip Rotations; the video does it seated)"],tags:["Hip rotators","Each side"],rx:{Reps:"8–10 each way"},
+    steps:["Lie on your back, knees bent, feet flat.","Cross one ankle over the opposite knee.","Let the crossed knee rotate out, then back in, slowly.","For a hold, gently press on the crossed knee with your hand."],
+    cue:"Keep the low back relaxed on the floor.",
+    why:"Trains the hip to rotate in both directions, which breaststroke and turns both need.",src:"GMB hip mobility"},
+   {n:"Figure-4 Piriformis",w:["d54Ifhvchic", 120, "Unlock Your Hips (Piriformis Stretch)"],tags:["Outer hip","Each side"],rx:{Hold:"20–30 sec"},
+    steps:["Lie on your back with the ankle crossed over the opposite knee.","Grab behind the lower thigh and draw it toward your chest.","For more, draw the crossed knee toward the opposite shoulder.","Switch sides."],
+    cue:"Keep the head and shoulders down and the neck relaxed.",
+    why:"Opens the back of the hip that swimmers rarely stretch.",src:"GMB hip mobility"},
+   {n:"Frog Rocks",w:["d54Ifhvchic", 207, "Unlock Your Hips (Frog Stretch)"],tags:["Inner thigh","Breaststroke"],rx:{Reps:"8–10",Hold:"up to 60 sec"},
+    steps:["On hands and knees, widen the knees as far as is comfortable with feet turned out and the balls of the feet down.","Rock the hips back toward your heels, then forward.","After a few reps, sit back and hold the stretch.","Come out slowly by walking the knees together."],
+    cue:"Keep the back flat. Skip it if you feel pain on the inside of the knee.",
+    why:"Breaststrokers need open inner thighs for a wide, powerful kick.",src:"GMB hip mobility · NSEA Adductor Rockback"},
+   {n:"90/90 Switch",w:["tCJEx2kfK84", 114, "The ONLY 3 Exercises for Bulletproof Hips (90/90 Switch)"],tags:["Hip rotators","Both sides"],rx:{Reps:"8 each way"},
+    steps:["Sit on the floor with both knees bent about 90° and both shins on the floor, knees pointing the same way.","Sit tall and keep your chest up.","Rotate both knees over to the other side, moving slowly and using your hands for balance.","Keep going side to side without letting the chest fall."],
+    cue:"Move one hip at a time. If a knee lifts a lot, rest it on a rolled towel.",
+    why:"Trains the hip to rotate in both directions under control, which a breaststroke kick and a flip turn both use.",src:"GMB hip video (exercise name from its chapter list; steps are standard practice)"},
+   {n:"Pigeon (or Supported Pigeon)",w:["d54Ifhvchic", 304, "Unlock Your Hips (Pigeon Stretch)"],tags:["Outer hip","Each side"],rx:{Hold:"30 sec"},
+    steps:["From hands and knees, bring one knee forward behind the wrist with the shin angled across your body.","Extend the other leg behind you.","Keep the chest up, then hinge forward over the front leg.","Easier version: rest the front foot on a chair or bench and let the back leg relax to the side."],
+    cue:"Square the hips and breathe. The stretch should be in the hip, not the knee.",
+    why:"Opens the external rotators that drive a breaststroke kick.",src:"GMB hip mobility"},
+   {n:"Squatting Internal Rotations",w:["d54Ifhvchic", 266, "Unlock Your Hips (Squatting Internal Rotation)"],tags:["Hips","Each side"],rx:{Reps:"8 each side"},
+    steps:["Sink into a deep squat, holding a post or chair if needed.","Rotate one knee in toward the floor, then return.","Alternate sides and keep moving instead of holding.","Raise your heels on a small plate or folded towel if your ankles limit you."],
+    cue:"Move slowly, keep your chest up, and stay out of any pinch at the front of the hip.",
+    why:"Gives the hip active control through the rotation range your kick uses.",src:"GMB hip mobility"}
+  ],
+  gmb:[["tCJEx2kfK84", "The ONLY 3 Exercises for Bulletproof Hips"], ["2v6BKBOt9hM", "Stop Stretching Your Hip Flexors. Do These 4 Moves Instead"], ["gYjHUqi_jgw", "Hip Mobility in 5 Minutes (No Stretching)"], ["FzB8zo-_SbY", "This Sitting Position Reveals How Your Hips Really Work"]],
+  lock:"Finish with the Pre-Practice Kneeling Hip CARs (10 each side) and a glute bridge (2 × 10) to put strength under the new hip range.",
+  vids:[["RTWMejBP4rU","Torque is king 3-way Hip Mob"],["V4swVgyUyuY","Hip External Rotation"],["ZkzFT6rRMhQ","Desk Athlete Hip Rescue"],["SE-yVP691SA","Hip Impingement: AIS (coach reference)"]]},
+
+ {id:"r5",title:"5 · Ankles, Wrists & Neck",time:"6",pri:false,areas:["Ankles","Wrists","Neck"],
+  when:"After practice, in the evening, or on a rest day.",
+  desc:"The small joints that connect you to the water. Ankles drive the kick, wrists support the catch and the push-up, and a neutral neck keeps the streamline and breathing smooth.",
+  ex:[
+   {n:"Toe-Sit (Instep Stretch)",dr:"Toe-Sit (Instep Stretch)",tags:["Ankles","Toe-pointing"],rx:{Hold:"20–30 sec",Rounds:"2"},
+    steps:["Kneel with the tops of your feet flat on the floor and toes pointing back.","Sit back toward your heels as far as is comfortable.","Place a rolled towel under the ankles if the stretch is too strong.","Rise up and shake out the feet."],
+    cue:"Ease in. Stop if you feel pinching at the front of the ankle or cramping.",
+    why:"Pointed toes with a loose ankle give freestyle, back, and fly kicks more push.",src:"Standard practice"},
+   {n:"Ankle Rocks",dr:"Ankle Rocks",tags:["Ankles","Breaststroke"],rx:{Reps:"10 each side",Hold:"2 sec"},
+    steps:["Half-kneel with the front foot flat.","Drive the knee forward over the toes without lifting the heel.","Hold 2 seconds, then rock back.","Try the foot turned out slightly for a breaststroke angle."],
+    cue:"Heel stays down. Move from the ankle, not the hip.",
+    why:"A bendable ankle turns the foot out for the breaststroke kick.",src:"Standard practice · NSEA Foam Roller calves and shins"},
+   {n:"Wrist Rocks",w:["4kXCxpomK5c", 5, "Daily Full-Body Joint Mobility Routine (wrist flexor and extensor drills)"],tags:["Wrists"],rx:{Reps:"8–10 each position"},
+    steps:["On hands and knees, place palms down with fingers forward.","Gently rock your weight forward and back.","Repeat with fingers pointing out, then with fingers pointing back (palms flat).","Go only as far as comfortable."],
+    cue:"Keep the elbows soft and add weight slowly over days, not minutes. GMB's wrist videos favor gradually loading the wrist over only stretching it.",
+    why:"Wrists carry the push-up, the kickboard, and the hand shape of your catch.",src:"Standard practice · see also Mobility WOD wrist videos"},
+   {n:"Wrist Circles",dr:"Wrist Circles",tags:["Wrists"],rx:{Reps:"5 each direction"},
+    steps:["Clasp your hands together with fingers interlaced.","Draw slow circles with both wrists, using the biggest range that stays comfortable.","Reverse the direction.","Shake out the hands."],
+    cue:"Move slowly. The forearm and hand do the work.",
+    why:"Warms up the wrist joint through every direction.",src:"Standard practice"},
+   {n:"Chin Nods",dr:"Chin Nods",tags:["Neck","Head position"],rx:{Reps:"8–10",Hold:"5 sec"},
+    steps:["Lie on your back with a small towel under your head and knees bent.","Gently nod, as if saying yes, so the back of the neck lengthens.","Hold 5 seconds without lifting your head.","Relax and repeat."],
+    cue:"Small and gentle. Do not push the head into the floor or tense the jaw.",
+    why:"Trains a neutral head in streamline and for backstroke and breaststroke head position.",src:"Standard practice · see also Mobility WOD neck videos"},
+   {n:"Seated Neck Rotation",dr:"Seated Neck Rotation",tags:["Neck","Breathing"],rx:{Reps:"8 each side"},
+    steps:["Sit tall with your chin level.","Slowly turn your head to look over one shoulder, as in a freestyle breath.","Return to center, then turn the other way.","Finish with a gentle side-bend: let your ear drift toward your shoulder, no pulling with the hand, hold 20 seconds each side."],
+    cue:"Turn the head, not the shoulders. Stay out of any tingling or sharp feeling.",
+    why:"Equal rotation both ways makes bilateral breathing easy.",src:"Standard practice"}
+  ],
+  gmb:[["pfh-4wvFIWM", "4 Ankle Mobility Exercises to Unlock Your Tight Ankles"], ["fYLjeqCn25A", "Stop Stretching Your Wrists. (Do This Instead)"], ["20w70zUTZik", "Wrist Mobility & Strength (No Equipment)"], ["Loqly-3g5xo", "This Fixed My Neck. Not Stretching."], ["IXCR5bQssQY", "Seiza: Why You Should Learn Japanese Formal Sitting"]],
+  lock:"Pair with Foam Roller Calves and Shins &amp; Peroneals (card 7 and 11) before this routine for extra ankle range.",
+  vids:[["NVVUa8aETgY","Pinchy Ankles and Weak Feet"],["n0z124bJy1k","Calf Blaster"],["oylx0Up7nG8","Wrist Mobility"],["iLheJx3Gnsk","Wrist Flexibility"],["gCOXvGfWd8M","Necking"],["D2VcDSJ6wMU","Forward Head On Neck Position"]]}
+];
+
+const $=s=>document.querySelector(s);
+const today=new Date().toISOString().slice(0,10);
+const KEY="nsea-mobility-"+today;
+let done={},filter="all";
+try{done=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){done={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}}
+
+// filter buttons
+const filt=$("#filt");
+const opts=[["all","All"]].concat(R.map((r,i)=>[r.id,"Routine "+(i+1)]));
+filt.innerHTML=opts.map(([k,l],i)=>`<button type="button" data-f="${k}" aria-pressed="${i===0}">${l}</button>`).join("");
+filt.addEventListener("click",ev=>{
+  const b=ev.target.closest("button");if(!b)return;
+  filter=b.dataset.f;
+  filt.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  render();
+});
+
+
+/* ---------- Line drawings (original, for moves with no matching video) ---------- */
+const f1=n=>(+n).toFixed(1);
+function cap(pts,w,col){return `<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`}
+function limb(pts,w){return cap(pts,w+3,"var(--gray)")+cap(pts,w,"var(--white)")}
+function head(x,y){return `<circle cx="${x}" cy="${y}" r="8" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`}
+function ah(x,y,dx,dy){const m=Math.hypot(dx,dy);dx/=m;dy/=m;const s=6;return `<path d="M${f1(x)} ${f1(y)} L${f1(x-dx*s-dy*s*.6)} ${f1(y-dy*s+dx*s*.6)} L${f1(x-dx*s+dy*s*.6)} ${f1(y-dy*s-dx*s*.6)} Z" fill="var(--coral)"/>`}
+const DASH='stroke="var(--coral)" stroke-width="2" stroke-dasharray="4 3" fill="none"';
+function dbl(x1,y1,x2,y2){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${DASH}/>`+ah(x2,y2,x2-x1,y2-y1)+ah(x1,y1,x1-x2,y1-y2)}
+function one(x1,y1,x2,y2){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${DASH}/>`+ah(x2,y2,x2-x1,y2-y1)}
+function tgt(x,y,rx,ry){return `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="var(--coral)" opacity=".55"/>`}
+const floor=`<line x1="4" y1="118" x2="196" y2="118" stroke="var(--line)" stroke-width="2"/>`;
+const faded=g=>`<g opacity=".45">${g}</g>`;
+const wallR=(x)=>`<rect x="${x}" y="4" width="8" height="114" fill="var(--line)"/>`;
+const mono=(x,y,t)=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="Space Mono,monospace" font-size="8.5" fill="var(--gray-light)">${t}</text>`;
+const DRAW={
+ "Ankle Rocks":{v:"Side view",l:[["t","Stretch"],["a","Knee forward"]],g:()=>floor+faded(limb([[90,72],[112,84],[112,112]],6))
+   +limb([[90,72],[82,112],[46,116]],6)+limb([[90,72],[128,84],[114,112],[142,116]],6)
+   +limb([[90,72],[92,32]],12)+head(92,20)+limb([[92,38],[110,60],[124,80]],5)+tgt(122,104,5,7)+one(116,64,146,64)},
+ "Toe-Sit (Instep Stretch)":{v:"Side view",l:[["t","Stretch"],["a","Sit back"]],g:()=>floor+limb([[44,116],[104,116]],6)+limb([[70,98],[106,114]],8)
+   +limb([[70,98],[76,56]],12)+head(80,44)+limb([[78,60],[100,88],[112,112]],5)+tgt(54,114,10,4)+one(92,60,72,82)},
+ "Wrist Circles":{v:"Front view",l:[["a","Circle"]],g:()=>limb([[56,110],[84,82],[100,68]],6)+limb([[144,110],[116,82],[100,68]],6)
+   +`<circle cx="100" cy="64" r="10" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`
+   +`<ellipse cx="100" cy="64" rx="28" ry="18" ${DASH}/>`+ah(128,66,0,1)+mono(100,126,"CLASPED HANDS")},
+ "Chin Nods":{v:"Side view",l:[["t","Back of neck"],["a","Nod"]],g:()=>floor+`<rect x="34" y="112" width="24" height="6" rx="2" fill="var(--line)"/>`
+   +limb([[66,108],[150,108]],14)+head(52,104)+limb([[150,108],[170,82],[186,114]],7)+tgt(60,111,6,3)+one(38,90,44,102)},
+ "Seated Neck Rotation":{v:"Front view",l:[["a","Turn head"]],g:()=>`<ellipse cx="100" cy="112" rx="46" ry="8" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`
+   +limb([[100,102],[100,54]],26)+`<circle cx="100" cy="34" r="11" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`
+   +`<path d="M110 30 L124 35 L110 40 Z" fill="var(--coral)"/>`+dbl(66,14,134,14)},
+ "Roller or Chair Thoracic Extension":{v:"Side view",l:[["r","Roller"],["t","Stretch"],["a","Lean back"]],g:()=>floor
+   +`<circle cx="94" cy="109" r="9" fill="var(--white)" stroke="var(--teal)" stroke-width="2"/>`
+   +limb([[150,108],[96,98],[62,90]],11)+head(46,86)+limb([[62,92],[52,72],[44,80]],5)+limb([[150,108],[170,82],[186,114]],7)+tgt(94,98,10,4)+one(62,64,50,80)},
+ "Doorway Pec Stretch":{v:"Front view",l:[["t","Stretch"],["a","Step through"]],g:()=>`<rect x="150" y="4" width="8" height="114" fill="var(--line)"/>`+floor
+   +limb([[92,78],[90,118]],7)+limb([[108,78],[110,118]],7)+limb([[100,36],[100,80]],24)+head(100,22)
+   +limb([[88,42],[84,70],[84,92]],5)+limb([[112,40],[146,40],[146,12]],5)+tgt(112,48,6,6)+one(60,100,88,100)},
+ "Seated Rotation + Side-Bend":{v:"Front view",l:[["t","Side stretch"],["a","Bend and turn"]],g:()=>`<ellipse cx="100" cy="112" rx="46" ry="8" fill="var(--white)" stroke="var(--gray)" stroke-width="2"/>`
+   +limb([[100,104],[112,56]],20)+head(116,40)+cap([[106,58],[110,22],[140,20]],6,"var(--coral)")+limb([[94,58],[78,82],[86,104]],5)
+   +tgt(94,76,5,10)+`<path d="M64 60 Q70 40 90 30" ${DASH}/>`+ah(90,30,2,-1)},
+ "Wall Angels":{v:"Side view",l:[["m","Arm path"],["a","Slide up"]],g:()=>wallR(34)+floor
+   +faded(limb([[46,40],[60,50],[46,32]],5))+limb([[48,80],[58,100],[56,118]],6)+limb([[48,80],[47,36]],12)+head(56,22)
+   +cap([[44,40],[44,6]],5,"var(--coral)")+dbl(76,12,76,48)},
+ "Tall-Kneeling Lat Reach":{v:"Front view",l:[["t","Side stretch"],["m","Reaching arm"]],g:()=>floor
+   +limb([[94,92],[94,118]],8)+limb([[106,92],[106,118]],8)+limb([[100,94],[116,48]],16)+head(120,34)
+   +cap([[108,52],[116,20],[146,22]],6,"var(--coral)")+limb([[100,54],[86,72],[94,92]],5)+tgt(98,70,5,10)},
+ "Wall Streamline Reach":{v:"Side view",l:[["m","Arms by ears"],["a","Ribs down"]],g:()=>wallR(34)+floor
+   +limb([[48,80],[58,100],[56,118]],6)+limb([[48,80],[47,36]],12)+head(56,22)+cap([[44,40],[44,4]],5,"var(--coral)")
+   +one(70,50,70,70)+mono(100,100,"RIBS DOWN")},
+ "Side-Lying Internal Rotation Stretch":{v:"Seen from the front",l:[["t","Stretch"],["a","Press down"]],g:()=>floor
+   +limb([[58,104],[146,104]],14)+head(46,100)+limb([[66,104],[62,66]],5)+tgt(70,102,7,4)
+   +`<path d="M62 60 Q96 56 94 96" ${DASH}/>`+ah(94,96,0,1)},
+ "Band or Towel Pass-Through":{v:"Front view",l:[["m","Towel"],["a","Over the top"]],g:()=>floor
+   +limb([[92,78],[90,118]],7)+limb([[108,78],[110,118]],7)+limb([[100,38],[100,80]],22)+head(100,24)
+   +faded(`<line x1="62" y1="92" x2="138" y2="92" stroke="var(--coral)" stroke-width="4" stroke-linecap="round"/>`)
+   +limb([[90,42],[66,14]],5)+limb([[110,42],[134,14]],5)+`<line x1="64" y1="12" x2="136" y2="12" stroke="var(--coral)" stroke-width="4" stroke-linecap="round"/>`
+   +`<path d="M52 88 Q28 50 58 16" ${DASH}/>`+ah(58,16,2,-3)}
+};
+function stillHTML(e){
+  const d=e.dr&&DRAW[e.dr];if(!d)return "";
+  const bits=d.l.map(([k,t])=>`<span><i class="${k==="a"?"":k}"></i>${t}</span>`).join("")+`<span>${d.v}</span>`;
+  return `<div class="still"><svg viewBox="0 0 200 135" role="img" aria-label="Line drawing of ${e.n}">${d.g()}</svg><div class="cap">${bits}</div></div>`;
+}
+function mmss(t){return Math.floor(t/60)+":"+String(t%60).padStart(2,"0")}
+function watchHTML(e){
+  if(!e.w)return "";
+  const [id,t,l]=e.w;
+  return `<div class="watch"><span class="pl"><svg width="9" height="10" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1l17 10L2 21z" fill="#fff"/></svg></span><span><a href="https://www.youtube.com/watch?v=${id}&amp;t=${t}s" target="_blank" rel="noopener">Watch at ${mmss(t)} ↗</a><small>GMB: ${l}</small></span></div>`;
+}
+function render(){
+  const out=$("#routines");out.innerHTML="";
+  R.forEach(r=>{
+    if(filter!=="all"&&filter!==r.id)return;
+    const sec=document.createElement("section");sec.className="routine";sec.id=r.id;
+    const pills=`<span class="pill ${r.pri?"p":""}">${r.pri?"Primary focus":"Second priority"}</span>`+r.areas.map(a=>`<span class="pill">${a}</span>`).join("");
+    const cards=r.ex.map((e,i)=>{
+      const id=r.id+"-"+i;
+      const tags=e.tags.map((t,j)=>`<span class="tag${j===0?" c":""}">${t}</span>`).join("");
+      const rx=Object.entries(e.rx).map(([k,v])=>`<div><span>${k}</span>${v}</div>`).join("");
+      return `<article class="card${done[id]?" done":""}">
+        <div class="head"><div class="num">${i+1}</div><div><h4>${e.n}</h4><div class="tags">${tags}</div></div></div>
+        ${stillHTML(e)}
+        <div class="rx">${rx}</div>
+        <div class="body"><ol>${e.steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+        <div class="cue"><b>Coach cue</b>${e.cue}</div>
+        <div class="cue why"><b>Why swimmers</b>${e.why}</div>
+        ${watchHTML(e)}
+        <div class="src1">Source: ${e.src}</div>
+        <div class="foot"><label class="chk"><input type="checkbox" data-id="${id}" ${done[id]?"checked":""}> Done today</label></div>
+      </article>`}).join("");
+    const vl=a=>a.map(v=>`<li><a href="${YT(v[0])}" target="_blank" rel="noopener">${v[1]} ↗</a></li>`).join("");
+    const vids=vl(r.vids),gm=vl(r.gmb);
+    sec.innerHTML=`
+      <div class="rhead"><div><h3>${r.title}</h3><div class="meta">${pills}</div><p>${r.desc}</p><p><b>When:</b> ${r.when}</p></div><div class="time">${r.time} min<small>${r.ex.length} moves</small></div></div>
+      <div class="cards">${cards}</div>
+      <div class="extras">
+        <div><h5>Lock it in with strength</h5><p style="margin:0">${r.lock}</p></div>
+        <div><h5>GMB Fitness videos</h5><ul>${gm}</ul></div>
+        <div><h5>Mobility WOD videos (coach reference)</h5><ul>${vids}</ul></div>
+      </div>`;
+    out.appendChild(sec);
+  });
+  updateProg();
+}
+function updateProg(){
+  const ids=[];
+  R.forEach(r=>{if(filter==="all"||filter===r.id)r.ex.forEach((e,i)=>ids.push(r.id+"-"+i))});
+  const d=ids.filter(i=>done[i]).length;
+  $("#barfill").style.width=(ids.length?d/ids.length*100:0)+"%";
+  $("#count").textContent=d+" / "+ids.length+" today";
+}
+$("#routines").addEventListener("change",ev=>{
+  const c=ev.target.closest("input[type=checkbox]");if(!c)return;
+  if(c.checked)done[c.dataset.id]=1;else delete done[c.dataset.id];
+  c.closest(".card").classList.toggle("done",c.checked);
+  save();updateProg();
+});
+$("#reset").onclick=()=>{done={};save();render();};
+render();
+})();
+</script>
+
+</body>
+</html>
