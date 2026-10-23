@@ -1,8 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
-const live = import.meta.env.PUBLIC_LIVE === 'true';
+import { Content } from '../content/privacy.md';
 ---
-<Base title="Privacy Statement" path="/privacy/">
+<Base title="Privacy Statement" description="How the NSEA Swim website handles information." path="/privacy/">
   <h1>Privacy Statement</h1>
-  {!live && <div class="todo"><h3>Content not migrated yet</h3><dl><dt>Replaces</dt><dd>nseaswimteam.com/privacy-policy</dd></dl></div>}
+  <div class="prose"><Content /></div>
 </Base>

@@ -198,7 +198,7 @@ export const held = [
 
 // Pages that are not part of the menu tree
 export const utility = [
-  { path: '/privacy/', title: 'Privacy Statement', status: 'pull', from: ['/privacy-policy'] },
+  { path: '/privacy/', title: 'Privacy Statement', status: 'done', from: ['/privacy-policy'] },
 ];
 
 // Live pages that are intentionally NOT carried over

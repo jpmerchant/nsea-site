@@ -20,7 +20,7 @@ Counts: rebuild 16 · done 67 · ready 14 · new 3
 | `/` | `/` | rebuild |
 | `/top-times---lcm` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
 | `/FAQ` | `/families/new-families/faq/` | done |
-| `/privacy-policy` | `/privacy/` | pull |
+| `/privacy-policy` | `/privacy/` | done |
 | `/fee-structure` | `/programs/fees/` | done |
 | `/shoulder-strength` | `/training/same/strength/` | done |
 | `/alumni` | `/about/alumni/` | done |
