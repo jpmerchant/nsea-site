@@ -3,6 +3,7 @@
 
 const enc = new TextEncoder();
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'];
 
 const json = (data, status = 200, headers = {}) =>
   new Response(JSON.stringify(data), {
@@ -120,7 +121,7 @@ export default {
 
       if (method === 'GET' && path === '/posts') {
         const { results } = await env.DB.prepare(
-          `SELECT p.id, p.kind, p.days, p.time_label, p.direction, p.area, p.seats, p.cost_note, p.note, p.swimmer, p.created_at,
+          `SELECT p.id, p.kind, p.days, p.time_label, p.direction, p.area, p.seats, p.cost_note, p.note, p.swimmer, p.driver, p.groups, p.created_at,
                   p.member_id, m.family_name,
                   (SELECT status FROM connections c WHERE c.post_id = p.id AND c.requester_id = ?1) AS my_connection,
                   (SELECT COUNT(*) FROM connections c WHERE c.post_id = p.id AND c.status = 'requested') AS open_requests
@@ -130,7 +131,7 @@ export default {
         ).bind(me.id).all();
         return json(results.map((p) => ({
           id: p.id, kind: p.kind, days: p.days.split(','), time: p.time_label, direction: p.direction, area: p.area,
-          seats: p.seats, cost: p.cost_note, note: p.note, swimmer: p.swimmer, family: p.family_name, created: p.created_at,
+          seats: p.seats, cost: p.cost_note, note: p.note, swimmer: p.swimmer, driver: p.driver, groups: p.groups ? p.groups.split(',') : [], family: p.family_name, created: p.created_at,
           mine: p.member_id === me.id, myConnection: p.my_connection, openRequests: p.member_id === me.id ? p.open_requests : undefined,
         })));
       }
@@ -140,15 +141,18 @@ export default {
         const direction = ['to', 'from', 'both'].includes(body.direction) ? body.direction : null;
         const days = (Array.isArray(body.days) ? body.days : []).filter((d) => DAYS.includes(d));
         const time = clean(body.time, 60), area = clean(body.area, 60);
+        const driver = kind === 'offer' ? (['parent', 'swimmer'].includes(body.driver) ? body.driver : null) : null;
+        if (kind === 'offer' && !driver) return fail(400, 'Please say whether a parent or a swimmer would be driving.');
+        const groups = GROUPS.filter((g) => (Array.isArray(body.groups) ? body.groups : []).includes(g));
         const seats = Math.min(Math.max(parseInt(body.seats, 10) || 1, 1), 8);
         if (!kind || !direction || !days.length || !time || !area) return fail(400, 'Please choose offer or need, days, a time, direction and a general area.');
         const mine = await env.DB.prepare(`SELECT COUNT(*) n FROM posts WHERE member_id = ? AND status = 'open'`).bind(me.id).first();
         if (mine.n >= 12) return fail(400, 'You have 12 open posts. Close one before adding another.');
         await env.DB.prepare(
-          `INSERT INTO posts (member_id, kind, days, time_label, direction, area, seats, cost_note, note, swimmer, expires_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+60 days'))`
+          `INSERT INTO posts (member_id, kind, days, time_label, direction, area, seats, cost_note, note, swimmer, driver, groups, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+60 days'))`
         ).bind(me.id, kind, DAYS.filter((d) => days.includes(d)).join(','), time, direction, area, seats,
-          clean(body.cost, 80) || null, clean(body.note, 200) || null, clean(body.swimmer, 60) || null).run();
+          clean(body.cost, 80) || null, clean(body.note, 200) || null, clean(body.swimmer, 60) || null, driver, groups.join(',') || null).run();
         return json({ ok: true });
       }
 
@@ -175,7 +179,7 @@ export default {
       if (method === 'GET' && path === '/connections') {
         const { results } = await env.DB.prepare(
           `SELECT c.id, c.status, c.message, c.created_at, c.requester_id,
-                  p.id AS post_id, p.kind, p.days, p.time_label, p.direction, p.area, p.swimmer, p.member_id AS poster_id,
+                  p.id AS post_id, p.kind, p.days, p.time_label, p.direction, p.area, p.swimmer, p.driver, p.groups, p.member_id AS poster_id,
                   pm.family_name AS poster_family, pm.email AS poster_email, pm.phone AS poster_phone,
                   rm.family_name AS requester_family, rm.email AS requester_email, rm.phone AS requester_phone
              FROM connections c
@@ -193,7 +197,7 @@ export default {
           if (c.status !== 'accepted') { delete other.email; delete other.phone; }
           return {
             id: c.id, status: c.status, role: asPoster ? 'poster' : 'requester', message: asPoster ? c.message : undefined,
-            post: { id: c.post_id, kind: c.kind, days: c.days.split(','), time: c.time_label, direction: c.direction, area: c.area, swimmer: c.swimmer },
+            post: { id: c.post_id, kind: c.kind, days: c.days.split(','), time: c.time_label, direction: c.direction, area: c.area, swimmer: c.swimmer, driver: c.driver, groups: c.groups ? c.groups.split(',') : [] },
             other, created: c.created_at,
           };
         }));
@@ -222,7 +226,7 @@ export default {
         if (method === 'GET' && path === '/admin/overview') {
           const [members, posts, conns] = await Promise.all([
             env.DB.prepare(`SELECT id, email, family_name, phone, swimmers, note, status, is_admin, created_at, approved_at FROM members ORDER BY status = 'pending' DESC, family_name`).all(),
-            env.DB.prepare(`SELECT p.id, p.kind, p.days, p.time_label, p.direction, p.area, p.seats, p.swimmer, p.status, p.created_at, p.expires_at, m.family_name FROM posts p JOIN members m ON m.id = p.member_id ORDER BY p.created_at DESC LIMIT 200`).all(),
+            env.DB.prepare(`SELECT p.id, p.kind, p.days, p.time_label, p.direction, p.area, p.seats, p.swimmer, p.driver, p.groups, p.status, p.created_at, p.expires_at, m.family_name FROM posts p JOIN members m ON m.id = p.member_id ORDER BY p.created_at DESC LIMIT 200`).all(),
             env.DB.prepare(`SELECT c.id, c.status, c.created_at, c.updated_at, p.kind, p.area, pm.family_name AS poster, rm.family_name AS requester FROM connections c JOIN posts p ON p.id = c.post_id JOIN members pm ON pm.id = p.member_id JOIN members rm ON rm.id = c.requester_id ORDER BY c.updated_at DESC LIMIT 200`).all(),
           ]);
           return json({ members: members.results, posts: posts.results, connections: conns.results });

@@ -11,6 +11,8 @@
   var root = document.getElementById('cp');
   var DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var DIR = { to: 'To practice', from: 'From practice', both: 'Both ways' };
+  var GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'];
+  var DRIVER = { parent: 'Parent driver', swimmer: 'Swimmer driver' };
   var me = null, tab = 'board', cache = {}, flash = '';
 
   function el(tag, attrs) {
@@ -95,10 +97,19 @@
 
   // ---------- board ----------
   function viewBoard() {
-    var filter = { kind: '', day: '' };
+    var filter = { kind: '', day: '', driver: '', group: '', dir: '', area: '' };
     var list = el('div', { class: 'cp-list' });
     function draw(posts) {
-      var shown = posts.filter(function (p) { return (!filter.kind || p.kind === filter.kind) && (!filter.day || p.days.indexOf(filter.day) >= 0); });
+      var q = filter.area.toLowerCase();
+      var shown = posts.filter(function (p) {
+        return (!filter.kind || p.kind === filter.kind)
+          && (!filter.day || p.days.indexOf(filter.day) >= 0)
+          && (!filter.driver || p.driver === filter.driver)
+          && (!filter.group || !p.groups.length || p.groups.indexOf(filter.group) >= 0)
+          && (!filter.dir || p.direction === filter.dir || p.direction === 'both')
+          && (!q || (p.area + ' ' + (p.note || '')).toLowerCase().indexOf(q) >= 0);
+      });
+      count.textContent = shown.length + ' of ' + posts.length + ' post' + (posts.length === 1 ? '' : 's');
       list.replaceChildren.apply(list, shown.length ? shown.map(postCard) : [el('p', { class: 'cp-empty' }, posts.length ? 'No posts match those filters.' : 'No rides posted yet. Be the first: use “Post a ride”.')]);
     }
     function postCard(p) {
@@ -111,7 +122,9 @@
       return el('article', { class: 'cp-card ' + p.kind },
         el('div', { class: 'cp-badge' }, p.kind === 'offer' ? 'Offering seats' : 'Needs a ride'),
         el('h3', null, p.family),
+        p.driver ? el('p', null, el('span', { class: 'cp-tag ' + p.driver }, DRIVER[p.driver])) : null,
         p.swimmer ? el('p', { class: 'cp-swimmer' }, p.swimmer) : null,
+        p.groups && p.groups.length ? el('p', { class: 'cp-small' }, 'Groups: ' + p.groups.join(', ')) : null,
         el('p', { class: 'cp-when' }, when(p)),
         el('p', null, DIR[p.direction] + ' · ' + p.area + ' · ' + p.seats + (p.kind === 'offer' ? ' seat(s)' : ' swimmer(s)')),
         p.cost ? el('p', null, 'Cost sharing: ' + p.cost) : null,
@@ -127,11 +140,21 @@
         }).catch(function (e) { out.replaceChildren(msg('err', e.message)); });
       } }, 'Send request'));
     }
-    var kind = el('select', { 'aria-label': 'Type', onchange: function (e) { filter.kind = e.target.value; draw(cache.posts); } },
-      el('option', { value: '' }, 'Offers and needs'), el('option', { value: 'offer' }, 'Offers only'), el('option', { value: 'need' }, 'Needs only'));
-    var day = el('select', { 'aria-label': 'Day', onchange: function (e) { filter.day = e.target.value; draw(cache.posts); } },
-      [el('option', { value: '' }, 'Any day')].concat(DAYS.map(function (d) { return el('option', { value: d }, d); })));
-    shell(el('div', null, el('div', { class: 'cp-filters' }, kind, day), list));
+    function sel(key, label, opts) {
+      return el('select', { 'aria-label': label, onchange: function (e) { filter[key] = e.target.value; draw(cache.posts); } },
+        opts.map(function (o) { return el('option', { value: o[0] }, o[1]); }));
+    }
+    var count = el('p', { class: 'cp-small', 'aria-live': 'polite' });
+    var area = el('input', { type: 'search', placeholder: 'Search area, e.g. Landfall', 'aria-label': 'Search area', oninput: function (e) { filter.area = e.target.value; draw(cache.posts); } });
+    var bar = el('div', { class: 'cp-filters' },
+      sel('kind', 'Type', [['', 'Offers and needs'], ['offer', 'Offers only'], ['need', 'Needs only']]),
+      sel('driver', 'Driver', [['', 'Any driver'], ['parent', 'Parent drivers'], ['swimmer', 'Swimmer drivers']]),
+      sel('group', 'Practice group', [['', 'Any group']].concat(GROUPS.map(function (g) { return [g, g]; }))),
+      sel('day', 'Day', [['', 'Any day']].concat(DAYS.map(function (d) { return [d, d]; }))),
+      sel('dir', 'Direction', [['', 'Any direction'], ['to', 'To practice'], ['from', 'From practice']]),
+      area,
+      el('button', { class: 'cp-link', type: 'button', onclick: function () { filter = { kind: '', day: '', driver: '', group: '', dir: '', area: '' }; viewBoard(); } }, 'Clear filters'));
+    shell(el('div', null, bar, count, list));
     list.appendChild(el('p', { class: 'cp-empty' }, 'Loading…'));
     api('GET', '/posts').then(function (ps) { cache.posts = ps; draw(ps); }).catch(function (e) { list.replaceChildren(msg('err', e.message)); });
   }
@@ -142,7 +165,8 @@
       e.preventDefault();
       var f = e.target, out = f.querySelector('.cp-out');
       var days = DAYS.filter(function (d) { return f['d_' + d].checked; });
-      var d = { kind: f.kind.value, days: days, time: f.time.value, direction: f.direction.value, area: f.area.value, seats: f.seats.value, cost: f.cost.value, note: f.note.value, swimmer: f.swimmer.value };
+      var groups = GROUPS.filter(function (g) { return f['g_' + g].checked; });
+      var d = { kind: f.kind.value, driver: f.kind.value === 'offer' ? (f.driver.value || '') : '', groups: groups, days: days, time: f.time.value, direction: f.direction.value, area: f.area.value, seats: f.seats.value, cost: f.cost.value, note: f.note.value, swimmer: f.swimmer.value };
       var another = e.submitter && e.submitter.getAttribute('data-another') === '1';
       api('POST', '/posts', d).then(function () {
         if (another) {
@@ -155,6 +179,11 @@
       el('fieldset', null, el('legend', null, 'I want to…'),
         el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'kind', value: 'offer', checked: true }), ' offer seats'),
         el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'kind', value: 'need' }), ' find a ride')),
+      el('fieldset', { class: 'cp-driver' }, el('legend', null, 'Who would be driving?'),
+        el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'driver', value: 'parent', checked: true }), ' a parent'),
+        el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'driver', value: 'swimmer' }), ' a swimmer'),
+        el('p', { class: 'cp-small' }, 'If a swimmer is driving, each rider’s parents decide whether they are comfortable with that.')),
+      el('fieldset', null, el('legend', null, 'Practice group(s) (optional)'), GROUPS.map(function (g) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'g_' + g }), ' ' + g); })),
       el('fieldset', null, el('legend', null, 'Days'), DAYS.map(function (d) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'd_' + d }), ' ' + d); })),
       el('label', null, 'Which swimmer or group? (optional)', el('input', { name: 'swimmer', maxlength: 60, placeholder: 'e.g. Alex, Surge group' })),
       el('label', null, 'Time', el('input', { name: 'time', required: true, maxlength: 60, placeholder: 'e.g. Leave 4:15 pm, practice 5:00 pm' })),
@@ -165,6 +194,9 @@
       el('label', null, 'Note (optional)', el('input', { name: 'note', maxlength: 200, placeholder: 'No phone numbers or addresses' })),
       el('div', { class: 'cp-out' }),
       el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Post to the board'), el('button', { class: 'btn ghost', type: 'submit', 'data-another': '1' }, 'Post and add another')));
+    function syncDriver() { form.querySelector('.cp-driver').style.display = form.kind.value === 'offer' ? '' : 'none'; }
+    form.addEventListener('change', function (e) { if (e.target.name === 'kind') syncDriver(); });
+    syncDriver();
     shell(el('div', { class: 'cp-panel' }, el('h2', null, 'Post a ride'),
       el('p', { class: 'cp-small' }, 'Other families see your family name, the days and times, and the general area. Your email and phone stay private until you accept a request.'),
       el('p', { class: 'cp-small' }, 'Swimmers with different needs? Post each ride separately, for example one post for a ride to practice and another for a ride home, or a separate post for each swimmer. Use “Post and add another” to do it quickly.'), form));
@@ -178,7 +210,7 @@
       var conns = r[0], mine = r[1].filter(function (p) { return p.mine; });
       function act(label, path, cls) { return el('button', { class: 'btn small ' + (cls || ''), type: 'button', onclick: function () {
         api('POST', path, {}).then(function () { viewMine(); }).catch(function (e) { alert(e.message); }); } }, label); }
-      function line(c) { return (c.post.swimmer ? c.post.swimmer + ' · ' : '') + c.post.days.join(' · ') + ' · ' + c.post.time + ' · ' + DIR[c.post.direction] + ' · ' + c.post.area; }
+      function line(c) { return (c.post.driver ? DRIVER[c.post.driver] + ' · ' : '') + (c.post.swimmer ? c.post.swimmer + ' · ' : '') + c.post.days.join(' · ') + ' · ' + c.post.time + ' · ' + DIR[c.post.direction] + ' · ' + c.post.area; }
       var incoming = conns.filter(function (c) { return c.role === 'poster' && c.status === 'requested'; });
       var outgoing = conns.filter(function (c) { return c.role === 'requester' && c.status === 'requested'; });
       var connected = conns.filter(function (c) { return c.status === 'accepted'; });
@@ -198,7 +230,7 @@
           outgoing.length ? outgoing.map(function (c) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, c.other.family), ' · ' + line(c), el('p', { class: 'cp-small' }, 'Waiting for a reply')),
             el('div', { class: 'cp-btns' }, act('Cancel', '/connections/' + c.id + '/cancel', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'Nothing pending.')),
         el('div', { class: 'cp-panel' }, el('h3', null, 'Your posts'),
-          mine.length ? mine.map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.kind === 'offer' ? 'Offering' : 'Needing'), ' · ' + (p.swimmer ? p.swimmer + ' · ' : '') + when(p) + ' · ' + DIR[p.direction] + ' · ' + p.area),
+          mine.length ? mine.map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.kind === 'offer' ? 'Offering' : 'Needing'), ' · ' + (p.driver ? DRIVER[p.driver] + ' · ' : '') + (p.swimmer ? p.swimmer + ' · ' : '') + when(p) + ' · ' + DIR[p.direction] + ' · ' + p.area),
             el('div', { class: 'cp-btns' }, act('Close post', '/posts/' + p.id + '/close', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'You have no open posts.')),
         el('div', { class: 'cp-panel' }, phone));
     }).catch(function (e) { box.replaceChildren(msg('err', e.message)); });
@@ -236,7 +268,7 @@
                 m.status === 'active' ? act(m.is_admin ? 'Remove admin' : 'Make admin', '/admin/members/' + m.id + (m.is_admin ? '/demote' : '/promote'), 'ghost') : null,
                 m.id !== me.id ? act(m.status === 'disabled' ? 'Re-enable' : 'Disable', '/admin/members/' + m.id + (m.status === 'disabled' ? '/enable' : '/disable'), 'ghost') : null)); })),
           el('div', { class: 'cp-panel' }, el('h3', null, 'All posts (' + o.posts.filter(function (p) { return p.status === 'open'; }).length + ' open)'),
-            o.posts.slice(0, 60).map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.family_name), ' · ' + (p.kind === 'offer' ? 'offers' : 'needs') + ' · ' + p.days.split(',').join(' · ') + ' · ' + p.time_label + ' · ' + p.area, el('p', { class: 'cp-small' }, p.status + ' · posted ' + fmtDate(p.created_at))),
+            o.posts.slice(0, 60).map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.family_name), ' · ' + (p.kind === 'offer' ? 'offers' + (p.driver ? ' (' + p.driver + ' driver)' : '') : 'needs') + (p.groups ? ' · ' + p.groups.split(',').join('/') : '') + ' · ' + p.days.split(',').join(' · ') + ' · ' + p.time_label + ' · ' + p.area, el('p', { class: 'cp-small' }, p.status + ' · posted ' + fmtDate(p.created_at))),
               el('div', { class: 'cp-btns' }, p.status === 'open' ? act('Close', '/posts/' + p.id + '/close', 'ghost') : null)); })),
           el('div', { class: 'cp-panel' }, el('h3', null, 'Recent connections'),
             o.connections.length ? o.connections.slice(0, 50).map(function (c) { return el('p', { class: 'cp-small' }, c.requester + ' → ' + c.poster + ' (' + c.kind + ', ' + c.area + ') · ' + c.status + ' · ' + fmtDate(c.updated_at)); }) : el('p', { class: 'cp-empty' }, 'None yet.')));

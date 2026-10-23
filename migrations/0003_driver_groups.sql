@@ -1,0 +1,2 @@
+ALTER TABLE posts ADD COLUMN driver TEXT;
+ALTER TABLE posts ADD COLUMN groups TEXT;
