@@ -91,7 +91,7 @@ export const pages = [
   { path: '/programs/clinics/high-school-skills/', type: 'page', title: 'High School Skills Clinics', desc: '', status: 'done', from: ['/offerings#HighSchoolSkillsClinics'] },
   { path: '/programs/clinics/summer-league-prep/', type: 'page', title: 'Summer League Prep', desc: '', status: 'done', from: ['/offerings#SummerLeaguePrep'] },
   { path: '/programs/clinics/summer-league-skills/', type: 'page', title: 'Summer League Skills Clinics', desc: '', status: 'done', from: ['/offerings#SummerLeagueSkillsClinics'] },
-  { path: '/programs/fees/', type: 'page', title: 'Fees', desc: 'What it costs and how billing works.', status: 'pull', from: ['/fee-structure'], legacy: ['2026 - 27/2026 - 2027 Fee Summary.docx'] },
+  { path: '/programs/fees/', type: 'page', title: 'Fees', desc: 'Monthly practice fees by group and season.', status: 'done', from: ['/fee-structure'], legacy: ['2026 - 27/2026 - 2027 Fee Summary.docx'] },
   { path: '/programs/financial-assistance/', type: 'page', title: 'Scholarships & Financial Assistance', desc: 'Help is available.', status: 'done', from: ['/scholarships-and-financial-assistance'] },
   { path: '/programs/join/', type: 'link', title: 'Free Assessment', desc: 'Sign up for an assessment to find the right group.', status: 'ready', url: 'https://form.jotform.com/jpmerchant/assessment-sign-up', feature: true },
 

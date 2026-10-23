@@ -22,7 +22,7 @@ new_path,title,type,status,replaces,source_files
 "/programs/clinics/high-school-skills/","High School Skills Clinics","page","done","/offerings#HighSchoolSkillsClinics",""
 "/programs/clinics/summer-league-prep/","Summer League Prep","page","done","/offerings#SummerLeaguePrep",""
 "/programs/clinics/summer-league-skills/","Summer League Skills Clinics","page","done","/offerings#SummerLeagueSkillsClinics",""
-"/programs/fees/","Fees","page","pull","/fee-structure","2026 - 27/2026 - 2027 Fee Summary.docx"
+"/programs/fees/","Fees","page","done","/fee-structure","2026 - 27/2026 - 2027 Fee Summary.docx"
 "/programs/financial-assistance/","Scholarships & Financial Assistance","page","done","/scholarships-and-financial-assistance",""
 "/programs/join/","Free Assessment","link","ready","",""
 "/families/","Family Guide","hub","rebuild","",""

@@ -4,7 +4,7 @@ _Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswi
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 66 · pull 1 · ready 14 · new 3
+Counts: rebuild 16 · done 67 · ready 14 · new 3
 
 ## 1. Live page -> new location
 
@@ -21,7 +21,7 @@ Counts: rebuild 16 · done 66 · pull 1 · ready 14 · new 3
 | `/top-times---lcm` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
 | `/FAQ` | `/families/new-families/faq/` | done |
 | `/privacy-policy` | `/privacy/` | pull |
-| `/fee-structure` | `/programs/fees/` | pull |
+| `/fee-structure` | `/programs/fees/` | done |
 | `/shoulder-strength` | `/training/same/strength/` | done |
 | `/alumni` | `/about/alumni/` | done |
 | `/2022---23-achievements` | `/times/achievements/2022-23/` | done |
@@ -150,7 +150,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/programs/clinics/high-school-skills/` | High School Skills Clinics | page | done | `/offerings#HighSchoolSkillsClinics` | - |
 | `/programs/clinics/summer-league-prep/` | Summer League Prep | page | done | `/offerings#SummerLeaguePrep` | - |
 | `/programs/clinics/summer-league-skills/` | Summer League Skills Clinics | page | done | `/offerings#SummerLeagueSkillsClinics` | - |
-| `/programs/fees/` | Fees | page | pull | `/fee-structure` | 2026 - 27/2026 - 2027 Fee Summary.docx |
+| `/programs/fees/` | Fees | page | done | `/fee-structure` | 2026 - 27/2026 - 2027 Fee Summary.docx |
 | `/programs/financial-assistance/` | Scholarships & Financial Assistance | page | done | `/scholarships-and-financial-assistance` | - |
 | `/programs/join/` | Free Assessment | link | ready | - | - |
 | `/families/` | Family Guide | hub | rebuild | - | - |
