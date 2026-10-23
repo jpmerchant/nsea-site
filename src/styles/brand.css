@@ -200,3 +200,4 @@ main{padding:28px 0 64px;min-height:50vh}
 .cp-msg.err{background:var(--coral-light);border:1px solid #F6C6BD;color:#a02a17}
 .cp-link-box{border-left:6px solid var(--teal);display:grid;gap:8px}
 .cp-link-box input{width:100%;font-family:var(--f-mono);font-size:12px}
+.cp-swimmer{font-weight:600;color:var(--teal-dark);margin:0}

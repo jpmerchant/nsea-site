@@ -111,6 +111,7 @@
       return el('article', { class: 'cp-card ' + p.kind },
         el('div', { class: 'cp-badge' }, p.kind === 'offer' ? 'Offering seats' : 'Needs a ride'),
         el('h3', null, p.family),
+        p.swimmer ? el('p', { class: 'cp-swimmer' }, p.swimmer) : null,
         el('p', { class: 'cp-when' }, when(p)),
         el('p', null, DIR[p.direction] + ' · ' + p.area + ' · ' + p.seats + (p.kind === 'offer' ? ' seat(s)' : ' swimmer(s)')),
         p.cost ? el('p', null, 'Cost sharing: ' + p.cost) : null,
@@ -141,23 +142,32 @@
       e.preventDefault();
       var f = e.target, out = f.querySelector('.cp-out');
       var days = DAYS.filter(function (d) { return f['d_' + d].checked; });
-      var d = { kind: f.kind.value, days: days, time: f.time.value, direction: f.direction.value, area: f.area.value, seats: f.seats.value, cost: f.cost.value, note: f.note.value };
-      api('POST', '/posts', d).then(function () { flash = 'Posted. It will stay on the board for 60 days or until you close it.'; tab = 'board'; render(); })
-        .catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+      var d = { kind: f.kind.value, days: days, time: f.time.value, direction: f.direction.value, area: f.area.value, seats: f.seats.value, cost: f.cost.value, note: f.note.value, swimmer: f.swimmer.value };
+      var another = e.submitter && e.submitter.getAttribute('data-another') === '1';
+      api('POST', '/posts', d).then(function () {
+        if (another) {
+          // keep everything except the swimmer, direction and time, so a second leg is quick to add
+          f.swimmer.value = ''; f.time.value = ''; f.direction.value = f.direction.value === 'to' ? 'from' : 'to'; f.swimmer.focus();
+          out.replaceChildren(msg('ok', 'Posted. Add the next ride below (for example a different swimmer, or the ride home).'));
+        } else { flash = 'Posted. It will stay on the board for 60 days or until you close it.'; tab = 'board'; render(); }
+      }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
     } },
       el('fieldset', null, el('legend', null, 'I want to…'),
         el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'kind', value: 'offer', checked: true }), ' offer seats'),
         el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'kind', value: 'need' }), ' find a ride')),
       el('fieldset', null, el('legend', null, 'Days'), DAYS.map(function (d) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'd_' + d }), ' ' + d); })),
+      el('label', null, 'Which swimmer or group? (optional)', el('input', { name: 'swimmer', maxlength: 60, placeholder: 'e.g. Alex, Surge group' })),
       el('label', null, 'Time', el('input', { name: 'time', required: true, maxlength: 60, placeholder: 'e.g. Leave 4:15 pm, practice 5:00 pm' })),
       el('label', null, 'Direction', el('select', { name: 'direction' }, el('option', { value: 'to' }, 'To practice'), el('option', { value: 'from' }, 'From practice'), el('option', { value: 'both' }, 'Both ways'))),
       el('label', null, 'General area', el('input', { name: 'area', required: true, maxlength: 60, placeholder: 'Neighborhood or part of town, not a street address' })),
       el('label', null, 'Seats offered / swimmers needing a ride', el('input', { name: 'seats', type: 'number', min: 1, max: 8, value: 1 })),
       el('label', null, 'Cost sharing (optional)', el('input', { name: 'cost', maxlength: 80, placeholder: 'e.g. Gas split, or free' })),
       el('label', null, 'Note (optional)', el('input', { name: 'note', maxlength: 200, placeholder: 'No phone numbers or addresses' })),
-      el('div', { class: 'cp-out' }), el('button', { class: 'btn', type: 'submit' }, 'Post to the board'));
+      el('div', { class: 'cp-out' }),
+      el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Post to the board'), el('button', { class: 'btn ghost', type: 'submit', 'data-another': '1' }, 'Post and add another')));
     shell(el('div', { class: 'cp-panel' }, el('h2', null, 'Post a ride'),
-      el('p', { class: 'cp-small' }, 'Other families see your family name, the days and times, and the general area. Your email and phone stay private until you accept a request.'), form));
+      el('p', { class: 'cp-small' }, 'Other families see your family name, the days and times, and the general area. Your email and phone stay private until you accept a request.'),
+      el('p', { class: 'cp-small' }, 'Swimmers with different needs? Post each ride separately, for example one post for a ride to practice and another for a ride home, or a separate post for each swimmer. Use “Post and add another” to do it quickly.'), form));
   }
 
   // ---------- my rides ----------
@@ -168,7 +178,7 @@
       var conns = r[0], mine = r[1].filter(function (p) { return p.mine; });
       function act(label, path, cls) { return el('button', { class: 'btn small ' + (cls || ''), type: 'button', onclick: function () {
         api('POST', path, {}).then(function () { viewMine(); }).catch(function (e) { alert(e.message); }); } }, label); }
-      function line(c) { return c.post.days.join(' · ') + ' · ' + c.post.time + ' · ' + DIR[c.post.direction] + ' · ' + c.post.area; }
+      function line(c) { return (c.post.swimmer ? c.post.swimmer + ' · ' : '') + c.post.days.join(' · ') + ' · ' + c.post.time + ' · ' + DIR[c.post.direction] + ' · ' + c.post.area; }
       var incoming = conns.filter(function (c) { return c.role === 'poster' && c.status === 'requested'; });
       var outgoing = conns.filter(function (c) { return c.role === 'requester' && c.status === 'requested'; });
       var connected = conns.filter(function (c) { return c.status === 'accepted'; });
@@ -188,7 +198,7 @@
           outgoing.length ? outgoing.map(function (c) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, c.other.family), ' · ' + line(c), el('p', { class: 'cp-small' }, 'Waiting for a reply')),
             el('div', { class: 'cp-btns' }, act('Cancel', '/connections/' + c.id + '/cancel', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'Nothing pending.')),
         el('div', { class: 'cp-panel' }, el('h3', null, 'Your posts'),
-          mine.length ? mine.map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.kind === 'offer' ? 'Offering' : 'Needing'), ' · ' + when(p) + ' · ' + p.area),
+          mine.length ? mine.map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.kind === 'offer' ? 'Offering' : 'Needing'), ' · ' + (p.swimmer ? p.swimmer + ' · ' : '') + when(p) + ' · ' + DIR[p.direction] + ' · ' + p.area),
             el('div', { class: 'cp-btns' }, act('Close post', '/posts/' + p.id + '/close', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'You have no open posts.')),
         el('div', { class: 'cp-panel' }, phone));
     }).catch(function (e) { box.replaceChildren(msg('err', e.message)); });
