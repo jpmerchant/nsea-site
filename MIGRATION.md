@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 109 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 100 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 66 · pull 1 · ready 14 · new 12
+Counts: rebuild 16 · done 66 · pull 1 · ready 14 · new 3
 
 ## 1. Live page -> new location
 
@@ -108,6 +108,20 @@ Merges worth noting: Top 10 Swimmers/Swims/Relays and Team Records collapse from
 | Carpool board (planned) | Not built | `/families/carpool/` (gated) | - |
 
 Deliberately **not** pulled: per-athlete biomechanics reports (individual swimmers’ data, which should never be on a public site), and the Fall 2026 internal documents in the NSEA Swim folder.
+
+### Held back (built, not published)
+
+These pages are excluded from the menu and the build until the owner releases them (`held` in `src/data/site.mjs`).
+
+- `/training/same/education/specialization-ages/` — When to Specialize (Project: claude/specialization-ages-swimming-reference.md)
+- `/training/same/education/race-pacing/` — Race Pacing (Project: claude/race-pacing-synthesis.md)
+- `/training/same/education/sodium-bicarbonate/` — Sodium Bicarbonate & Young Swimmers (Project: claude/sodium-bicarbonate-youth-swimming-reference.md)
+- `/training/biomechanics/` — Biomechanics (Project: claude/*-biomechanics-reference.md, Project: claude/nsea-tritonwear-eo-metrics-*.html)
+- `/training/biomechanics/metrics/` — Reading the Metrics (Project: claude/nsea-tritonwear-eo-metrics-one-pager.html, Project: claude/nsea-tritonwear-eo-metrics-by-stroke.html)
+- `/training/biomechanics/freestyle/` — Freestyle (Project: claude/freestyle-biomechanics-reference.md)
+- `/training/biomechanics/backstroke/` — Backstroke (Project: claude/backstroke-biomechanics-reference.md)
+- `/training/biomechanics/butterfly/` — Butterfly (Project: claude/butterfly-biomechanics-reference.md)
+- `/training/biomechanics/breaststroke/` — Breaststroke (Project: claude/breaststroke-biomechanics-reference.md)
 
 ## 3. Full page list for the new site
 
@@ -213,13 +227,4 @@ Deliberately **not** pulled: per-athlete biomechanics reports (individual swimme
 | `/training/same/education/` | Education | hub | rebuild | `/education` | - |
 | `/training/same/education/caffeine-guide/` | Caffeine & Energy Drinks: A Quick Guide | tool | done | `/caffeine---energy-drinks--a-quick-guide` | content/guides/caffeine-guide-for-nsea-families_1.html |
 | `/training/same/education/caffeine-research/` | Caffeine & Energy Drinks: The Research | tool | done | `/caffeine---energy-drinks--research` | content/guides/caffeine-youth-athletes-research.html; Project: claude/nsea-research-caffeine-and-youth-athletes.html |
-| `/training/same/education/specialization-ages/` | When to Specialize | page | new | - | Project: claude/specialization-ages-swimming-reference.md |
-| `/training/same/education/race-pacing/` | Race Pacing | page | new | - | Project: claude/race-pacing-synthesis.md |
-| `/training/same/education/sodium-bicarbonate/` | Sodium Bicarbonate & Young Swimmers | page | new | - | Project: claude/sodium-bicarbonate-youth-swimming-reference.md |
-| `/training/biomechanics/` | Biomechanics | hub | new | - | Project: claude/*-biomechanics-reference.md; Project: claude/nsea-tritonwear-eo-metrics-*.html |
-| `/training/biomechanics/metrics/` | Reading the Metrics | page | new | - | Project: claude/nsea-tritonwear-eo-metrics-one-pager.html; Project: claude/nsea-tritonwear-eo-metrics-by-stroke.html |
-| `/training/biomechanics/freestyle/` | Freestyle | page | new | - | Project: claude/freestyle-biomechanics-reference.md |
-| `/training/biomechanics/backstroke/` | Backstroke | page | new | - | Project: claude/backstroke-biomechanics-reference.md |
-| `/training/biomechanics/butterfly/` | Butterfly | page | new | - | Project: claude/butterfly-biomechanics-reference.md |
-| `/training/biomechanics/breaststroke/` | Breaststroke | page | new | - | Project: claude/breaststroke-biomechanics-reference.md |
 

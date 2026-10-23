@@ -180,6 +180,11 @@ export const pages = [
   { path: '/training/same/education/', type: 'hub', title: 'Education', desc: 'Research-backed guides for families.', status: 'rebuild', from: ['/education'] },
   { path: '/training/same/education/caffeine-guide/', type: 'tool', title: 'Caffeine & Energy Drinks: A Quick Guide', desc: '', embed: '/embeds/caffeine-guide.html', status: 'done', from: ['/caffeine---energy-drinks--a-quick-guide'], legacy: ['content/guides/caffeine-guide-for-nsea-families_1.html'] },
   { path: '/training/same/education/caffeine-research/', type: 'tool', title: 'Caffeine & Energy Drinks: The Research', desc: '', embed: '/embeds/caffeine-research.html', status: 'done', from: ['/caffeine---energy-drinks--research'], legacy: ['content/guides/caffeine-youth-athletes-research.html', 'Project: claude/nsea-research-caffeine-and-youth-athletes.html'] },
+];
+
+// Built but deliberately NOT published or in the menu until the owner says so.
+// To release a page, move its line back into `pages` and re-run `npm run report`.
+export const held = [
   { path: '/training/same/education/specialization-ages/', type: 'page', title: 'When to Specialize', desc: 'What the research says about specialization ages.', status: 'new', legacy: ['Project: claude/specialization-ages-swimming-reference.md'] },
   { path: '/training/same/education/race-pacing/', type: 'page', title: 'Race Pacing', desc: '', status: 'new', legacy: ['Project: claude/race-pacing-synthesis.md'] },
   { path: '/training/same/education/sodium-bicarbonate/', type: 'page', title: 'Sodium Bicarbonate & Young Swimmers', desc: '', status: 'new', legacy: ['Project: claude/sodium-bicarbonate-youth-swimming-reference.md'] },

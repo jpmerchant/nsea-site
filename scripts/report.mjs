@@ -1,7 +1,7 @@
 // npm run report  ->  MIGRATION.md + migration.csv + gated-paths.txt
 // Everything is generated from src/data/site.mjs so the list never drifts from the site.
 import { writeFileSync, readFileSync } from 'node:fs';
-import { pages, utility, retired } from '../src/data/site.mjs';
+import { pages, utility, retired, held } from '../src/data/site.mjs';
 
 const live = JSON.parse(readFileSync(new URL('./live-urls.json', import.meta.url)));
 const norm = (u) => u.split('#')[0];
@@ -69,6 +69,13 @@ const comps = [
 for (const c of comps) rows.push(`| ${c.join(' | ')} |`);
 rows.push('');
 rows.push('Deliberately **not** pulled: per-athlete biomechanics reports (individual swimmers’ data, which should never be on a public site), and the Fall 2026 internal documents in the NSEA Swim folder.');
+rows.push('');
+
+rows.push('### Held back (built, not published)');
+rows.push('');
+rows.push('These pages are excluded from the menu and the build until the owner releases them (`held` in `src/data/site.mjs`).');
+rows.push('');
+for (const h of held) rows.push(`- \`${h.path}\` — ${h.title}${h.legacy ? ' (' + h.legacy.join(', ') + ')' : ''}`);
 rows.push('');
 
 rows.push('## 3. Full page list for the new site');

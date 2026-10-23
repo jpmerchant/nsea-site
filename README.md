@@ -172,15 +172,7 @@ A subdomain is optional. Use the free `workers.dev` address Cloudflare assigns w
     ▸ Education   /training/same/education/
       · Caffeine & Energy Drinks: A Quick Guide   /training/same/education/caffeine-guide/
       · Caffeine & Energy Drinks: The Research   /training/same/education/caffeine-research/
-      · When to Specialize   /training/same/education/specialization-ages/
-      · Race Pacing   /training/same/education/race-pacing/
-      · Sodium Bicarbonate & Young Swimmers   /training/same/education/sodium-bicarbonate/
-  ▸ Biomechanics   /training/biomechanics/
-    · Reading the Metrics   /training/biomechanics/metrics/
-    · Freestyle   /training/biomechanics/freestyle/
-    · Backstroke   /training/biomechanics/backstroke/
-    · Butterfly   /training/biomechanics/butterfly/
-    · Breaststroke   /training/biomechanics/breaststroke/
+  (Held back, not published: Biomechanics section and three education pages. See `held` in src/data/site.mjs.)
 ```
 
 See `MIGRATION.md` for what replaces what, the full page list with sources, and the list of components that moved.
