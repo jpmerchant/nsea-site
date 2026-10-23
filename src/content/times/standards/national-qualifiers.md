@@ -1,5 +1,3 @@
-<!-- REVIEW: Rebuilt from the live page (logo buttons dropped). The last meet header on the live page is only an image (saalogo) — confirm its name; I labelled it "Speedo Short Course (SAA) Championships" as a placeholder. -->
-
 Swimmers who have reached a national-level meet, by meet and year.
 
 ## Olympic Team Trials
@@ -31,7 +29,7 @@ Swimmers who have reached a national-level meet, by meet and year.
 - Bryson Edwards — 2025
 - Behr Petroff — 2026
 
-## Speedo Short Course (SAA) Championships
+## Scholastic All-America (SAA)
 
 - Madi Joy — 2023
 - Cole Witmer — 2023, 2024

@@ -19,4 +19,16 @@ const first = variants ? variants[keys[0]] : src;
       frame.src = b.dataset.src;
     });
   });
+  // Same-origin embeds (/embeds/*) size themselves to their content.
+  if (frame && frame.getAttribute('src')?.startsWith('/embeds/')) {
+    const fit = () => {
+      try {
+        const d = frame.contentDocument;
+        if (d && d.documentElement) frame.style.height = Math.max(d.documentElement.scrollHeight, d.body.scrollHeight) + 'px';
+      } catch (e) { /* cross-origin: keep the fixed height */ }
+    };
+    if (frame.contentDocument && frame.contentDocument.readyState === 'complete') fit();
+    frame.addEventListener('load', () => { fit(); setTimeout(fit, 400); setTimeout(fit, 1500); try { new ResizeObserver(fit).observe(frame.contentDocument.body); } catch (e) {} });
+    window.addEventListener('resize', fit);
+  }
 </script>

@@ -1,0 +1,406 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base target="_top"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style></style></head><body style="margin:0"><style>:root{
+    --teal:#008675;
+    --teal-dark:#00695a;
+    --coral:#ee492f;
+    --gray:#676d70;
+    --light-gray:#f4f6f6;
+    --border:#e2e6e6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    background:var(--light-gray);
+    color:#222;
+  }
+  header{
+    background:var(--teal);
+    color:#fff;
+    padding:22px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    border-bottom:5px solid var(--coral);
+  }
+  header .brand{
+    display:flex;
+    flex-direction:column;
+  }
+  header .brand .eyebrow{
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:12px;
+    font-weight:600;
+    color:#cdece7;
+    margin-bottom:4px;
+  }
+  header .brand h1{
+    margin:0;
+    font-size:24px;
+    font-weight:700;
+    letter-spacing:.3px;
+  }
+  header .subtitle{
+    font-size:14px;
+    color:#e4f4f1;
+    max-width:340px;
+    text-align:right;
+  }
+  main{
+    max-width:1100px;
+    margin:0 auto;
+    padding:28px 20px 60px;
+  }
+  .intro{
+    background:#fff;
+    border:1px solid var(--border);
+    border-left:6px solid var(--teal);
+    border-radius:6px;
+    padding:18px 22px;
+    margin-bottom:20px;
+  }
+  .intro h2{
+    margin:0 0 6px;
+    color:var(--teal-dark);
+    font-size:19px;
+  }
+  .intro p{
+    margin:0;
+    color:var(--gray);
+    font-size:15px;
+    line-height:1.5;
+  }
+  .intro a{
+    color:var(--teal-dark);
+    font-weight:600;
+    text-decoration:none;
+  }
+  .intro a:hover{ text-decoration:underline; }
+  .toolbar{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--light-gray);
+    padding:12px 0 14px;
+    margin-bottom:8px;
+  }
+  .search-wrap{
+    position:relative;
+    margin-bottom:12px;
+  }
+  .search-wrap input{
+    width:100%;
+    padding:12px 16px 12px 42px;
+    font-size:15px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  }
+  .search-wrap input:focus{
+    outline:none;
+    border-color:var(--teal);
+  }
+  .search-wrap::before{
+    content:"🔍";
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:14px;
+    opacity:.6;
+  }
+  .alpha-nav{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  }
+  .alpha-nav button{
+    border:none;
+    background:var(--light-gray);
+    color:var(--teal-dark);
+    font-weight:700;
+    font-size:13px;
+    width:30px;
+    height:30px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .alpha-nav button:hover{
+    background:var(--teal);
+    color:#fff;
+  }
+  .alpha-nav button.disabled{
+    color:#c7cccc;
+    cursor:default;
+  }
+  .alpha-nav button.disabled:hover{
+    background:var(--light-gray);
+    color:#c7cccc;
+  }
+  .count-note{
+    font-size:13px;
+    color:var(--gray);
+    margin:6px 2px 18px;
+  }
+  .count-note strong{ color:var(--teal-dark); }
+  .letter-section{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin-bottom:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    overflow:hidden;
+  }
+  .letter-section h2{
+    margin:0;
+    background:var(--teal);
+    color:#fff;
+    font-size:16px;
+    padding:10px 20px;
+    letter-spacing:.5px;
+  }
+  .term-list{
+    padding:6px 22px 14px;
+  }
+  .term{
+    padding:12px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .term:last-child{
+    border-bottom:none;
+  }
+  .term dt{
+    font-weight:700;
+    color:var(--coral);
+    font-size:15px;
+    margin-bottom:4px;
+  }
+  .term dt a{
+    color:var(--coral);
+    text-decoration:none;
+    border-bottom:1px dotted var(--coral);
+  }
+  .term dt a:hover{
+    color:var(--teal-dark);
+    border-bottom-color:var(--teal-dark);
+  }
+  .term dd{
+    margin:0;
+    font-size:14.5px;
+    line-height:1.55;
+    color:#333;
+  }
+  .term dd a{
+    color:var(--teal-dark);
+    font-weight:600;
+    text-decoration:none;
+    border-bottom:1px solid #cfe8e4;
+  }
+  .term dd a:hover{
+    text-decoration:none;
+    border-bottom-color:var(--teal-dark);
+  }
+  .term dd a.xref{
+    color:var(--teal-dark);
+    border-bottom:1px dashed #cfe8e4;
+  }
+  .ext-icon{
+    font-size:11px;
+    margin-left:2px;
+    opacity:.65;
+  }
+  .term.flash{
+    animation:flashHighlight 1.6s ease;
+  }
+  @keyframes flashHighlight{
+    0%{ background:#fff2e0; }
+    100%{ background:transparent; }
+  }
+  mark{
+    background:#ffe6b3;
+    color:inherit;
+    border-radius:2px;
+    padding:0 1px;
+  }
+  .no-results{
+    display:none;
+    text-align:center;
+    color:var(--gray);
+    padding:40px 10px;
+    font-size:15px;
+  }
+  .note{
+    margin-top:8px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-left:6px solid var(--coral);
+    border-radius:6px;
+    padding:16px 22px;
+    font-size:14px;
+    color:#333;
+    line-height:1.6;
+  }
+  .note strong{ color:var(--coral); }
+  footer{
+    text-align:center;
+    padding:22px 18px;
+    font-size:12px;
+    color:var(--gray);
+    border-top:1px solid var(--border);
+  }
+  footer strong{ color:var(--teal-dark); }
+  footer .contact{
+    margin-top:6px;
+  }
+  @media (max-width: 700px){
+    header{ flex-direction:column; align-items:flex-start; }
+    header .subtitle{ text-align:left; }
+    .alpha-nav button{ width:26px; height:26px; font-size:12px; }
+  }</style> 
+ <main> <div class="intro"> <h2>New to the Sport? Start Here.</h2> 
+ <p>Competitive swimming has a language all its own. This glossary covers the terms, abbreviations, and meet-day lingo you'll hear around the pool deck. If you have additional questions, please email us at <a href="mailto:team@nseaswim.com">team@nseaswim.com</a>.</p> 
+</div> 
+ <div class="toolbar"> <div class="search-wrap"><input type="text" id="search" placeholder="Search terms and definitions…" autocomplete="off" aria-label="Search terms and definitions…" data-placeholder-original="Search terms and definitions…"/></div> 
+ <div class="alpha-nav" id="alphaNav"></div> 
+</div> 
+ <div class="count-note" id="countNote"></div> 
+ <div id="glossaryContainer"></div> 
+ <div class="no-results" id="noResults">No terms match your search.</div> 
+ <div class="note"> <strong>Note:</strong> 
+USA Swimming meet names change from time to time as title sponsorships are renewed (for example, the Toyota National Championships and Speedo Sectionals, linked below). This glossary is kept current with those changes where possible, and links out to USA Swimming, NSEA, and other official pages for more detail &mdash; if you spot something out of date, let us know at <a href="mailto:team@nseaswim.com" style="color:inherit;">team@nseaswim.com</a>.</div> 
+</main> 
+ <script>
+
+
+  const GLOSSARY = 
+{"A":[{"term":"\"A\"","def":"Time classification for a swimmer. National Age Group Motivational Standard \"A\". See the NAGMS published chart.","id":"a","html":"Time classification for a swimmer. National Age Group Motivational Standard \"A\". See the <a href=\"https://www.nseaswimteam.com/time-standards\" target=\"_blank\" rel=\"noopener\">NAGMS</a> published chart."},{"term":"\"AA\"","def":"Time classification for a swimmer. National Age Group Motivational Standard \"AA\"","id":"aa"},{"term":"\"AAA\"","def":"Time classification for a swimmer. National Age Group Motivational Standard \"AAA\"","id":"aaa"},{"term":"\"AAAA\"","def":"Time classification for a swimmer. National Age Group Motivational Standard \"AAAA\" This is the fastest time standard listed on the NAGMS chart","id":"aaaa","html":"Time classification for a swimmer. National Age Group Motivational Standard \"AAAA\" This is the fastest time standard listed on the <a href=\"https://www.nseaswimteam.com/time-standards\" target=\"_blank\" rel=\"noopener\">NAGMS</a> chart"},{"term":"A-Meet","def":"Swim meet, which requires swimmers to have previously achieved an \"A\" time standard in the events they wish to enter.","id":"a-meet"},{"term":"Add Up or Aggregate Time","def":"Times achieved by 4 swimmers in individual events, which are added together to arrive at a provable relay entry time.","id":"add-up-or-aggregate-time"},{"term":"Age Group","def":"Division of swimmers according to age. The National Age Group divisions are: 10-under, 11-12, 13-14, 15-16, 17-18 (15-18). Some LSCs have divided the swimmers into more convenient divisions specific to their situations (i.e.) 8-under, 13-Over, 15-Over, Junior, Senior.","id":"age-group","html":"Division of swimmers according to age. The National Age Group divisions are: 10-under, 11-12, 13-14, 15-16, 17-18 (15-18). Some LSCs have divided the swimmers into more convenient divisions specific to their situations (i.e.) 8-under, 13-Over, 15-Over, Junior, Senior. See NSEA\u2019s <a href=\"https://www.nseaswimteam.com/time-standards\">Time Standards page</a> for age-group time standards."},{"term":"Age Group Championships","def":"See States","id":"age-group-championships","html":"See <a href=\"#states\" class=\"xref\" data-target=\"states\">States</a>"},{"term":"Alternate","def":"In a Prelims/Finals meet, after the finalist is decided, the next two fastest swimmers other than the finalist are designated as alternates. The faster of the 2 being first alternate and the next being second. If a finalist cannot participate, the alternates are called to take their place, often on a moment's notice.","id":"alternate"},{"term":"Anchor","def":"The final swimmer in a relay.","id":"anchor"},{"term":"Approved Meet","def":"A meet conducted with sufficient USA Swimming officials to certify conformance to USA Swimming rules. The meet may include competitors who are not USA Swimming members. The meet may be a competition sanctioned at the LSC level with the added approval of USA Swimming because both member and non-member athletes will be competing.","id":"approved-meet"},{"term":"ASCA","def":"The American Swim Coaches Association. The professional organization for swim coaches throughout the nation, certifying coaches and offering many services for coaches' education and career advancement.","id":"asca","termUrl":"https://www.swimmingcoach.org"}],"B":[{"term":"\"B\"","def":"Time classification for a swimmer. National Age Group Motivational Standard \"B\".","id":"b"},{"term":"\"BB\"","def":"Time classification for a swimmer. National Age Group Motivational Standard \"BB\".","id":"bb"},{"term":"B-Meet","def":"Swim meet which requires swimmers to have previously achieved a \"B\" time standard in the events they wish to enter. Some meets have no bottom cut time, allowing \"C\" swimmers also to compete.","id":"b-meet"},{"term":"Backstroke","def":"One of the 4 competitive racing strokes, basically any style of swimming on your back. Backstroke is swum as the first stroke in the Medley Relay and second stroke in the I.M. Racing distances are 50 yards/meters, 100 yards/meters, and 200 yards/meters. (LSCs with 8-under divisions offer the 25 yd back)","id":"backstroke"},{"term":"Beep","def":"The starting sound from an electronic computerized timing system.","id":"beep"},{"term":"Bell Lap","def":"The part of a freestyle distance race (400 meters or longer) when the swimmer has 2 lengths plus 5 yards/meters to go. The bell is rung over the lane of the lead swimmer; at national level meets, the bell is rung over each lane.","id":"bell-lap"},{"term":"Blocks","def":"The starting platforms located behind each lane. Some pools have blocks at the deeper end of the pool, and some pools have blocks at both ends. Blocks have a variety of designs and can be permanent or removable.","id":"blocks"},{"term":"BOD","def":"Board of Directors of the Local Swim Committee (LSC) or USA Swimming.","id":"bod"},{"term":"Bonus Heat","def":"The heat held during the finals session of a Prelims/Finals meet that is an extra heat in addition to Consolation finals, typically non-scoring.","id":"bonus-heat"},{"term":"Bonus Event Swim","def":"Additional events a swimmer may enter in some meets requiring qualifying times. There may be a time standard required to enter these events.","id":"bonus-event-swim"},{"term":"Bonus Time Standard","def":"A time required to enter a Bonus Event.","id":"bonus-time-standard"},{"term":"Bottom","def":"The floor of the pool. Bottom depths are usually marked on the walls or sides of the pool.","id":"bottom"},{"term":"Breaststroke","def":"One of the 4 competitive racing strokes. Breaststroke is swum as the second stroke in the Medley Relay and the third stroke in the I.M. Racing distances are 50 yards/meters, 100 yards/meters, and 200 yards/meters.","id":"breaststroke"},{"term":"Bull Pen","def":"The staging area where swimmers wait for their swim.","id":"bull-pen"},{"term":"Butterfly","def":"One of the 4 competitive racing strokes. Butterfly (nicknamed FLY) is swum as the third stroke in the Medley Relay and first stroke in the I.M. Racing distances are 50 yards/meters, 100 yards/meters, and 200 yards/meters.","id":"butterfly"},{"term":"Button","def":"The manual timing system stopping device that records a back-up time in case the touch pad fails. The button is at the end of a wire, plugged into a deck terminal box. There are usually 3 buttons per lane. It is the timer's responsibility to push the button as the swimmer finishes the race.","id":"button"}],"C":[{"term":"Camp","def":"A swimming function offered by USA Swimming, your LSC, or a USA Swimming coach. There are many types of camps for just about every level of swimmer. When selecting a camp, ask your coach's advice as to what will be best for the swimmer.","id":"camp"},{"term":"Cap","def":"A latex, lycra, or silicone covering worn on the head of swimmers. The colors and team logos adorning these caps are limitless \u2014 national caps, state team caps, award caps, plain practice caps, etc.","id":"cap"},{"term":"Championship Meet","def":"The meet held at the end of a season. Qualification times are usually necessary.","id":"championship-meet"},{"term":"Championship Finals","def":"The top heat of swimmers (the number depends on the number of pool lanes) in a Prelims/Finals meet who, after the Prelims swim, qualify to return to the Finals \u2014 the fastest heat of finals when there are multiple heats.","id":"championship-finals"},{"term":"Check-In","def":"The procedure required before a swimmer swims a deck-seeded event. Sometimes referred to as positive check-in; the swimmer must mark their name on a list posted by the meet host.","id":"check-in"},{"term":"Chlorine","def":"The chemical used by most pools to kill the bacteria in water and keep it clear and safe to swim in.","id":"chlorine"},{"term":"Circle Seeding","def":"A method of seeding swimmers when they are participating in prelims/finals events. The fastest 18 to 30 swimmers are seeded in the last three heats, with the fastest swimmers being in the inside lanes (example: Lane 4 in the final 3 heats). See the rulebook for the exact method depending on the number of lanes in the pool.","id":"circle-seeding"},{"term":"Clinic","def":"A scheduled meeting for the purpose of instruction (example: Officials clinic, Coaches clinic).","id":"clinic"},{"term":"Closed Competition","def":"A swim meet that is open only to the members of an organization or group. Summer club swim meets are considered \"Closed Competition.\"","id":"closed-competition"},{"term":"Club","def":"A registered swim team that is a dues-paying member of USA Swimming and the local LSC.","id":"club"},{"term":"Code","def":"A set of rules that have been officially published.","id":"code"},{"term":"Code of Ethics","def":"A Code of Conduct that both swimmers and coaches are required to sign at certain USA Swimming/LSC sponsored events. The Code involves common sense and proper behavior.","id":"code-of-ethics"},{"term":"Consolation Finals","def":"The second-fastest heat of finals when multiple heats are held; conducted before the Championship heat.","id":"consolation-finals"},{"term":"Convention","def":"United States Aquatic Sports' annual, week-long meeting where all rules changes are decided and working committees are established. Representatives are sent by each LSC to make up the voting body.","id":"convention"},{"term":"Course Designated Distance","def":"Length of pool for swimming competition (example: Long Course = 50 meters / Short Course = 25 yards or 25 meters).","id":"course-designated-distance"}],"D":[{"term":"Deck","def":"The area around the swimming pool reserved for swimmers, officials, and coaches. No one but an \"authorized\" USA Swimming member may be on the deck during a swim competition.","id":"deck"},{"term":"Deck Entries","def":"Accepting entries into swimming events on the first day or a later day of a meet.","id":"deck-entries"},{"term":"Deck Seeding","def":"Swimmers report to a bullpen or staging area and receive their lane and heat assignments for the events.","id":"deck-seeding"},{"term":"Developmental","def":"A classification of meet or competition that is usually held early in the season, to allow all levels of swimmers to compete in a low-pressure environment.","id":"developmental"},{"term":"Distance","def":"How far a swimmer swims. Distances for short course are: 25 yards (1 length), 50 yards (2 lengths), 100 yards (4 lengths), 200 yards (8 lengths), 400 yards (16 lengths), 500 yards (20 lengths), 1000 yards (40 lengths), 1650 yards (66 lengths). Distances for long course are: 50 meters (1 length), 100 meters (2 lengths), 200 meters (4 lengths), 400 meters (8 lengths), 800 meters (16 lengths), 1500 meters (30 lengths).","id":"distance"},{"term":"Disqualified","def":"A swimmer's performance is not counted because of a rules infraction. A disqualification is shown by an official raising one arm with an open hand above their head.","id":"disqualified"},{"term":"Dive","def":"Entering the water head first. Diving is not allowed during warm-ups except at the designated time, in specific lanes monitored by the swimmer's coach.","id":"dive"},{"term":"Double Dual","def":"A type of swim meet where three teams compete in dual meets against each other at the same time. Separate meet scores are kept for Team A vs. Team B, Team A vs. Team C, and Team B vs. Team C.","id":"double-dual"},{"term":"Dual Meet","def":"A type of meet where two teams/clubs compete against each other.","id":"dual-meet"},{"term":"Draw","def":"Random selection by chance.","id":"draw"},{"term":"Dropped Time","def":"When a swimmer goes faster than their previous performance, they have \"dropped their time.\"","id":"dropped-time"},{"term":"Dryland","def":"The exercises and various strength programs swimmers do out of the water.","id":"dryland"},{"term":"Dry Side","def":"The part of the Code book (rule book) that deals with the \"Administrative\" Regulations of Competition.","id":"dry-side"}],"E":[{"term":"Entry","def":"An individual, relay team, or club roster's event list into a swim competition.","id":"entry"},{"term":"Entry Chairperson","def":"The host club's designated person responsible for receiving entries and making sure they've met the deadline, or returning entries if the meet is full. This person usually finds discrepancies in meet entries and notifies the entering club to correct any errors.","id":"entry-chairperson"},{"term":"Entry Fees","def":"The amount per event a swimmer or relay is charged. This varies depending on the LSC and type of meet.","id":"entry-fees"},{"term":"Entry Limit","def":"Each meet will usually have a limit on total swimmers they can accept, or a time limit they cannot exceed. Once an entry limit has been reached, a meet will be closed and all other entries returned.","id":"entry-limit"},{"term":"Electronic Timing","def":"A timing system operated on DC current (battery). The system usually has touch pads in the water, junction boxes on the deck with hook-up cables, buttons for backup timing, and a computer-type console that prints out the results of each race. Some systems are hooked up to a scoreboard that displays swimmer times.","id":"electronic-timing"},{"term":"Eligible to Compete","def":"The status of a member swimmer meaning they are registered and have met all requirements.","id":"eligible-to-compete"},{"term":"Equipment","def":"The items necessary to operate a swim practice or conduct a swim competition.","id":"equipment"},{"term":"Event","def":"A race or stroke over a given distance. An event equals 1 preliminary with its final, or 1 timed final.","id":"event"}],"F":[{"term":"False Start","def":"When a swimmer leaves the starting block before the horn or gun. One false start will disqualify a swimmer or relay team, although the starter or referee may disallow the false start due to unusual circumstances.","id":"false-start"},{"term":"False Start Rope","def":"A recall rope across the width of the racing pool for stopping swimmers who were not aware of a false start. The rope is about halfway on yard pools and about 50 feet from the starting end on meter pools.","id":"false-start-rope"},{"term":"Fastest to Slowest","def":"A seeding method used on longer events held at the end of a session. The fastest-seeded swimmers participate in the first heats, followed by the next fastest, and so on. Many times these events alternate one girls' heat and one boys' heat until all swimmers have competed.","id":"fastest-to-slowest"},{"term":"Fees","def":"Money paid by swimmers for services (example: practice fees, registration fee, USA Swimming membership fee).","id":"fees"},{"term":"FINA","def":"Now known as World Aquatics, the international rules-making organization for the sport of swimming.","id":"fina","html":"Now known as <a href=\"https://www.worldaquatics.com\" target=\"_blank\" rel=\"noopener\">World Aquatics</a>, the international rules-making organization for the sport of swimming."},{"term":"Finals","def":"The final race of each event. See \"Championship Finals,\" \"Consolation Finals,\" \"Timed Finals,\" etc.","id":"finals"},{"term":"Final Results","def":"The printed copy of the results of each race of a swim meet.","id":"final-results"},{"term":"Fine","def":"The monetary penalty assessed to a swimmer or club when a swimmer does not achieve the necessary time required to swim in an event and cannot prove they had previously done the time.","id":"fine"},{"term":"Fins","def":"Large rubber fin-type devices that fit on a swimmer's feet. Used in swim practice, not competition.","id":"fins"},{"term":"Flags","def":"Pennants suspended over the width of each end of the pool, approximately 15 feet from the wall.","id":"flags"},{"term":"Format","def":"The order of events and type of swim meet being conducted.","id":"format"},{"term":"Fundraiser","def":"A money-making endeavor by a swim team/club, usually involving both parents and swimmers.","id":"fundraiser"},{"term":"Futures Championships","def":"A USA Swimming championship meet for swimmers of all ages, positioned between Speedo Sectionals and the Speedo Junior National Championships. Currently held under the title sponsorship \"TYR Futures Championships.\" Qualification times are necessary.","id":"futures-championships","termUrl":"https://www.usaswimming.org/times/time-standards"},{"term":"Freestyle","def":"One of the 4 competitive racing strokes. Freestyle (nicknamed Free) is swum as the fourth stroke in the Medley Relay and the fourth stroke in the I.M. Racing distances are 50 yards/meters, 100 yards/meters, 200 yards/meters, 400 meters/500 yards, 800 meters/1000 yards, 1500 meters/1650 yards.","id":"freestyle"}],"G":[{"term":"Gallery","def":"The viewing area for spectators during the swimming competition.","id":"gallery"},{"term":"Goals","def":"The short- and long-range targets for swimmers to aim for.","id":"goals"},{"term":"Goggles","def":"Glasses-type devices worn by swimmers to keep their eyes from being irritated by the chlorine in the water.","id":"goggles"}],"H":[{"term":"Hats","def":"See \"Caps.\"","id":"hats","html":"See \"<a href=\"#cap\" class=\"xref\" data-target=\"cap\">Caps</a>.\""},{"term":"Heats","def":"A division of an event when there are too many swimmers to compete at the same time. Results are compiled by the swimmer's time swum, after all heats of the event are completed.","id":"heats"},{"term":"Heat Award","def":"A ribbon or coupon given to the winner of a single heat at an age group swim meet.","id":"heat-award"},{"term":"Heat Sheet","def":"The pre-meet printed listing of swimmers' seed times in the various events at a swim meet. These sheets vary in accuracy, since coaches submit swimmers' times many weeks before the meet. Heat sheets are sold at the admissions table and are used mainly to make sure a swimmer has been properly entered in all the events they signed up for.","id":"heat-sheet","html":"The pre-meet printed listing of swimmers' seed times in the various events at a swim meet. These sheets vary in accuracy, since coaches submit swimmers' times many weeks before the meet. Heat sheets are sold at the admissions table and are used mainly to make sure a swimmer has been properly entered in all the events they signed up for. For a full walkthrough, see NSEA\u2019s <a href=\"https://www.nseaswimteam.com/about-swim-meets\">Guide to Swim Meets</a>."},{"term":"High Point","def":"An award given to the swimmer scoring the most points in a given age group at a swim meet. Not all meets offer high point awards; check the pre-meet information.","id":"high-point"},{"term":"HOD","def":"House of Delegates. The ruling body of an LSC, composed of the designated representative of each club plus the board of directors (BOD) of the LSC. One vote per club and board member.","id":"hod"},{"term":"Horn","def":"A sounding device used in place of a gun, used mainly with a fully automatic timing system.","id":"horn"}],"I":[{"term":"Illegal","def":"Doing something against the rules that is cause for disqualification.","id":"illegal"},{"term":"IM","def":"Individual Medley. A swimming event using all 4 competitive strokes over consecutive lengths of the race. The order must be: Butterfly, Backstroke, Breaststroke, Freestyle. Equal distances of each stroke are swum. Distances offered: 100 yards, 200 yards/meters, 400 yards/meters.","id":"im","html":"Individual Medley. A swimming event using all 4 competitive strokes over consecutive lengths of the race. The order must be: Butterfly, Backstroke, Breaststroke, Freestyle. Equal distances of each stroke are swum. Distances offered: 100 yards, 200 yards/meters, 400 yards/meters. See NSEA\u2019s <a href=\"https://www.nseaswimteam.com/imx-progress\">IMX / IMR programs guide</a> for how the IM fits into those programs."},{"term":"Interval","def":"A specific elapsed time for swimming or rest used during swim practice.","id":"interval"},{"term":"Intersquad Meet","def":"A swim competition among members of the same team.","id":"intersquad-meet"},{"term":"Invitational","def":"A type of meet that requires a club to request an invitation to attend.","id":"invitational"}],"J":[{"term":"J.O.","def":"Junior Olympics. An age group championship meet conducted by the LSC.","id":"j-o"},{"term":"Jump","def":"An illegal start done by the 2nd, 3rd, or 4th member of a relay team, when the swimmer on the block breaks contact with the block before the swimmer in the water touches the wall.","id":"jump"},{"term":"Summer Juniors / Speedo Junior National Championships","def":"A USA Swimming championship meet for swimmers 18 years old or under, held long course in the summer under the Speedo Junior National Championships title sponsorship. Qualification times are necessary.","id":"summer-juniors-speedo-junior-national-championships","termUrl":"https://www.usaswimming.org/times/time-standards"}],"K":[{"term":"Kick","def":"The leg movements of a swimmer. A popular word to \"yell\" to encourage swimmers during a race.","id":"kick"},{"term":"Kick Board","def":"A flotation device used by swimmers during practice.","id":"kick-board"}],"L":[{"term":"Lane","def":"The specific area in which a swimmer is assigned to swim (example: Lane 1 or Lane 2). In pools with starting blocks at only one end, lanes are numbered from right (Lane 1) to left (Lane 6) as swimmers stand behind the blocks.","id":"lane"},{"term":"Lane Lines","def":"Continuous floating markers attached to a cable stretched from the starting end to the turning end, separating each lane and quieting the waves caused by racing swimmers.","id":"lane-lines"},{"term":"Lap","def":"Two lengths of the course.","id":"lap"},{"term":"Lap Counter","def":"The large numbered cards (or the person turning the cards) used during freestyle events 500 yards or longer. Counting is done from the end opposite the starting end. The numbers on the cards are odd numbers only, with the final lap designated by a bright orange card.","id":"lap-counter"},{"term":"Leg","def":"The part of a relay event swum by a single team member; a single stroke in the IM.","id":"leg"},{"term":"Length","def":"The extent of the competitive course from end to end.","id":"length"},{"term":"Long Course","def":"A 50-meter pool.","id":"long-course"},{"term":"LSC","def":"Local Swim Committee. The local-level administrative division of USA Swimming, with supervisory responsibility within certain geographic boundaries.","id":"lsc","termUrl":"https://www.usaswimming.org/about/lsc-websites"},{"term":"LSC Championship","def":"See States","id":"lsc-championship","html":"See <a href=\"#states\" class=\"xref\" data-target=\"states\">States</a>"},{"term":"Lycra","def":"A stretch material used to make competitive swimsuits and swim hats.","id":"lycra"}],"M":[{"term":"Malfunction","def":"A mechanical or electronic failure, not a human failure by the swimmer.","id":"malfunction"},{"term":"Mark","def":"The command to take your starting position.","id":"mark"},{"term":"Marshall","def":"The adult official(s) who control the crowd and swimmer flow at a swim meet.","id":"marshall"},{"term":"Meet","def":"A series of events held in one program.","id":"meet"},{"term":"Meet Director","def":"The official in charge of the administration of the meet \u2014 the person directing the \"dry side\" of the meet.","id":"meet-director"},{"term":"Meters","def":"The measurement of the length of a swimming pool built per specs using the metric system. Long course meters is 50 meters, short course meters is 25 meters.","id":"meters"},{"term":"Mile","def":"The slang term referring to the 1500-meter or 1650-yard freestyle, both of which are slightly short of a mile.","id":"mile"}],"N":[{"term":"NAIA","def":"National Association of Intercollegiate Athletics.","id":"naia","termUrl":"https://www.naia.org"},{"term":"NAGMS","def":"National Age Group Motivational Standards \u2014 the list of \"B\" through \"AAAA\" times, published and updated periodically by USA Swimming.","id":"nagms","html":"National Age Group Motivational Standards \u2014 the list of \"B\" through \"AAAA\" times, published and updated periodically by <a href=\"https://www.usaswimming.org\" target=\"_blank\" rel=\"noopener\">USA Swimming</a>."},{"term":"Nationals","def":"See Toyota National Championships \u2014 USA Swimming's premier summer long course championship meet, currently held under Toyota's title sponsorship.","id":"nationals","html":"See <a href=\"#toyota-national-championships\" class=\"xref\" data-target=\"toyota-national-championships\">Toyota National Championships</a> \u2014 USA Swimming's premier summer long course championship meet, currently held under Toyota's title sponsorship."},{"term":"Natatorium","def":"A building constructed for the purpose of housing a swimming pool and related equipment.","id":"natatorium"},{"term":"NGB","def":"National Governing Body.","id":"ngb"},{"term":"Non-Conforming Time","def":"A short course time submitted to qualify for a long course meet, or vice versa.","id":"non-conforming-time"},{"term":"Novelty Meet","def":"A meet that does not fall into a specific category because of limited events, sessions, or age brackets.","id":"novelty-meet"},{"term":"Novice","def":"A beginner or someone who does not have experience.","id":"novice"},{"term":"NRT","def":"National Reportable Time. A time list published once a year; if a swimmer equals or betters the time on the list, they may submit their time in that event for consideration for national recognition.","id":"nrt"},{"term":"NT","def":"No Time. The abbreviation used on a heat sheet to designate that the swimmer has not swum that event before.","id":"nt"},{"term":"NTV","def":"National Times Verification. A certificate verifying a national qualifying time achieved by a swimmer, issued only by a verification official at the location where the meet was held.","id":"ntv"}],"O":[{"term":"Observed Meet","def":"A meet not conducted according to USA Swimming rules (high school, YMCA) where a request for observation has been processed and approved in advance. Sufficient USA Swimming officials are present to certify that the athletes' swims comply with USA Swimming technical rules.","id":"observed-meet"},{"term":"Observed Swim","def":"A swim observed by assigned USA Swimming officials for conformance with USA Swimming technical rules, in a meet conducted under rules other than USA Swimming's.","id":"observed-swim"},{"term":"Officials","def":"The certified adult volunteers who operate the many facets of a swim competition.","id":"officials"},{"term":"Olympic Team Trials","def":"The USA Swimming-sanctioned long course swim meet held in the year of the Olympic Games to decide which swimmers will represent the USA on the Olympic Team.","id":"olympic-team-trials"},{"term":"Omega","def":"A brand of automatic timing system.","id":"omega"},{"term":"OT","def":"Official Time. The swimmer's event time recorded to one-hundredth of a second (.01).","id":"ot"},{"term":"OTC","def":"Olympic Training Center in Colorado Springs, Colorado.","id":"otc"},{"term":"Open Competition","def":"Competition which any qualified club, organization, or individual may enter.","id":"open-competition"}],"P":[{"term":"Pace Clock","def":"Electronic or large clocks with highly visible numbers and second hands, positioned at the ends or sides of a swimming pool so swimmers can read their times during warm-ups or practice.","id":"pace-clock"},{"term":"Paddle / Hand Paddle","def":"Colored plastic devices worn on a swimmer's hands during swim practice.","id":"paddle-hand-paddle"},{"term":"Toyota National Championships","def":"USA Swimming's championship meet conducted each summer, currently under Toyota's title sponsorship. Qualifying standards are required.","id":"toyota-national-championships","termUrl":"https://www.usaswimming.org/times/time-standards"},{"term":"Pool","def":"The facility in which a swimming competition is conducted.","id":"pool"},{"term":"Positive Check-In","def":"The procedure required before a swimmer swims an event in a deck-seeded or pre-seeded event. The swimmer must mark their name on a list posted by the meet host.","id":"positive-check-in"},{"term":"Practice","def":"The scheduled workouts a swimmer attends with their swim team/club.","id":"practice"},{"term":"Prelims","def":"The session of a Prelims/Finals meet in which the qualification heats are conducted.","id":"prelims"},{"term":"Prelims-Finals","def":"A type of meet with two sessions. Preliminary heats are usually held in the morning session; the fastest 6-10 swimmers (Championship Heat) and the next fastest 6-10 swimmers (Consolation Heat) return in the evening to compete in the Finals. A swimmer who has qualified for Consolation Finals may not place in Championship Finals even if their finals time would place them so, and the converse also applies.","id":"prelims-finals"},{"term":"Pre-seeded","def":"A meet conducted without a bullpen, in which a swimmer knows their lane and heat by looking at the meet heat sheet or posted meet program.","id":"pre-seeded"},{"term":"Proof of Time","def":"An official meet result or other accepted form. Swimmers/coaches must supply proof of time with some meet entries; for other meets it is not required unless a swimmer misses a time cut at the meet.","id":"proof-of-time"},{"term":"Psyche Sheet","def":"An entry sheet showing all swimmers entered into each individual event. Sometimes referred to as a \"Heat Sheet\" or meet program; however, a \"heat sheet\" also shows what heat and lane each swimmer is swimming in.","id":"psyche-sheet"},{"term":"Pull Buoy","def":"A flotation device used for pulling by swimmers in practice.","id":"pull-buoy"}],"Q":[{"term":"Qualifying Times","def":"Published times necessary to enter certain meets, or the times necessary to achieve a specific category of swimmer. See \"A,\" \"AA,\" etc. times.","id":"qualifying-times","html":"Published times necessary to enter certain meets, or the times necessary to achieve a specific category of swimmer. See \"A,\" \"AA,\" etc. times. See NSEA\u2019s <a href=\"https://www.nseaswimteam.com/time-standards\">Time Standards page</a>."}],"R":[{"term":"Race","def":"Any single swimming competition (example: preliminary, final, timed final).","id":"race"},{"term":"Ready Room","def":"A room poolside for swimmers to relax before they compete in finals.","id":"ready-room"},{"term":"Recall Rope","def":"A rope across the width of the racing pool for stopping swimmers who were not aware of a false start.","id":"recall-rope"},{"term":"Referee","def":"The head official at a swim meet, in charge of all \"Wet Side\" administration and decisions.","id":"referee"},{"term":"Registered","def":"Enrolled and paid as a member of USA Swimming and the LSC.","id":"registered"},{"term":"Relays","def":"A swimming event in which 4 swimmers participate as a relay team, each swimming an equal distance of the race. There are two types: (1) Medley relay \u2014 one swimmer swims Backstroke, one Breaststroke, one Butterfly, one Freestyle, in that order, conducted over 200 yd/m and 400 yd/m distances; (2) Freestyle relay \u2014 each swimmer swims freestyle, conducted over 200, 400, and 800 yd/m distances.","id":"relays"},{"term":"Rest Area","def":"A designated area (such as a gymnasium) set aside for swimmers to rest during a meet.","id":"rest-area"}],"S":[{"term":"Sanction","def":"A permit issued by an LSC to a USA Swimming group member to conduct an event or meet.","id":"sanction"},{"term":"Sanction Fee","def":"The amount paid by a USA Swimming group member to an LSC for issuing a sanction.","id":"sanction-fee"},{"term":"Sanctioned Meet","def":"A meet approved by the LSC in which it is held. The meet must be conducted according to USA Swimming rules; all participants, including coaches, athletes, and officials, must be USA Swimming members.","id":"sanctioned-meet"},{"term":"Scratch","def":"To withdraw from an event after having declared an intention to participate. Some meets have scratch deadlines and specific scratch rules; if not followed, a swimmer can be disqualified from remaining events.","id":"scratch"},{"term":"Sectionals","def":"Nickname for Speedo Sectionals (see below), a \"senior level\" meet held in the spring and summer. Each Zone may hold up to four meets. Qualifying times, sites, dates, and meet rules are determined locally.","id":"sectionals","html":"Nickname for <a href=\"#speedo-sectionals\" class=\"xref\" data-target=\"speedo-sectionals\">Speedo Sectionals</a> (see below), a \"senior level\" meet held in the spring and summer. Each Zone may hold up to four meets. Qualifying times, sites, dates, and meet rules are determined locally."},{"term":"Seed","def":"Assign swimmers' heats and lanes according to their submitted or preliminary times.","id":"seed"},{"term":"Seeding","def":"Deck Seeding \u2014 swimmers are called to report to the Clerk of the Course; after scratches are determined, the event is seeded. Pre-Seeding \u2014 swimmers are arranged in heats according to submitted times, usually a day prior to the meet.","id":"seeding"},{"term":"Senior Meet","def":"A meet for senior-level swimmers that is not divided into age groups. Qualification times are usually necessary and vary depending on the level of the meet.","id":"senior-meet"},{"term":"Senior","def":"A USA Swimming national championship meet for swimmers of any age, as long as qualification times are met.","id":"senior"},{"term":"Session","def":"A portion of a meet distinctly separated from other portions by locale, time, type of competition, or age group.","id":"session"},{"term":"Shave","def":"The process of removing arm, leg, and exposed torso hair to decrease drag/resistance moving through the water. Used mainly by senior-level swimmers at championship meets.","id":"shave"},{"term":"Short Course","def":"A 25-yard or 25-meter pool.","id":"short-course"},{"term":"Speedo Sectionals","def":"\"Senior level\" meets held in the spring and summer, under Speedo's title sponsorship. Each Zone may hold up to four meets. Qualifying times, sites, dates, and meet rules are determined locally.","id":"speedo-sectionals","termUrl":"https://www.usaswimming.org/times/time-standards"},{"term":"Splash","def":"The USA Swimming magazine, mailed bi-monthly as a benefit of USA Swimming membership.","id":"splash"},{"term":"Split","def":"A portion of an event, shorter than the total distance, that is timed (example: a swimmer's first 50 time taken as they swim the 100). It is common to take multiple splits for longer distances.","id":"split"},{"term":"Start","def":"The beginning of a race, initiated with a dive.","id":"start"},{"term":"Starter","def":"The official in charge of signaling the beginning of a race and ensuring all swimmers have a fair takeoff.","id":"starter"},{"term":"Still Water","def":"Water that has no current caused by a filter system or waves caused by swimmers.","id":"still-water"},{"term":"States","def":"A meet held twice a year (Short Course and Long Course), sponsored by the LSC. In larger LSCs it is common to hold a Championship Senior meet and an Age Group meet separately. Qualification times are necessary. (Also known as Age Group Championships, 14 & Under Championships, and/or Senior Championships)","id":"states"},{"term":"State Championships","def":"See States","id":"state-championships","html":"See <a href=\"#states\" class=\"xref\" data-target=\"states\">States</a>"},{"term":"Meet Qualifier","def":"A swimmer who has made the necessary cutoff times to enter the designated meet.","id":"meet-qualifier"},{"term":"Stand-up","def":"The command given by the Starter or Referee to release swimmers from their starting position.","id":"stand-up"},{"term":"Step-Down","def":"The command given by the Starter or Referee to have swimmers move off the blocks \u2014 usually a good indication something is not right for the race to start.","id":"step-down"},{"term":"Stroke","def":"There are 4 competitive strokes: Butterfly, Backstroke, Breaststroke, Freestyle.","id":"stroke"},{"term":"Stroke Judge","def":"The official positioned at the side of the pool, walking the length of the course as swimmers complete their race. If a Stroke Judge sees something illegal, they report it to the referee, and the swimmer may be disqualified.","id":"stroke-judge"},{"term":"Submitted Time","def":"Times used to enter swimmers in meets; these must have been achieved by the swimmer at previous meets.","id":"submitted-time"},{"term":"Suit","def":"The racing uniform worn by the swimmer during competition. Popular styles/types include Nylon, Lycra, and technical racing fabrics (\"tech suits\").","id":"suit"},{"term":"Swim-A-Thon","def":"A \"fundraiser\" concept popularized by USA Swimming for local clubs to raise money.","id":"swim-a-thon"},{"term":"Swim-off","def":"In a Prelims/Finals competition, a race after the scheduled event to break a tie. The only circumstance warranting a swim-off is to determine which swimmer makes finals or is named an alternate; otherwise, ties stand.","id":"swim-off"}],"T":[{"term":"Taper","def":"The resting phase of a senior swimmer at the end of the season before the championship meet.","id":"taper"},{"term":"Team","def":"A USA Swimming-registered club with the right to compete for points.","id":"team"},{"term":"Team Records","def":"The statistics a team keeps, listing the fastest swimmer in the club's history for each age group/event.","id":"team-records"},{"term":"Timed Finals","def":"Competition in which only heats are swum, and final placing is determined by those times.","id":"timed-finals"},{"term":"Time Standard","def":"A time set by a meet, LSC, or USA Swimming that a swimmer must achieve for qualification or recognition.","id":"time-standard","html":"A time set by a meet, <a href=\"https://www.usaswimming.org/about/lsc-websites\" target=\"_blank\" rel=\"noopener\">LSC</a>, or <a href=\"https://www.usaswimming.org\" target=\"_blank\" rel=\"noopener\">USA Swimming</a> that a swimmer must achieve for qualification or recognition."},{"term":"Timer","def":"The volunteers sitting behind the starting blocks/finish end of the pool, responsible for getting watch times on events and activating the backup buttons for the timing system.","id":"timer"},{"term":"Time Trial","def":"An event or series of events where a swimmer may achieve or better a required time standard.","id":"time-trial"},{"term":"Top 5/8/10/16","def":"A list of times compiled by the LSC or USA Swimming that recognizes the top swimmers in each age group (boys & girls) by event and distance.","id":"top-5-8-10-16","html":"A list of times compiled by the <a href=\"https://www.usaswimming.org/about/lsc-websites\" target=\"_blank\" rel=\"noopener\">LSC</a> or USA Swimming that recognizes the top swimmers in each age group (boys &amp; girls) by event and distance. See NSEA\u2019s <a href=\"https://www.nseaswimteam.com/top-times\">Top Times</a> pages."},{"term":"Touch Out","def":"To reach the touch pad and finish first in a close race.","id":"touch-out"},{"term":"Touch Pad","def":"The removable plate (at the end of pools) connected to an automatic timing system. A swimmer must properly touch the touchpad to register an official time in a race.","id":"touch-pad"},{"term":"Toyota U.S. Open Championship","def":"A USA Swimming championship meet, typically held in early December, that serves as one of the sport's premier season-ending long course meets; currently sponsored under Toyota's title sponsorship.","id":"toyota-u-s-open-championship","termUrl":"https://www.usaswimming.org/times/time-standards"},{"term":"Transfer","def":"The act of leaving one club or LSC and going to another. Usually 120 days of unattached competition is required before a swimmer can represent another USA Swimming club.","id":"transfer"},{"term":"Travel Fund","def":"A sum of money set aside for a swimmer's travel expenses and entry fees to specified meets.","id":"travel-fund"},{"term":"Tri-meet","def":"A meet with 3 teams competing for points to see who places 1st, 2nd, and 3rd.","id":"tri-meet"}],"U":[{"term":"Unattached","def":"An athlete member who competes but does not represent a club or team (abbr. UN).","id":"unattached"},{"term":"Uniform","def":"The various parts of clothing a swimmer wears at a meet \u2014 parka, warm-up jacket, team duffel bag, sweatpants, suit, cap, goggles, T-shirt, etc.","id":"uniform"},{"term":"Unofficial Time","def":"The time displayed on a readout board or announced over the intercom immediately after the race. Once checked, it becomes the official time.","id":"unofficial-time"},{"term":"USA Swimming","def":"The national governing body of the sport, headquartered in Colorado Springs, Colorado.","id":"usa-swimming","termUrl":"https://www.usaswimming.org"},{"term":"USA Swimming ID","def":"A combination of letters and numbers assigned to a swimmer after they have completed the proper forms and paid annual dues.","id":"usa-swimming-id"},{"term":"USOTC","def":"United States Olympic Training Center, located in Colorado Springs, Colorado.","id":"usotc"}],"W":[{"term":"Warm-down","def":"The recovery swimming a swimmer does after a race, when pool space is available.","id":"warm-down"},{"term":"Warm-up","def":"The practice and \"loosening up\" session a swimmer does before a meet or their event.","id":"warm-up"},{"term":"Watch","def":"The handheld device used by timers and coaches for timing a swimmer's races and taking splits.","id":"watch"},{"term":"Whistle","def":"The sound a starter/referee makes to signal for quiet before giving the command to start a race.","id":"whistle"},{"term":"Speedo Winter Junior Championships","def":"A USA Swimming championship meet for swimmers 18 years old and under, held during the winter (typically December) in two locations \u2014 East and West \u2014 under Speedo's title sponsorship. Qualification times are necessary.","id":"speedo-winter-junior-championships","termUrl":"https://www.usaswimming.org/times/time-standards"},{"term":"Work Out","def":"The practice sessions a swimmer attends.","id":"work-out"}],"Y":[{"term":"Yards","def":"The measurement of the length of a swimming pool built per specs using the American (imperial) system. A short course yard pool is 25 yards (75 feet) in length.","id":"yards"},{"term":"Yardage","def":"The distance a swimmer races or swims in practice. Total yardage can be calculated for each practice session.","id":"yardage"}],"Z":[{"term":"Zones","def":"The country is divided into 4 major zones: Eastern, Southern, Central, and Western. At the end of the long course season (in August), the Zone administration sponsors a championship age group meet.","id":"zones"}]}
+;
+const letters = Object.keys(GLOSSARY).sort();
+const totalTerms = Object.values(GLOSSARY).reduce((a,arr)=>a+arr.length,0);
+const container = document.getElementById('glossaryContainer');
+const alphaNav = document.getElementById('alphaNav');
+const countNote = document.getElementById('countNote');
+const noResults = document.getElementById('noResults');
+const searchInput = document.getElementById('search');
+const ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function highlight(text, q){
+  if(!q) return escapeHtml(text);
+  const esc = escapeHtml(text);
+  const escQ = escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return esc.replace(new RegExp('('+escQ+')', 'ig'), '<mark>$1</mark>');
+}
+// Highlight search matches inside pre-built HTML (which may contain <a> tags)
+// without touching tag markup or attributes.
+function highlightHtml(html, q){
+  if(!q) return html;
+  const escQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('('+escQ+')', 'ig');
+  // Split on tags, only highlight text nodes
+  return html.split(/(<[^>]+>)/g).map(part=>{
+    if(part.startsWith('<')) return part;
+    return part.replace(re, '<mark>$1</mark>');
+  }).join('');
+}
+function jumpTo(id){
+  searchInput.value = '';
+  render('');
+  requestAnimationFrame(()=>{
+    const el = document.getElementById('term-'+id);
+    if(el){
+      el.scrollIntoView({behavior:'smooth', block:'center'});
+      el.classList.add('flash');
+      setTimeout(()=>el.classList.remove('flash'), 1600);
+    }
+  });
+}
+window.jumpTo = jumpTo;
+function buildAlphaNav(){
+  alphaNav.innerHTML = '';
+  ALL_LETTERS.forEach(L=>{
+    const btn = document.createElement('button');
+    btn.textContent = L;
+    if(GLOSSARY[L] && GLOSSARY[L].length){
+      btn.addEventListener('click', ()=>{
+        const el = document.getElementById('letter-'+L);
+        if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    } else {
+      btn.classList.add('disabled');
+      btn.disabled = true;
+    }
+    alphaNav.appendChild(btn);
+  });
+}
+function render(query){
+  const q = (query||'').trim().toLowerCase();
+  container.innerHTML = '';
+  let shown = 0;
+  letters.forEach(L=>{
+    const entries = GLOSSARY[L].filter(e=>{
+      if(!q) return true;
+      return e.term.toLowerCase().includes(q) || e.def.toLowerCase().includes(q);
+    });
+    if(!entries.length) return;
+    shown += entries.length;
+    const section = document.createElement('div');
+    section.className = 'letter-section';
+    section.id = 'letter-'+L;
+    const h2 = document.createElement('h2');
+    h2.textContent = L;
+    section.appendChild(h2);
+    const list = document.createElement('dl');
+    list.className = 'term-list';
+    entries.forEach(e=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'term';
+      wrap.id = 'term-' + e.id;
+      const dt = document.createElement('dt');
+      if(e.termUrl){
+        const termHtml = highlight(e.term, q);
+        dt.innerHTML = `<a href="${e.termUrl}" target="_blank" rel="noopener">${termHtml}<span class="ext-icon">&#8599;</span></a>`;
+      } else {
+        dt.innerHTML = highlight(e.term, q);
+      }
+      const dd = document.createElement('dd');
+      if(e.html){
+        dd.innerHTML = highlightHtml(e.html, q);
+        // wire up cross-reference jump links (they use # hrefs)
+        dd.querySelectorAll('a.xref').forEach(a=>{
+          a.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+            jumpTo(a.dataset.target);
+          });
+        });
+      } else {
+        dd.innerHTML = highlight(e.def, q);
+      }
+      wrap.appendChild(dt);
+      wrap.appendChild(dd);
+      list.appendChild(wrap);
+    });
+    section.appendChild(list);
+    container.appendChild(section);
+  });
+  noResults.style.display = shown === 0 ? 'block' : 'none';
+  countNote.innerHTML = q
+    ? `Showing <strong>${shown}</strong> of ${totalTerms} terms matching &ldquo;${escapeHtml(query)}&rdquo;`
+    : `<strong>${totalTerms}</strong> terms A&ndash;Z`;
+}
+buildAlphaNav();
+render('');
+searchInput.addEventListener('input', (e)=>render(e.target.value));
+                   
+
+                </script></body></html>

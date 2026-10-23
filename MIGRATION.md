@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 106 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 107 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 37 · pull 21 · ready 20 · new 12
+Counts: rebuild 16 · done 56 · pull 7 · ready 16 · new 12
 
 ## 1. Live page -> new location
 
@@ -19,56 +19,56 @@ Counts: rebuild 16 · done 37 · pull 21 · ready 20 · new 12
 | `/2023---2024` | `/times/achievements/2023-24/` | done |
 | `/` | `/` | rebuild |
 | `/top-times---lcm` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
-| `/FAQ` | `/families/new-families/faq/` | pull |
+| `/FAQ` | `/families/new-families/faq/` | done |
 | `/privacy-policy` | `/privacy/` | pull |
 | `/fee-structure` | `/programs/fees/` | pull |
 | `/shoulder-strength` | `/training/same/strength/` | pull |
 | `/alumni` | `/about/alumni/` | done |
 | `/2022---23-achievements` | `/times/achievements/2022-23/` | done |
-| `/books` | `/families/new-families/books/` | pull |
+| `/books` | `/families/new-families/books/` | done |
 | `/ejp-parking` | `/about/practice-locations/parking/` | done |
 | `/who-to-contact` | `/about/contact/` | done |
 | `/scy---relay-team-records` | `/times/records/relays/` | ready |
 | `/top-5-relays---scy` | `/times/top-times/` + `/times/top-times/relays/` | rebuild, ready |
 | `/top-times` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
 | `/power-points-explained` | `/times/standards/power-points/` | done |
-| `/captyn-message-archive` | `/families/how-to/captyn-messages/` | pull |
+| `/captyn-message-archive` | `/families/how-to/captyn-messages/` | done |
 | `/2025---2026` | `/times/achievements/2025-26/` | done |
 | `/scholarships-and-financial-assistance` | `/programs/financial-assistance/` | done |
-| `/glossary` | `/families/new-families/glossary/` | pull |
+| `/glossary` | `/families/new-families/glossary/` | done |
 | `/education` | `/training/same/education/` | rebuild |
-| `/fast-facts-on-water-safety` | `/families/new-families/water-safety/` | pull |
+| `/fast-facts-on-water-safety` | `/families/new-families/water-safety/` | done |
 | `/coaching-staff` | `/about/coaching-staff/` | done |
-| `/practice-equipment` | `/families/team-store/group-equipment/` | pull |
+| `/practice-equipment` | `/families/team-store/group-equipment/` | done |
 | `/general-practice-schedule` | `/programs/schedule/` | done |
 | `/practice-groups` | `/programs/` + `/programs/practice-groups/` + `/programs/practice-groups/splash/` + `/programs/practice-groups/tidepool/` + `/programs/practice-groups/riptide/` + `/programs/practice-groups/breakers/` + `/programs/practice-groups/surge/` + `/programs/practice-groups/senior/` | rebuild, done |
 | `/college-swimmers` | `/about/alumni/college-swimmers/` | done |
 | `/national--meet--qualifiers` | `/times/standards/national-qualifiers/` | done |
 | `/calendar` | `/meets/` + `/meets/calendar/` | rebuild, ready |
-| `/opt-out---intent-information` | `/families/how-to/session-opt-out/` | pull |
+| `/opt-out---intent-information` | `/families/how-to/session-opt-out/` | done |
 | `/2024---2025` | `/times/achievements/2024-25/` | done |
 | `/about-us` | `/about/` + `/about/who-we-are/` | rebuild, done |
-| `/about-swim-meets` | `/meets/guide/` | pull |
+| `/about-swim-meets` | `/meets/guide/` | done |
 | `/time-standards` | `/times/standards/` + `/times/standards/understanding/` | rebuild, done |
 | `/practice-locations` | `/about/practice-locations/` | done |
-| `/meet-pools` | `/meets/pools/` | pull |
+| `/meet-pools` | `/meets/pools/` | done |
 | `/safe-sport` | `/about/safe-sport/` | done |
-| `/newsletters` | `/families/newsletter/` + `/families/newsletter/archive/` | rebuild, ready |
+| `/newsletters` | `/families/newsletter/` + `/families/newsletter/archive/` | rebuild, done |
 | `/team-records---lcm` | `/times/records/individual/` | ready |
 | `/imx-progress` | `/times/standards/imx-imr/` + `/times/standards/imx-imr/about/` | rebuild, done |
-| `/current` | `/families/newsletter/` + `/families/newsletter/current/` | rebuild, ready |
+| `/current` | `/families/newsletter/` + `/families/newsletter/current/` | rebuild, done |
 | `/lcm---relay-team-records` | `/times/records/relays/` | ready |
 | `/top-5-relays---lcm` | `/times/top-times/` + `/times/top-times/relays/` | rebuild, ready |
 | `/nc-age-group-championships` | `/times/standards/nc-age-group/` | done |
 | `/nc-senior-championships` | `/times/standards/nc-senior/` | done |
-| `/opt-out-of-meets` | `/families/how-to/opt-out-of-meets/` | pull |
-| `/opt-in-to-meets` | `/families/how-to/opt-in-to-meets/` | pull |
-| `/register-for-an-event` | `/families/how-to/register-for-an-event/` | pull |
+| `/opt-out-of-meets` | `/families/how-to/opt-out-of-meets/` | done |
+| `/opt-in-to-meets` | `/families/how-to/opt-in-to-meets/` | done |
+| `/register-for-an-event` | `/families/how-to/register-for-an-event/` | done |
 | `/team-records---scy` | `/times/records/individual/` | ready |
 | `/team-record-holders` | `/times/records/holders/` | ready |
-| `/tech-suit-info` | `/families/team-store/tech-suit-guide/` | pull |
+| `/tech-suit-info` | `/families/team-store/tech-suit-guide/` | done |
 | `/training-zone-cheat-sheet` | `/training/zones/` | pull |
-| `/swim-suit-guide` | `/meets/uniform/` | pull |
+| `/swim-suit-guide` | `/meets/uniform/` | done |
 | `/test-page` | _retired: Test page_ | retired |
 | `/imr-/-imx-progress` | `/times/standards/imx-imr/` + `/times/standards/imx-imr/progress/` | rebuild, ready |
 | `/agility` | `/training/same/agility/` | pull |
@@ -141,36 +141,37 @@ Deliberately **not** pulled: per-athlete biomechanics reports (individual swimme
 | `/programs/join/` | Free Assessment | link | ready | - | - |
 | `/families/` | Family Guide | hub | rebuild | - | - |
 | `/families/new-families/` | New to Swimming | hub | new | - | - |
-| `/families/new-families/faq/` | FAQ | page | pull | `/FAQ` | - |
-| `/families/new-families/glossary/` | Glossary | page | pull | `/glossary` | - |
-| `/families/new-families/water-safety/` | Fast Facts on Water Safety | page | pull | `/fast-facts-on-water-safety` | - |
-| `/families/new-families/books/` | Books | page | pull | `/books` | - |
+| `/families/new-families/faq/` | FAQ | page | done | `/FAQ` | - |
+| `/families/new-families/glossary/` | Glossary | tool | done | `/glossary` | - |
+| `/families/new-families/water-safety/` | Fast Facts on Water Safety | page | done | `/fast-facts-on-water-safety` | - |
+| `/families/new-families/books/` | Books | page | done | `/books` | - |
 | `/families/new-families/usa-swimming-parents/` | USA Swimming Parents Page | link | ready | - | - |
 | `/families/how-to/` | How-To Guides | hub | rebuild | - | - |
-| `/families/how-to/captyn-messages/` | Captyn Message Archive | page | pull | `/captyn-message-archive` | - |
-| `/families/how-to/register-for-an-event/` | Register for an Event | page | pull | `/register-for-an-event` | - |
-| `/families/how-to/opt-in-to-meets/` | Opt In to Meets | page | pull | `/opt-in-to-meets` | - |
-| `/families/how-to/opt-out-of-meets/` | Opt Out of Meets | page | pull | `/opt-out-of-meets` | - |
-| `/families/how-to/session-opt-out/` | Session & Season Opt-Out | page | pull | `/opt-out---intent-information` | 2026 - 27/2026 - 27 Session and Season Opt Out.odt |
+| `/families/how-to/captyn-messages/` | Captyn Message Archive | page | done | `/captyn-message-archive` | - |
+| `/families/how-to/register-for-an-event/` | Register for an Event | page | done | `/register-for-an-event` | - |
+| `/families/how-to/opt-in-to-meets/` | Opt In to Meets | page | done | `/opt-in-to-meets` | - |
+| `/families/how-to/opt-out-of-meets/` | Opt Out of Meets | page | done | `/opt-out-of-meets` | - |
+| `/families/how-to/session-opt-out/` | Session & Season Opt-Out | page | done | `/opt-out---intent-information` | 2026 - 27/2026 - 27 Session and Season Opt Out.odt |
 | `/families/newsletter/` | Newsletter | hub | rebuild | `/current`, `/newsletters` | - |
-| `/families/newsletter/current/` | Current Issue | page | ready | `/current` | content/newsletters/nsea-newsletter-10-17-2026.html |
-| `/families/newsletter/archive/` | Newsletter Archive | page | ready | `/newsletters` | content/newsletters/nsea-newsletter-10-03-2026.html |
+| `/families/newsletter/current/` | Current Issue | tool | done | `/current` | content/newsletters/nsea-newsletter-10-17-2026.html |
+| `/families/newsletter/archive/` | Newsletter Archive | page | done | `/newsletters` | content/newsletters/nsea-newsletter-10-03-2026.html |
 | `/families/team-store/` | Team Store | hub | rebuild | - | - |
 | `/families/team-store/apparel/` | Apparel Store | link | ready | - | - |
 | `/families/team-store/caps/` | Cap Order Form | link | ready | - | - |
 | `/families/team-store/practice-equipment/` | Practice Equipment Order | link | ready | - | - |
-| `/families/team-store/group-equipment/` | Equipment by Group | page | pull | `/practice-equipment` | NSEA_Required_Practice_Equipment.pdf |
+| `/families/team-store/group-equipment/` | Equipment by Group | page | done | `/practice-equipment` | NSEA_Required_Practice_Equipment.pdf |
 | `/families/team-store/tech-suit-order/` | Tech Suit Order Form | link | ready | - | - |
-| `/families/team-store/tech-suit-guide/` | Tech Suit Guide | page | pull | `/tech-suit-info` | FINIS Suit Guide.pdf |
+| `/families/team-store/tech-suit-guide/` | Tech Suit Guide | page | done | `/tech-suit-info` | FINIS Suit Guide.pdf |
 | `/families/carpool/` | Carpool Board 🔒 | page | new | - | - |
 | `/meets/` | Meets | hub | rebuild | `/calendar` | - |
 | `/meets/calendar/` | Calendar of Events | tool | ready | `/calendar` | tools/events/ (site-src) |
-| `/meets/guide/` | Guide to Swim Meets | page | pull | `/about-swim-meets` | Project: claude/nsea-guide-to-swim-meets.html |
-| `/meets/uniform/` | Meet Uniform | page | pull | `/swim-suit-guide` | - |
-| `/meets/pools/` | Meet Pools | page | pull | `/meet-pools` | - |
+| `/meets/guide/` | Guide to Swim Meets | tool | done | `/about-swim-meets` | Project: claude/nsea-guide-to-swim-meets.html |
+| `/meets/uniform/` | Meet Uniform | page | done | `/swim-suit-guide` | - |
+| `/meets/pools/` | Meet Pools | page | done | `/meet-pools` | - |
 | `/meets/recaps/` | Meet Recaps | hub | new | - | content/recaps/ |
-| `/meets/recaps/october-suprise-2026/` | October Suprise 2026 | page | ready | - | content/recaps/meet-recap-october-suprise-2026.html; content/recaps/october-suprise-2026-analysis.html |
-| `/meets/recaps/fall-frenzy-2026/` | Fall Frenzy 2026 (BAC v NSEA) | page | ready | - | Project: claude/newsletter-inserts/meet-recap-fall-frenzy-2026.html |
+| `/meets/recaps/october-suprise-2026/` | October Suprise 2026 | tool | done | - | content/recaps/meet-recap-october-suprise-2026.html; content/recaps/october-suprise-2026-analysis.html |
+| `/meets/recaps/october-suprise-2026-analysis/` | October Suprise 2026: Analysis | tool | done | - | content/recaps/october-suprise-2026-analysis.html |
+| `/meets/recaps/fall-frenzy-2026/` | Fall Frenzy 2026 (BAC v NSEA) | tool | done | - | Project: claude/newsletter-inserts/meet-recap-fall-frenzy-2026.html |
 | `/times/` | Times & Records | hub | rebuild | - | - |
 | `/times/standards/` | Time Standards | hub | rebuild | `/time-standards` | - |
 | `/times/standards/understanding/` | Understanding Time Standards | page | done | `/time-standards` | - |

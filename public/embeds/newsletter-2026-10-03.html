@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NSEA Swim — Weekly Newsletter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325; --panel:#FAFBFB; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#EEF1F1;font-family:'Inter',sans-serif;color:var(--ink);}
+  .page{max-width:800px;margin:0 auto;padding:32px 16px;}
+  .sheet{background:var(--white);border-radius:10px;padding:40px 44px 32px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .header{display:flex;gap:20px;align-items:flex-start;}
+  .logo{width:76px;height:76px;flex-shrink:0;}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:4px;}
+  h1{font-family:'Oswald',sans-serif;font-weight:600;font-size:34px;margin:0 0 4px;color:var(--ink);}
+  .date{font-size:14px;color:var(--gray);margin-bottom:14px;}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;}
+  .pill-link{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--teal);border:1px solid var(--teal);border-radius:20px;padding:5px 14px;text-decoration:none;background:var(--white);}
+  hr.divider{border:none;border-top:2px solid var(--coral);margin:22px 0 26px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin-bottom:28px;}
+  .label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:10px;}
+  .doc-pills{display:flex;flex-wrap:wrap;gap:10px;}
+  .doc-pill{font-size:13px;font-weight:500;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 12px;background:var(--white);}
+  h2{font-family:'Oswald',sans-serif;font-weight:600;font-size:24px;text-transform:uppercase;letter-spacing:.01em;margin:0 0 14px;padding-left:12px;border-left:4px solid var(--coral);color:var(--ink);}
+  .section{margin-bottom:30px;}
+  .event-row{display:flex;align-items:center;gap:18px;border-left:3px solid var(--teal);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:4px;padding:12px 16px;margin-bottom:8px;background:var(--white);}
+  .event-date{font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--teal);width:100px;flex-shrink:0;letter-spacing:.02em;}
+  .event-desc{flex:1;font-size:14.5px;color:var(--ink);}
+  .badge{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--coral);background:var(--coral-light);border-radius:14px;padding:4px 10px;white-space:nowrap;}
+  .cal-row{display:flex;gap:18px;padding:10px 2px;border-bottom:1px solid var(--line);}
+  .cal-row:last-child{border-bottom:none;}
+  .cal-date{font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--teal);width:100px;flex-shrink:0;}
+  .cal-desc{font-size:14.5px;color:var(--ink);}
+  .cal-list{margin:6px 0 2px;padding-left:18px;font-size:13.5px;color:var(--gray);line-height:1.6;}
+  .cal-list a{color:var(--teal);font-weight:600;}
+  .event-links{margin-top:6px;font-size:12px;}
+  .event-links a{color:var(--teal);font-weight:600;text-decoration:none;margin-right:14px;}
+  .event-links a:hover{text-decoration:underline;}
+  .event-main{flex:1;}
+  .cal-link-row{display:flex;align-items:center;gap:18px;padding:11px 2px;border-bottom:1px solid var(--line);}
+  .cal-link-row:last-child{border-bottom:none;}
+  .cal-link-label{font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--teal);width:100px;flex-shrink:0;}
+  .cal-link-row a{color:var(--ink);font-weight:600;}
+  .pgm-note{font-size:12.5px;color:var(--gray);font-style:italic;margin:0 0 10px;}
+  .pgm-row{display:flex;justify-content:space-between;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px;}
+  .pgm-row:last-child{border-bottom:none;}
+  .pgm-group{font-family:'Oswald',sans-serif;font-weight:600;color:var(--teal);text-transform:uppercase;font-size:13.5px;}
+  .pgm-time{color:var(--ink);font-size:13.5px;}
+  .event-loc{font-size:12px;color:var(--gray);margin-top:2px;}
+  .sched-footnote{font-size:12px;color:var(--gray);margin-top:10px;padding-top:10px;border-top:1px solid var(--line);line-height:1.5;}
+  .bday-pills{display:flex;flex-wrap:wrap;gap:10px;}
+  .bday-pill{font-size:13px;font-weight:600;color:var(--coral);background:var(--coral-light);border-radius:20px;padding:6px 14px;}
+  table.sched{width:100%;border-collapse:collapse;font-size:13.5px;}
+  table.sched th{background:var(--teal);color:var(--white);font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:9px 6px;text-align:center;font-weight:700;}
+  table.sched th.group-h{text-align:left;padding-left:12px;}
+  table.sched td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);}
+  table.sched td.group{text-align:left;padding-left:12px;font-family:'Oswald',sans-serif;font-weight:600;color:var(--teal);text-transform:uppercase;font-size:13px;}
+  table.sched td.ampm{font-family:'Space Mono',monospace;font-size:11px;color:var(--gray);text-transform:uppercase;}
+  table.sched td.off{color:var(--gray-light);font-style:italic;}
+  table.sched td.event-hl{color:var(--coral);font-weight:700;}
+  table.sched tr:nth-child(even) td{background:var(--panel);}
+  .reminders{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .card{border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:var(--white);}
+  .card h3{font-family:'Oswald',sans-serif;font-weight:600;font-size:17px;text-transform:uppercase;margin:0 0 8px;color:var(--ink);}
+  .card p{font-size:13.5px;color:var(--gray);line-height:1.5;margin:0;}
+  .card a{color:var(--teal);font-weight:600;}
+  .card.full{grid-column:1 / -1;}
+  .card ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--gray);line-height:1.7;}
+  .footer-sponsors{text-align:center;border-top:1px solid var(--line);padding-top:20px;margin-top:6px;}
+  .footer-label{font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:10px;}
+  .sponsor-links{font-size:13px;}
+  .sponsor-links a{color:var(--ink);text-decoration:none;font-weight:600;}
+  .sponsor-links span{color:var(--line);margin:0 8px;}
+  .quick-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px;}
+  .qt{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:10px;background:var(--teal);color:var(--white);text-decoration:none;}
+  .qt:nth-child(2){background:var(--teal-dark);}
+  .qt-icon{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:var(--white);}
+  .qt-text{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .qt-label{font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#CFEAE6;}
+  .qt-title{font-family:'Oswald',sans-serif;font-weight:600;font-size:17px;text-transform:uppercase;letter-spacing:.01em;line-height:1.2;}
+  .qt-arrow{font-size:18px;opacity:.8;}
+  .sched-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .foot-line{text-align:center;font-size:11.5px;color:var(--gray-light);margin-top:16px;}
+  @media (max-width:520px){
+    .sheet{padding:26px 18px;}
+    .reminders{grid-template-columns:1fr;}
+    .header{flex-direction:column;}
+    h1{font-size:26px;}
+    .event-row{flex-wrap:wrap;}
+  }
+  @media print{
+    @page{size:letter;margin:0.4in;}
+    body{background:var(--white);}
+    .page{max-width:none;padding:0;margin:0;}
+    .sheet{box-shadow:none;border-radius:0;padding:0;}
+    .section,.panel,.header,.card,table.sched,.bday-pills,.footer-sponsors{break-inside:avoid;page-break-inside:avoid;}
+    .event-row,.cal-row,.cal-link-row,.pgm-row{break-inside:avoid;page-break-inside:avoid;}
+    h2{break-after:avoid;page-break-after:avoid;}
+    a{color:inherit;text-decoration:none;}
+    .pill-link,.event-links a,.cal-link-row a,.card a{text-decoration:underline;}
+    .qt{-webkit-print-color-adjust:exact;print-color-adjust:exact;break-inside:avoid;}
+    /* a long Meet Recap must be allowed to flow across pages (overrides .section break-avoid) */
+    .section.nsea-recap,.nsea-recap .rc-card{break-inside:auto;page-break-inside:auto;}
+  }
+
+  .bday-box{display:flex;align-items:center;gap:20px;border:2px dashed var(--coral);border-radius:14px;padding:18px 22px;background:var(--coral-light);-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .bday-art{width:112px;flex-shrink:0;}
+  .bday-cheer{font-family:'Oswald',sans-serif;font-weight:700;font-size:24px;text-transform:uppercase;color:var(--coral);line-height:1.1;}
+  .bday-sub{font-size:13px;color:var(--gray);margin:3px 0 12px;}
+  .bday-box .bday-pill{background:var(--white);border:1px solid var(--coral);font-size:14px;}
+  .sp-card{display:flex;gap:18px;border:1px solid var(--line);border-left:6px solid var(--coral);border-radius:10px;padding:16px 18px;margin-bottom:12px;background:var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.05);break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .sp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:12px;}
+  .sp-grid .sp-card{margin-bottom:0;gap:14px;padding:14px;}
+    .sp-date{width:72px;flex-shrink:0;align-self:flex-start;background:var(--teal);color:var(--white);border-radius:10px;text-align:center;padding:10px 4px;display:flex;flex-direction:column;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .sp-mon{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;}
+  .sp-day{font-family:'Oswald',sans-serif;font-weight:700;font-size:38px;line-height:1.05;}
+  .sp-dow{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;color:#CFEAE6;}
+  .sp-tag{display:inline-block;font-family:'Space Mono',monospace;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--coral);background:var(--coral-light);border-radius:12px;padding:2px 9px;margin-bottom:5px;}
+  .sp-title{font-family:'Oswald',sans-serif;font-weight:600;font-size:19px;text-transform:uppercase;color:var(--ink);line-height:1.2;}
+  .sp-card .cal-list{color:var(--ink);font-size:14px;}
+  @media (max-width:520px){.bday-box{flex-direction:column;text-align:center;}.bday-box .bday-pills{justify-content:center;}.sp-card{gap:12px;padding:14px 12px;}.sp-date{width:68px;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="sheet">
+
+    <!-- HEADER -->
+    <div class="header">
+      <img class="logo" src="https://irp.cdn-website.com/11bbd3ff/dms3rep/multi/opt/NEW+NSEA+Swim_Logo+-+Alex+Mojaverian-3-1920w.png" alt="NSEA Swim Sea Devils logo" onerror="this.style.display='none'">
+      <div class="header-text">
+        <div class="eyebrow">Weekly Newsletter</div>
+        <h1>NSEA Swim — Sea Devils</h1>
+        <div class="date">2026 – 2027 Season · Week of 10/03/2026</div>
+        <div class="pills">
+          <a class="pill-link" href="https://www.nseaswimteam.com" target="_blank">Website ↗</a>
+          <a class="pill-link" href="https://nseaswim.captyn.com" target="_blank">Captyn ↗</a>
+          <a class="pill-link" href="/families/newsletter/" target="_blank">Newsletter Archive ↗</a>
+          <a class="pill-link" href="https://canva.link/yfffkdlhkd508pn" target="_blank">Foundation Newsletter ↗</a>
+        </div>
+      </div>
+    </div>
+    <hr class="divider">
+
+    <!-- ATTACHED DOCUMENTS -->
+    <div class="panel">
+      <div class="label">Attached Documents</div>
+      <div class="doc-pills"><div class="doc-pill">Full Newsletter</div></div>
+    </div>
+
+    <!-- OCTOBER BIRTHDAYS -->
+    <div class="section">
+      <h2>October Birthdays</h2>
+      <div class="bday-box">
+        <svg class="bday-art" viewBox="0 0 120 110" aria-hidden="true">
+          <path d="M22 44 Q20 62 30 74" stroke="#9BA0A3" stroke-width="1.5" fill="none"/><path d="M98 40 Q101 58 90 74" stroke="#9BA0A3" stroke-width="1.5" fill="none"/>
+          <ellipse cx="22" cy="26" rx="13" ry="17" fill="#ee492f"/><path d="M19 43h6l-3-4z" fill="#ee492f"/>
+          <ellipse cx="98" cy="22" rx="13" ry="17" fill="#008675"/><path d="M95 39h6l-3-4z" fill="#008675"/>
+          <rect x="47" y="34" width="4" height="16" rx="2" fill="#008675"/><rect x="58" y="34" width="4" height="16" rx="2" fill="#ee492f"/><rect x="69" y="34" width="4" height="16" rx="2" fill="#008675"/>
+          <path d="M49 24c3 4 3 7 0 9c-3-2-3-5 0-9z M60 24c3 4 3 7 0 9c-3-2-3-5 0-9z M71 24c3 4 3 7 0 9c-3-2-3-5 0-9z" fill="#F5B301"/>
+          <rect x="38" y="50" width="44" height="20" rx="5" fill="#fff" stroke="#ee492f" stroke-width="2.5"/>
+          <rect x="28" y="70" width="64" height="26" rx="6" fill="#008675"/>
+          <path d="M28 80q8 8 16 0t16 0t16 0t16 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <rect x="20" y="96" width="80" height="5" rx="2.5" fill="#676d70"/>
+          <circle cx="8" cy="60" r="3" fill="#F5B301"/><circle cx="112" cy="56" r="3" fill="#ee492f"/><circle cx="60" cy="8" r="3" fill="#008675"/><circle cx="40" cy="12" r="2.5" fill="#F5B301"/><circle cx="80" cy="10" r="2.5" fill="#ee492f"/><circle cx="112" cy="90" r="2.5" fill="#008675"/><circle cx="8" cy="92" r="2.5" fill="#ee492f"/>
+        </svg>
+        <div class="bday-main">
+          <div class="bday-cheer">Happy Birthday, Sea Devils!</div>
+          <div class="bday-sub">Celebrating our October birthdays</div>
+          <div class="bday-pills"><div class="bday-pill">Harper</div><div class="bday-pill">Lilly B</div><div class="bday-pill">Josie</div><div class="bday-pill">Olivia</div><div class="bday-pill">Matthew</div><div class="bday-pill">Kirin</div><div class="bday-pill">Kira</div><div class="bday-pill">Sophie</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPECIAL EVENTS - SAVE THE DATES -->
+    <div class="section">
+      <h2>Special Events — Save the Dates</h2>
+      <div class="sp-grid">
+      <div class="sp-card">
+        <div class="sp-date"><span class="sp-mon">Oct</span><span class="sp-day">13</span><span class="sp-dow">Tue · 2026</span></div>
+        <div class="event-main">
+          <div class="sp-tag">Save the Date</div>
+          <div class="sp-title">Team Picture Day!</div>
+          <ul class="cal-list"><li><strong>5:15pm</strong> at Earl Jackson Pool</li><li>All of NSEA Swim</li><li>Bring this year's Team Shirt!</li></ul>
+          <div class="event-links"><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=NSEA+Swim+Team+Picture+Day&amp;dates=20261013T171500%2F20261013T181500&amp;details=All+of+NSEA+Swim.+Bring+this+year%27s+Team+Shirt%21&amp;location=Earl+Jackson+Pool&amp;ctz=America%2FNew_York" target="_blank">+ Add to Calendar</a></div>
+        </div>
+      </div>
+      <div class="sp-card">
+        <div class="sp-date"><span class="sp-mon">Mar</span><span class="sp-day">22</span><span class="sp-dow">Mon · 2027</span></div>
+        <div class="event-main">
+          <div class="sp-tag">Save the Date</div>
+          <div class="sp-title">2027 Spring Banquet &amp; Senior Recognition</div>
+          <ul class="cal-list"><li><strong>5:30 – 7:30pm</strong></li><li>4 Live Oak Dr, Wrightsville Beach, NC 28480</li><li>All of NSEA Swim</li><li>A celebration of you, the NSEA Swim family, and a recognition of our graduating Seniors (Class of 2027)</li></ul>
+          <div class="event-links"><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=NSEA+Swim+Spring+Banquet+%26+Senior+Recognition&amp;dates=20270322T173000%2F20270322T193000&amp;details=A+celebration+of+the+NSEA+Swim+family+and+recognition+of+our+graduating+Seniors+%28Class+of+2027%29.+All+of+NSEA+Swim.&amp;location=4+Live+Oak+Dr%2C+Wrightsville+Beach%2C+NC+28480&amp;ctz=America%2FNew_York" target="_blank">+ Add to Calendar</a></div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- UPCOMING EVENTS & DEADLINES -->
+    <div class="section">
+      <h2>Upcoming Events &amp; Deadlines</h2>
+      <div class="event-row">
+        <div class="event-date">FRI, OCT 9</div>
+        <div class="event-main">
+          <div class="event-desc"><strong>2026 NSEA Swim Team Intersquad</strong></div>
+          <div class="event-loc">Earl Jackson Pool · All groups / all swimmers</div>
+          <div class="event-links">
+            <a href="https://nseaswim.captyn.com/account/volunteers/cmtvx21bp001a14n4afz8xkro" target="_blank">Volunteer Sign Up</a>
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=NSEA+Swim+Team+Intersquad&amp;dates=20261009%2F20261010&amp;details=All+groups+%2F+all+swimmers.&amp;location=Earl+Jackson+Pool" target="_blank">+ Add to Calendar</a>
+          </div>
+        </div>
+        <div class="badge">Entries closed</div>
+      </div>
+      <div class="event-row">
+        <div class="event-date">OCT 30–NOV 1</div>
+        <div class="event-main">
+          <div class="event-desc"><strong>BAC Halloween Bash</strong></div>
+          <div class="event-loc">Dinah E Gore Fitness &amp; Aquatics Center · All groups / all swimmers</div>
+          <div class="event-links">
+            <a href="https://nseaswim.captyn.com/account/meets/cmu4aghey0qp51cn1fjnk5egt" target="_blank">Meet Sign Up</a>
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=BAC+Halloween+Bash&amp;dates=20261030%2F20261102&amp;details=All+groups+%2F+all+swimmers.+Entry+deadline+Thu+10%2F15+%40+11%3A00pm.&amp;location=Dinah+E+Gore+Fitness+%26+Aquatics+Center" target="_blank">+ Add to Calendar</a>
+          </div>
+        </div>
+        <div class="badge">Sign up by 10/15, 11pm</div>
+      </div>
+      <div class="event-row">
+        <div class="event-date">NOV 13–15</div>
+        <div class="event-main">
+          <div class="event-desc"><strong>GAME Turkey Invitational</strong></div>
+          <div class="event-loc">Carolina Natatorium @ USC · Breakers / Surge / Senior</div>
+          <div class="event-links">
+            <a href="https://nseaswim.captyn.com/account/meets/cmtiur9s907uw15n4qz0g8sj0" target="_blank">Meet Sign Up</a>
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=GAME+Turkey+Invitational&amp;dates=20261113%2F20261116&amp;details=Breakers+%2F+Surge+%2F+Senior.+Entry+deadline+10%2F27+%40+11pm.&amp;location=Carolina+Natatorium+%40+USC" target="_blank">+ Add to Calendar</a>
+          </div>
+        </div>
+        <div class="badge">Sign up by 10/27, 11pm</div>
+      </div>
+      <p class="pgm-note" style="margin-top:10px;">Volunteer sign-up links for the Halloween Bash and Turkey Invitational will be added once they're posted in Captyn.</p>
+    </div>
+
+    <!-- WEEKLY SCHEDULE -->
+    <div class="section">
+      <h2>Weekly Schedule — Oct 5 – Oct 11</h2>
+      <div class="sched-wrap"><table class="sched">
+        <tr>
+          <th class="group-h">Group</th><th></th>
+          <th>MON<br>10/05</th><th>TUE<br>10/06</th><th>WED<br>10/07</th>
+          <th>THU<br>10/08</th><th>FRI<br>10/09</th><th>SAT<br>10/10</th><th>SUN<br>10/11</th>
+        </tr>
+<tr><td class="group">Splash</td><td class="ampm">PM</td><td class="off">Off</td><td>4:30 – 5:15</td><td>4:30 – 5:15</td><td>4:30 – 5:15</td><td class="event-hl">Meet</td><td class="off">Off</td><td class="off">Off</td></tr>
+<tr><td class="group">Tidepool</td><td class="ampm">PM</td><td>4:30 – 5:30</td><td>4:30 – 6:00</td><td>4:30 – 5:30</td><td>4:30 – 6:00</td><td class="event-hl">Meet</td><td class="off">Off</td><td class="off">Off</td></tr>
+<tr><td class="group">Riptide</td><td class="ampm">PM</td><td>5:15 – 6:45</td><td>5:15 – 6:45</td><td>5:15 – 6:15</td><td>5:15 – 6:45</td><td class="event-hl">Meet</td><td class="off">Off</td><td class="off">Off</td></tr>
+<tr><td class="group">Breakers</td><td class="ampm">AM</td><td class="off">Off</td><td class="off">Off</td><td class="off">Off</td><td class="off">Off</td><td class="off">Off</td><td>8:30 – 10:00</td><td class="off">Off</td></tr>
+<tr><td class="group"></td><td class="ampm">PM</td><td>5:15 – 6:45</td><td>5:15 – 6:45</td><td>6:15 – 8:15</td><td>5:15 – 6:45</td><td class="event-hl">Meet</td><td class="off">Off</td><td class="off">Off</td></tr>
+<tr><td class="group">Surge</td><td class="ampm">AM</td><td class="off">Off</td><td class="off">Off</td><td class="off">Off</td><td class="off">Off</td><td>5:30 – 7:00</td><td>6:30 – 8:30</td><td class="off">Off</td></tr>
+<tr><td class="group"></td><td class="ampm">PM</td><td>6:45 – 8:15</td><td>6:15 – 8:15</td><td>6:15 – 8:15</td><td>6:15 – 8:15</td><td class="event-hl">Meet</td><td class="off">Off</td><td class="off">Off</td></tr>
+<tr><td class="group">Senior</td><td class="ampm">AM</td><td class="off">Off</td><td>5:30 – 7:00</td><td class="off">Off</td><td>5:30 – 7:00</td><td>5:30 – 7:00</td><td>6:30 – 8:30</td><td class="off">Off</td></tr>
+<tr><td class="group"></td><td class="ampm">PM</td><td>6:45 – 8:15</td><td>6:15 – 8:15</td><td>4:15 – 6:15</td><td>6:15 – 8:15</td><td class="event-hl">Meet</td><td class="off">Off</td><td class="off">Off</td></tr>
+      </table></div>
+      <p class="sched-footnote">
+        This schedule is unofficial — Captyn is the source of truth for practice times. If the Newsletter and Captyn conflict, go with Captyn, or ask your child's group coach.<br>
+        <strong>This week:</strong> Friday 10/9 is the NSEA Swim Team Intersquad at Earl Jackson Pool. <strong>Coming up:</strong> Team Picture Day Tue 10/13 @ 5:15pm · BAC Halloween Bash entries due Thu 10/15 @ 11pm.
+      </p>
+    </div>
+
+    <!-- VOLUNTEER OPPORTUNITIES -->
+    <div class="section">
+      <h2>Volunteer Opportunities</h2>
+      <div class="cal-row">
+        <div class="cal-date">OCT 5 – 9</div>
+        <div class="event-main">
+          <div class="cal-desc"><strong>Schools in Pools Week</strong> <span style="color:var(--gray);">· Foundation</span></div>
+          <div class="event-links">
+            <a href="https://www.signupgenius.com/go/4090A4AACAA29ABF94-65713719-october#/" target="_blank">Volunteer Sign Up</a>
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Schools+in+Pools+week+%28Foundation%29&amp;dates=20261005%2F20261010&amp;details=Volunteer+sign+up%3A+https%3A%2F%2Fwww.signupgenius.com%2Fgo%2F4090A4AACAA29ABF94-65713719-october%23%2F&amp;location=" target="_blank">+ Add to Calendar</a>
+          </div>
+        </div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-date">SAT, OCT 10</div>
+        <div class="event-main">
+          <div class="cal-desc"><strong>Saturday Swim Lessons Begin</strong> <span style="color:var(--gray);">· Foundation</span></div>
+          <div class="event-links">
+            <a href="https://www.signupgenius.com/go/4090A4AACAA29ABF94-65471668-volunteers#/" target="_blank">Volunteer Sign Up</a>
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Saturday+swim+lessons+start+%28Foundation%29&amp;dates=20261010%2F20261011&amp;details=Volunteer+sign+up%3A+https%3A%2F%2Fwww.signupgenius.com%2Fgo%2F4090A4AACAA29ABF94-65471668-volunteers%23%2F&amp;location=" target="_blank">+ Add to Calendar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEAM INFO & REMINDERS -->
+    <div class="section">
+      <h2>Team Info &amp; Reminders</h2>
+      <div class="reminders">
+      <div class="card full">
+        <h3>Parking</h3>
+        <p>Team activities are underway at Earl Jackson Pool — please take a moment to review the <a href="/about/practice-locations/parking/" target="_blank">Parking Guidelines</a>.</p>
+      </div>
+      <div class="card full">
+        <h3>Team Assistance — Parent Volunteers</h3>
+        <p>We're looking for parents to assist with team events: the Spring Banquet &amp; Senior Celebration, team celebrations, events and outings. Email <a href="mailto:brittany@nseaswim.com">brittany@nseaswim.com</a> or <a href="mailto:devin@nseaswim.com">devin@nseaswim.com</a> to volunteer.</p>
+      </div>
+      </div>
+    </div>
+
+    <!-- WEBSITE UPDATES & ADDITIONS -->
+    <div class="section">
+      <h2>Website Updates &amp; Additions</h2>
+      <div class="reminders">
+      <div class="card">
+        <h3>New Guides</h3>
+        <ul>
+          <li><a href="/training/same/foam-rolling/" target="_blank">Foam Rolling</a></li>
+          <li><a href="/training/same/strength/" target="_blank">Shoulder Strength &amp; Health</a></li>
+          <li><a href="/training/same/mobility/" target="_blank">Pre-Practice Routine</a></li>
+          <li><a href="/times/standards/compare-all-ages/" target="_blank">SCY Time Standards Comparison — All Ages</a></li>
+          <li><a href="/times/standards/compare-by-age-group/" target="_blank">SCY Time Standards Comparison — By Age Group</a></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Updated Guides</h3>
+        <ul>
+          <li><a href="/times/standards/nc-age-group/" target="_blank">NC Age Group Championships — Qualifying &amp; Placement</a></li>
+          <li><a href="/times/standards/nc-senior/" target="_blank">NC Senior Championships — Qualifying &amp; Placement</a></li>
+        </ul>
+      </div>
+      </div>
+    </div>
+
+    <!-- TEAM CALENDARS & HOLIDAY PRACTICE SCHEDULE (persistent every week, static links — link tiles directly above sponsors) -->
+    <div class="section quick-tiles">
+      <a class="qt" href="https://www.nseaswimteam.com/2026---27-events---dates" target="_blank">
+        <span class="qt-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 17h2M11 17h2"/></svg></span>
+        <span class="qt-text"><span class="qt-label">2026–2027</span><span class="qt-title">Calendar of Meets &amp; Team Events</span></span>
+        <span class="qt-arrow">↗</span>
+      </a>
+      <a class="qt" href="https://docs.google.com/spreadsheets/d/1PnEukw-c0GVkrEFhYK4A-sXXShC2Vg6AnqlF0ztQx6Y/edit?usp=sharing" target="_blank">
+        <span class="qt-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M4.2 7l15.6 10M4.2 17L19.8 7"/><path d="M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5"/></svg></span>
+        <span class="qt-text"><span class="qt-label">Holidays</span><span class="qt-title">Holiday Break Practice Schedules</span></span>
+        <span class="qt-arrow">↗</span>
+      </a>
+    </div>
+
+    <!-- SPONSORS / FOOTER (static) -->
+    <div class="footer-sponsors">
+      <div class="footer-label">Sponsors &amp; Friends of NSEA Swim</div>
+      <div class="sponsor-links">
+        <a href="https://www.finisswim.com/" target="_blank">FINIS</a><span>·</span>
+        <a href="https://www.swimmersbest.com/nsea-swim/" target="_blank">SwimmersBest</a><span>·</span>
+        <a href="https://www.tritonwear.com/" target="_blank">TritonWear</a><span>·</span>
+        <a href="http://elementallabs.refr.cc/jpmerchant" target="_blank">LMNT</a><span>·</span>
+        <a href="https://www.swimintel.com" target="_blank">SwimIntel</a><span>·</span>
+        <a href="https://time-drops.com/" target="_blank">Time-Drops</a><span>·</span>
+        <a href="https://www.myswimio.com/" target="_blank">MySwimIO</a><span>·</span>
+        <a href="https://makoswim.io/" target="_blank">MaKoSwim</a>
+      </div>
+      <div class="foot-line">NSEA Swim · Sea Devils — Northside Elite Aquatics — jp@nseaswim.com</div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
