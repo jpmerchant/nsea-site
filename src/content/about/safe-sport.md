@@ -1,7 +1,7 @@
 <!-- REVIEW: Two MAAPP links on the live page were broken "joplin-content://" paste artifacts; pointed at the NSEA MAAPP PDF from Quick Links. PDFs are hosted on the BUILD CDN and must be localized. Opening sentence still says "by June 23, 2019". -->
-NSEA Swim is required to implement the new Minor Athlete Abuse Prevention Policy ([MAAPP](https://irp.cdn-website.com/11bbd3ff/files/uploaded/maapp-2-0-customizable-nsea_048137.pdf)) by June 23, 2019. All Athletes, Adult Athletes and Non-Athlete members are required to comply by this policy. 
+NSEA Swim is required to implement the new Minor Athlete Abuse Prevention Policy ([MAAPP](/assets/cdn/pdf/maapp-2-0-customizable-nsea_048137.pdf)) by June 23, 2019. All Athletes, Adult Athletes and Non-Athlete members are required to comply by this policy. 
 
-**NSEA Swim's Safe Sport Coordinator is Brittany Witmer**. If you have questions about the [MAAPP](https://irp.cdn-website.com/11bbd3ff/files/uploaded/maapp-2-0-customizable-nsea_048137.pdf) or Safe Sport policies, contact Brittany at <brittany@nseaswim.com>.
+**NSEA Swim's Safe Sport Coordinator is Brittany Witmer**. If you have questions about the [MAAPP](/assets/cdn/pdf/maapp-2-0-customizable-nsea_048137.pdf) or Safe Sport policies, contact Brittany at <brittany@nseaswim.com>.
 
 Additionally, USA Swimming is committed to safeguarding all of its members with the welfare of its athlete members as the top priority. Safe Sport is USA Swimming’s comprehensive abuse prevention program and provides tools for swim clubs to educate their members and intervene in risky situations. Please see the below links as important training tools for your athletes and families. 
 
@@ -11,15 +11,15 @@ Additionally, USA Swimming is committed to safeguarding all of its members with 
 - [Training for swimmers under 18](https://www.usaswimming.org/articles-landing-page/2017/04/05/free-safe-sport-training-for-athletes)
 - [Training for Athletes 18 and Over ](https://www.usaswimming.org/articles-landing-page/2017/04/05/free-safe-sport-training-for-athletes)
 - [Training for Parents](https://www.usaswimming.org/articles-landing-page/2017/02/16/safe-sport-for-parents)
-- [Bullying Prevention](https://www.usaswimming.org/articles-landing-page/2017/02/16/bullying-prevention) (USASwimming) \| [NSEA Action Plan](https://irp.cdn-website.com/11bbd3ff/files/uploaded/action-plan-to-address-bullying_085267.pdf)
-- [Grievance Procedure](https://irp.cdn-website.com/11bbd3ff/files/uploaded/grievance-procedure_053120.pdf)
+- [Bullying Prevention](https://www.usaswimming.org/articles-landing-page/2017/02/16/bullying-prevention) (USASwimming) \| [NSEA Action Plan](/assets/cdn/pdf/action-plan-to-address-bullying_085267.pdf)
+- [Grievance Procedure](/assets/cdn/pdf/grievance-procedure_053120.pdf)
 
 ## Quick Links
 
 - To deal with a safe support concern, call USA Swimming at (719) 866-4578, or [click here](https://www.usaswimming.org/articles-landing-page/2017/05/08/safe-sport-report).
 - To make a report, use the [online reporting form](https://safesport.i-sight.com/portal), call the U.S. Center for Safe Sport at (720) 524-5640, or find more information at [uscenterforsafesport.org](https://uscenterforsafesport.org/)
-- Click to read the NSEA Swim [MAPP Policy](https://irp.cdn-website.com/11bbd3ff/files/uploaded/maapp-2-0-customizable-nsea_048137.pdf) in full.
-- Read about USA Swimming Safe Sport [Best Practices](https://irp.cdn-website.com/11bbd3ff/files/uploaded/best-practice-guidelines_062680.pdf).
+- Click to read the NSEA Swim [MAPP Policy](/assets/cdn/pdf/maapp-2-0-customizable-nsea_048137.pdf) in full.
+- Read about USA Swimming Safe Sport [Best Practices](/assets/cdn/pdf/best-practice-guidelines_062680.pdf).
 
 ## Parent Consent Forms
 

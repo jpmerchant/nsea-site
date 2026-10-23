@@ -88,7 +88,7 @@ A few of the more commonly replaced items are kept in stock.
 
 ### Specific Equipment Information
 
-- [FINIS SlipFin Pro](https://irp.cdn-website.com/11bbd3ff/files/uploaded/FINIS_SlipFinPro_TechSheet.pdf)
-- [FINIS Edge Pro](https://irp.cdn-website.com/11bbd3ff/files/uploaded/Edge_TechSheet.pdf)
-- [FINIS Long Floating Fins](https://irp.cdn-website.com/11bbd3ff/files/uploaded/LongFloatingFins_TechSheet.pdf)
-- [FINIS Goggle Comparison](https://irp.cdn-website.com/11bbd3ff/files/uploaded/Goggles_ComparisonGuide_ALL.pdf)
+- [FINIS SlipFin Pro](/assets/cdn/pdf/FINIS_SlipFinPro_TechSheet.pdf)
+- [FINIS Edge Pro](/assets/cdn/pdf/Edge_TechSheet.pdf)
+- [FINIS Long Floating Fins](/assets/cdn/pdf/LongFloatingFins_TechSheet.pdf)
+- [FINIS Goggle Comparison](/assets/cdn/pdf/Goggles_ComparisonGuide_ALL.pdf)

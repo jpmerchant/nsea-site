@@ -1,6 +1,6 @@
 <!-- REVIEW: Infographic is hotlinked from the BUILD CDN (localize before BUILD is cancelled). Stats are from the live page and are not dated or sourced beyond the CDC lines; verify before relaunch. -->
 
-![](https://irp.cdn-website.com/11bbd3ff/dms3rep/multi/opt/infographic-1920w.png)
+![](/assets/cdn/img/infographic.png)
 
 - No child is ever water safe. The goal of swim lessons is to make children SAFER in, on, and around water.  
 - 79% of children in households with incomes less than \$50,000 have little-to-no swimming ability.  

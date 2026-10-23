@@ -7,7 +7,7 @@ NSEA Swim has a mission to increase diversity in the sport of swimming. In order
 
 NSEA Swim Inc. (“NSEA”) offers full and partial scholarships to qualifying families in order to allow athletes to join the NSEA competitive swim team. Scholarships are awarded to athletes wishing to compete in the sport of swimming who due to their financial circumstances would not otherwise be able to do so. Any athlete eligible to compete / participate as a member of NSEA residing in the Tri-County area (New Hanover, Pender, Brunswick) is eligible to apply for a full or partial scholarship.
 
-[SCHOLARSHIP & FINANCIAL DETAILS DOCUMENT](https://irp.cdn-website.com/11bbd3ff/files/uploaded/2024-25-swim-team-scholarships_039615.pdf)
+[SCHOLARSHIP & FINANCIAL DETAILS DOCUMENT](/assets/cdn/pdf/2024-25-swim-team-scholarships_039615.pdf)
 
 ### Award Period
 

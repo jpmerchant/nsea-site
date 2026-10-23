@@ -1,3 +1,4 @@
+<!-- REVIEW: Weekly newsletter PDFs are NOT stored in this repo (by decision). Links point at the old BUILD CDN and will break when BUILD is cancelled; the archive needs a new home first. -->
 <!-- REVIEW: All PDFs are hotlinked from the BUILD CDN; download them before BUILD is cancelled. The 10-17 PDF filename says 2027 (typo in the file); I corrected the link text only. Empty future months were dropped. Earlier seasons beyond 2025–26 are not on the live page. -->
 
 The newest issue is on the [Current Issue](/families/newsletter/current/) page. Older issues are PDFs.
@@ -68,7 +69,6 @@ The newest issue is on the [Current Issue](/families/newsletter/current/) page. 
 - [06-07-2026](https://irp.cdn-website.com/11bbd3ff/files/uploaded/06-07-2026-Weekly-Newsletter-272ab0db.pdf)
 - [06-13-2026](https://irp.cdn-website.com/11bbd3ff/files/uploaded/06-13-2026-Weekly-Newsletter.pdf)
 - [06-21-2026](https://irp.cdn-website.com/11bbd3ff/files/uploaded/06-21-2026-Weekly-Newsletter.pdf)
-- [06-28-2026](https://irp.cdn-website.com/11bbd3ff/files/uploaded/06-28-2026-Weekly-Newsletter.pdf)
 - [06-28-2026](https://irp.cdn-website.com/11bbd3ff/files/uploaded/06-28-2026-Weekly-Newsletter-f6558f75.pdf)
 ### July
 - [07-05-2026](https://irp.cdn-website.com/11bbd3ff/files/uploaded/07-05-2026-Weekly-Newsletterv2.pdf)

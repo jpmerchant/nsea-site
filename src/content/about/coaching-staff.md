@@ -1,7 +1,7 @@
 <!-- REVIEW: Headshots are hotlinked from the BUILD CDN; localize before BUILD is cancelled. Alt text is empty. -->
 <div class="staff">
 
-<img src="https://irp.cdn-website.com/11bbd3ff/dms3rep/multi/opt/jp_001852-1920w.png" alt="" loading="lazy">
+<img src="/assets/cdn/img/jp_001852.jpg" alt="" loading="lazy">
 
 <div>
 
@@ -25,7 +25,7 @@ His coaching experience includes learn to swim for Jenrow Swim America, Head Coa
 
 <div class="staff">
 
-<img src="https://irp.cdn-website.com/11bbd3ff/dms3rep/multi/opt/devin_074164-1920w.png" alt="" loading="lazy">
+<img src="/assets/cdn/img/devin_074164.jpg" alt="" loading="lazy">
 
 <div>
 
@@ -54,7 +54,7 @@ In addition to her coaching duties at NSEA Swim, Devin is a Physical Therapy Ass
 
 <div class="staff">
 
-<img src="https://irp.cdn-website.com/11bbd3ff/dms3rep/multi/opt/andy-headshot_060002-1920w.png" alt="" loading="lazy">
+<img src="/assets/cdn/img/andy-headshot_060002.jpg" alt="" loading="lazy">
 
 <div>
 
@@ -82,7 +82,7 @@ When not on the pool deck, you can find Andy surfing, rock climbing, or spending
 
 <div class="staff">
 
-<img src="https://irp.cdn-website.com/11bbd3ff/dms3rep/multi/opt/genny_hs-1920w.jpg" alt="" loading="lazy">
+<img src="/assets/cdn/img/genny_hs.jpg" alt="" loading="lazy">
 
 <div>
 
