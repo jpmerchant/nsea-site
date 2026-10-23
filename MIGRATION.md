@@ -4,19 +4,19 @@ _Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswi
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 22 · pull 30 · ready 26 · new 12
+Counts: rebuild 16 · done 37 · pull 21 · ready 20 · new 12
 
 ## 1. Live page -> new location
 
 | Live page (nseaswimteam.com) | New path | Status |
 |---|---|---|
 | `/top-10-swims---scy` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
-| `/records-set-in-2025---26` | `/times/records/this-season/` | pull |
-| `/2025---26-updates` | `/times/top-times/new-additions/` | ready |
+| `/records-set-in-2025---26` | `/times/records/this-season/` | done |
+| `/2025---26-updates` | `/times/top-times/new-additions/` | done |
 | `/top-10-swims--lcm` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
 | `/offerings` | `/programs/clinics/` + `/programs/clinics/high-school-prep/` + `/programs/clinics/high-school-skills/` + `/programs/clinics/summer-league-prep/` + `/programs/clinics/summer-league-skills/` | done |
-| `/check-my-time` | `/times/standards/check-my-time/` | ready |
-| `/2023---2024` | `/times/achievements/2023-24/` | pull |
+| `/check-my-time` | `/times/standards/check-my-time/` | done |
+| `/2023---2024` | `/times/achievements/2023-24/` | done |
 | `/` | `/` | rebuild |
 | `/top-times---lcm` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
 | `/FAQ` | `/families/new-families/faq/` | pull |
@@ -24,16 +24,16 @@ Counts: rebuild 16 · done 22 · pull 30 · ready 26 · new 12
 | `/fee-structure` | `/programs/fees/` | pull |
 | `/shoulder-strength` | `/training/same/strength/` | pull |
 | `/alumni` | `/about/alumni/` | done |
-| `/2022---23-achievements` | `/times/achievements/2022-23/` | pull |
+| `/2022---23-achievements` | `/times/achievements/2022-23/` | done |
 | `/books` | `/families/new-families/books/` | pull |
 | `/ejp-parking` | `/about/practice-locations/parking/` | done |
 | `/who-to-contact` | `/about/contact/` | done |
 | `/scy---relay-team-records` | `/times/records/relays/` | ready |
 | `/top-5-relays---scy` | `/times/top-times/` + `/times/top-times/relays/` | rebuild, ready |
 | `/top-times` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
-| `/power-points-explained` | `/times/standards/power-points/` | pull |
+| `/power-points-explained` | `/times/standards/power-points/` | done |
 | `/captyn-message-archive` | `/families/how-to/captyn-messages/` | pull |
-| `/2025---2026` | `/times/achievements/2025-26/` | pull |
+| `/2025---2026` | `/times/achievements/2025-26/` | done |
 | `/scholarships-and-financial-assistance` | `/programs/financial-assistance/` | done |
 | `/glossary` | `/families/new-families/glossary/` | pull |
 | `/education` | `/training/same/education/` | rebuild |
@@ -43,24 +43,24 @@ Counts: rebuild 16 · done 22 · pull 30 · ready 26 · new 12
 | `/general-practice-schedule` | `/programs/schedule/` | done |
 | `/practice-groups` | `/programs/` + `/programs/practice-groups/` + `/programs/practice-groups/splash/` + `/programs/practice-groups/tidepool/` + `/programs/practice-groups/riptide/` + `/programs/practice-groups/breakers/` + `/programs/practice-groups/surge/` + `/programs/practice-groups/senior/` | rebuild, done |
 | `/college-swimmers` | `/about/alumni/college-swimmers/` | done |
-| `/national--meet--qualifiers` | `/times/standards/national-qualifiers/` | pull |
+| `/national--meet--qualifiers` | `/times/standards/national-qualifiers/` | done |
 | `/calendar` | `/meets/` + `/meets/calendar/` | rebuild, ready |
 | `/opt-out---intent-information` | `/families/how-to/session-opt-out/` | pull |
-| `/2024---2025` | `/times/achievements/2024-25/` | pull |
+| `/2024---2025` | `/times/achievements/2024-25/` | done |
 | `/about-us` | `/about/` + `/about/who-we-are/` | rebuild, done |
 | `/about-swim-meets` | `/meets/guide/` | pull |
-| `/time-standards` | `/times/standards/` + `/times/standards/understanding/` | rebuild, pull |
+| `/time-standards` | `/times/standards/` + `/times/standards/understanding/` | rebuild, done |
 | `/practice-locations` | `/about/practice-locations/` | done |
 | `/meet-pools` | `/meets/pools/` | pull |
 | `/safe-sport` | `/about/safe-sport/` | done |
 | `/newsletters` | `/families/newsletter/` + `/families/newsletter/archive/` | rebuild, ready |
 | `/team-records---lcm` | `/times/records/individual/` | ready |
-| `/imx-progress` | `/times/standards/imx-imr/` + `/times/standards/imx-imr/about/` | rebuild, pull |
+| `/imx-progress` | `/times/standards/imx-imr/` + `/times/standards/imx-imr/about/` | rebuild, done |
 | `/current` | `/families/newsletter/` + `/families/newsletter/current/` | rebuild, ready |
 | `/lcm---relay-team-records` | `/times/records/relays/` | ready |
 | `/top-5-relays---lcm` | `/times/top-times/` + `/times/top-times/relays/` | rebuild, ready |
-| `/nc-age-group-championships` | `/times/standards/nc-age-group/` | ready |
-| `/nc-senior-championships` | `/times/standards/nc-senior/` | ready |
+| `/nc-age-group-championships` | `/times/standards/nc-age-group/` | done |
+| `/nc-senior-championships` | `/times/standards/nc-senior/` | done |
 | `/opt-out-of-meets` | `/families/how-to/opt-out-of-meets/` | pull |
 | `/opt-in-to-meets` | `/families/how-to/opt-in-to-meets/` | pull |
 | `/register-for-an-event` | `/families/how-to/register-for-an-event/` | pull |
@@ -78,8 +78,8 @@ Counts: rebuild 16 · done 22 · pull 30 · ready 26 · new 12
 | `/mobility` | `/training/same/mobility/` | pull |
 | `/strength` | `/training/same/strength/` | pull |
 | `/foam-rolling` | `/training/same/foam-rolling/` | pull |
-| `/scy---comparison-by-age-group` | `/times/standards/compare-by-age-group/` | ready |
-| `/scy---comparison-all-ages` | `/times/standards/compare-all-ages/` | ready |
+| `/scy---comparison-by-age-group` | `/times/standards/compare-by-age-group/` | done |
+| `/scy---comparison-all-ages` | `/times/standards/compare-all-ages/` | done |
 | `/pre-practice-mobility` | `/training/same/mobility/` | pull |
 | `/coming-soon` | _retired: Placeholder; replaced by Coach’s Corner on the home page_ | retired |
 
@@ -173,32 +173,32 @@ Deliberately **not** pulled: per-athlete biomechanics reports (individual swimme
 | `/meets/recaps/fall-frenzy-2026/` | Fall Frenzy 2026 (BAC v NSEA) | page | ready | - | Project: claude/newsletter-inserts/meet-recap-fall-frenzy-2026.html |
 | `/times/` | Times & Records | hub | rebuild | - | - |
 | `/times/standards/` | Time Standards | hub | rebuild | `/time-standards` | - |
-| `/times/standards/understanding/` | Understanding Time Standards | page | pull | `/time-standards` | - |
-| `/times/standards/check-my-time/` | Check My Time | tool | ready | `/check-my-time` | tools/standards/nsea-standards-explorer.html |
-| `/times/standards/compare-by-age-group/` | SCY Comparison by Age Group | tool | ready | `/scy---comparison-by-age-group` | tools/standards/NSEA SCY Time Standards Comparison.html |
-| `/times/standards/compare-all-ages/` | SCY Comparison, All Ages | tool | ready | `/scy---comparison-all-ages` | tools/standards/NSEA SCY Time Standards - All Ages Ranked.html |
-| `/times/standards/nc-age-group/` | NC Age Group Championships | tool | ready | `/nc-age-group-championships` | tools/standards/ncs-ag-champs-standards-embed.html |
-| `/times/standards/nc-senior/` | NC Senior Championships | tool | ready | `/nc-senior-championships` | tools/standards/ncs-senior-standards-embed.html |
-| `/times/standards/national-qualifiers/` | National Meet Qualifiers | page | pull | `/national--meet--qualifiers` | - |
-| `/times/standards/power-points/` | About Power Points | page | pull | `/power-points-explained` | - |
+| `/times/standards/understanding/` | Understanding Time Standards | page | done | `/time-standards` | - |
+| `/times/standards/check-my-time/` | Check My Time | tool | done | `/check-my-time` | tools/standards/nsea-standards-explorer.html |
+| `/times/standards/compare-by-age-group/` | SCY Comparison by Age Group | tool | done | `/scy---comparison-by-age-group` | tools/standards/NSEA SCY Time Standards Comparison.html |
+| `/times/standards/compare-all-ages/` | SCY Comparison, All Ages | tool | done | `/scy---comparison-all-ages` | tools/standards/NSEA SCY Time Standards - All Ages Ranked.html |
+| `/times/standards/nc-age-group/` | NC Age Group Championships | tool | done | `/nc-age-group-championships` | tools/standards/ncs-ag-champs-standards-embed.html |
+| `/times/standards/nc-senior/` | NC Senior Championships | tool | done | `/nc-senior-championships` | tools/standards/ncs-senior-standards-embed.html |
+| `/times/standards/national-qualifiers/` | National Meet Qualifiers | page | done | `/national--meet--qualifiers` | - |
+| `/times/standards/power-points/` | About Power Points | page | done | `/power-points-explained` | - |
 | `/times/standards/imx-imr/` | IMX / IMR | hub | rebuild | `/imx-progress`, `/imr-/-imx-progress` | - |
-| `/times/standards/imx-imr/about/` | About IMX / IMR | page | pull | `/imx-progress` | - |
+| `/times/standards/imx-imr/about/` | About IMX / IMR | page | done | `/imx-progress` | - |
 | `/times/standards/imx-imr/progress/` | IMX / IMR Progress Board | tool | ready | `/imr-/-imx-progress` | tools/boards/imx-imr-scy.html |
 | `/times/top-times/` | Top Times | hub | rebuild | `/top-times`, `/top-times---lcm`, `/top-10-swims---scy`, `/top-10-swims--lcm`, `/top-5-relays---scy`, `/top-5-relays---lcm` | - |
 | `/times/top-times/swimmers/` | Top 10 Swimmers | tool | ready | `/top-times`, `/top-times---lcm` | tools/boards/top10-performers-*.html |
 | `/times/top-times/swims/` | Top 10 Swims | tool | ready | `/top-10-swims---scy`, `/top-10-swims--lcm` | tools/boards/top10-performances-*.html |
 | `/times/top-times/relays/` | Top 5 Relays | tool | ready | `/top-5-relays---scy`, `/top-5-relays---lcm` | tools/boards/top5-relays-*.html |
-| `/times/top-times/new-additions/` | New Board Additions | tool | ready | `/2025---26-updates` | tools/standards/NSEA New Board Additions - Site Embed.html |
+| `/times/top-times/new-additions/` | New Board Additions | tool | done | `/2025---26-updates` | tools/standards/NSEA New Board Additions - Site Embed.html |
 | `/times/records/` | Team Records | hub | rebuild | - | - |
 | `/times/records/holders/` | Record Holders | tool | ready | `/team-record-holders` | tools/boards/records.html |
 | `/times/records/individual/` | Individual Records | tool | ready | `/team-records---scy`, `/team-records---lcm` | tools/boards/records-traditional-*.html |
 | `/times/records/relays/` | Relay Records | tool | ready | `/scy---relay-team-records`, `/lcm---relay-team-records` | tools/boards/records-relays-*.html |
-| `/times/records/this-season/` | Records Set This Season | page | pull | `/records-set-in-2025---26` | - |
+| `/times/records/this-season/` | Records Set This Season | tool | done | `/records-set-in-2025---26` | - |
 | `/times/achievements/` | Achievements by Season | hub | rebuild | - | - |
-| `/times/achievements/2025-26/` | 2025 – 2026 | page | pull | `/2025---2026` | - |
-| `/times/achievements/2024-25/` | 2024 – 2025 | page | pull | `/2024---2025` | - |
-| `/times/achievements/2023-24/` | 2023 – 2024 | page | pull | `/2023---2024` | - |
-| `/times/achievements/2022-23/` | 2022 – 2023 | page | pull | `/2022---23-achievements` | - |
+| `/times/achievements/2025-26/` | 2025 – 2026 | page | done | `/2025---2026` | - |
+| `/times/achievements/2024-25/` | 2024 – 2025 | page | done | `/2024---2025` | - |
+| `/times/achievements/2023-24/` | 2023 – 2024 | tool | done | `/2023---2024` | - |
+| `/times/achievements/2022-23/` | 2022 – 2023 | tool | done | `/2022---23-achievements` | - |
 | `/training/` | Training | hub | rebuild | - | - |
 | `/training/zones/` | Training Zone Cheat Sheet | page | pull | `/training-zone-cheat-sheet` | NSEASwim-KB-Repo/NSEA_Training_Zones_Cheat_Sheet.pdf |
 | `/training/rpe/` | RPE & Session RPE | page | pull | `/rpe-information` | content/guides/rpe-session-rpe-handout.html; Project: claude/rpe-session-rpe-reference.md |
