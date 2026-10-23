@@ -1,4 +1,4 @@
-<!-- REVIEW: Built from the 2026–27 Fee Summary. The live Fee Structure page is blank. The fee document calls the top group "Senior Surge"; per our decision the site says "Senior". Billing terms (due dates, withdrawals) are in the Financial Contract and are not summarized here. -->
+<!-- REVIEW: Built from the 2026–27 Fee Summary. The live Fee Structure page is blank. The source fee document used an older name for the top group; the site says "Senior". Billing terms (due dates, withdrawals) are in the Financial Contract and are not summarized here. -->
 
 Practice fees are monthly and depend on your swimmer's group and the season.
 

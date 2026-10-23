@@ -123,7 +123,7 @@ export const pages = [
 
   // ---------------------------------------------------------------- MEETS ----
   { path: '/meets/', type: 'hub', title: 'Meets', desc: 'The calendar, how meets work, and how to prepare.', status: 'rebuild', from: ['/calendar'] },
-  { path: '/meets/calendar/', type: 'tool', title: 'Calendar of Events', desc: 'Filter by group, type and location, and sync to Google Calendar.', status: 'ready', from: ['/calendar'], embed: EVENTS + '/', height: 1400, legacy: ['tools/events/ (site-src)'], feature: true },
+  { path: '/meets/calendar/', type: 'tool', title: 'Calendar of Events', desc: 'Filter by group, type and location, and sync to Google Calendar.', status: 'ready', from: ['/calendar'], embed: EVENTS + '/', hideTitle: true, height: 1400, legacy: ['tools/events/ (site-src)'], feature: true },
   { path: '/meets/guide/', type: 'tool', title: 'Guide to Swim Meets', desc: 'New to meets? Start here.', embed: '/embeds/swim-meets-guide.html', status: 'done', from: ['/about-swim-meets'], legacy: ['Project: claude/nsea-guide-to-swim-meets.html'] },
   { path: '/meets/uniform/', type: 'page', title: 'Meet Uniform', desc: 'What swimmers wear on deck.', status: 'done', from: ['/swim-suit-guide'] },
   { path: '/meets/pools/', type: 'page', title: 'Meet Pools', desc: 'Where we compete and how to get there.', status: 'done', from: ['/meet-pools'] },

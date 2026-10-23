@@ -25,8 +25,8 @@ const hasEmbed = p.embed || p.variants;
 ---
 <Base title={p.title} description={p.desc} path={p.path}>
   <Breadcrumbs path={p.path} />
-  <h1>{p.title}</h1>
-  {p.desc && <p class="lede">{p.desc}</p>}
+  <h1 class={p.hideTitle ? 'sr-only' : undefined}>{p.title}</h1>
+  {p.desc && !p.hideTitle && <p class="lede">{p.desc}</p>}
   {p.gated && <p class="chip new">Members only &middot; gated by Cloudflare Access</p>}
 
   {Content && <div class="prose"><Content /></div>}

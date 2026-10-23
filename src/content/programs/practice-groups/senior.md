@@ -1,5 +1,4 @@
 <!-- REVIEW: Live page has group graphics between sections that were not carried over (association unclear).  -->
-<!-- REVIEW: Live heading is "Senior Surge"; kept the site name Senior. -->
 - General Age Range \| 15 & Older
 - At least (1) full year in the Surge Group practice group (or equivalent)
 - 15 & Older ‘A / AA’ time standards
