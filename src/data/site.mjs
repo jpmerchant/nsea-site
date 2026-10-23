@@ -74,7 +74,7 @@ export const pages = [
   { path: '/about/alumni/', type: 'page', title: 'Alumni', desc: 'Where NSEA swimmers go next.', status: 'done', from: ['/alumni'] },
   { path: '/about/alumni/college-swimmers/', type: 'page', title: 'College Swimmers', desc: 'NSEA alumni swimming in college.', status: 'done', from: ['/college-swimmers'] },
   { path: '/about/safe-sport/', type: 'page', title: 'Safe Sport', desc: 'How we keep athletes safe, and how to report a concern.', status: 'done', from: ['/safe-sport'] },
-  { path: '/about/contact/', type: 'page', title: 'Contact & Who to Ask', desc: 'The right person for every question.', status: 'done', from: ['/who-to-contact'] },
+  { path: '/about/contact/', type: 'page', title: 'Contact & Who to Ask', desc: 'Being updated. Email the team inbox in the meantime.', status: 'done', from: ['/who-to-contact'] },
 
   // ------------------------------------------------------------- PROGRAMS ----
   { path: '/programs/', type: 'hub', title: 'Programs', desc: 'Find the right group, see the schedule, and get started.', status: 'rebuild', from: ['/practice-groups'] },
@@ -87,10 +87,10 @@ export const pages = [
   { path: '/programs/practice-groups/senior/', type: 'page', title: 'Senior', desc: 'Ages 15 & older · A / AA time standards', status: 'done', from: ['/practice-groups#SeniorSurge'], legacy: ['Practice Group Documents/senior surge requirments.docx'] },
   { path: '/programs/schedule/', type: 'page', title: 'Practice Schedule', desc: 'The general practice schedule for every group.', status: 'done', from: ['/general-practice-schedule'] },
   { path: '/programs/clinics/', type: 'hub', title: 'Prep Programs & Clinics', desc: 'High school and summer league prep, plus skills clinics.', status: 'done', from: ['/offerings'] },
-  { path: '/programs/clinics/high-school-prep/', type: 'page', title: 'High School Prep', desc: '', status: 'done', from: ['/offerings#HighSchoolPrep'] },
-  { path: '/programs/clinics/high-school-skills/', type: 'page', title: 'High School Skills Clinics', desc: '', status: 'done', from: ['/offerings#HighSchoolSkillsClinics'] },
-  { path: '/programs/clinics/summer-league-prep/', type: 'page', title: 'Summer League Prep', desc: '', status: 'done', from: ['/offerings#SummerLeaguePrep'] },
-  { path: '/programs/clinics/summer-league-skills/', type: 'page', title: 'Summer League Skills Clinics', desc: '', status: 'done', from: ['/offerings#SummerLeagueSkillsClinics'] },
+  { path: '/programs/clinics/high-school-prep/', type: 'page', title: 'High School Prep', desc: 'Fall practices for high schoolers not on a USA Swimming team.', status: 'done', from: ['/offerings#HighSchoolPrep'] },
+  { path: '/programs/clinics/high-school-skills/', type: 'page', title: 'High School Skills Clinics', desc: 'Saturday-morning technique clinics.', status: 'done', from: ['/offerings#HighSchoolSkillsClinics'] },
+  { path: '/programs/clinics/summer-league-prep/', type: 'page', title: 'Summer League Prep', desc: 'Details for summer 2027 announced by December.', status: 'done', from: ['/offerings#SummerLeaguePrep'] },
+  { path: '/programs/clinics/summer-league-skills/', type: 'page', title: 'Summer League Skills Clinics', desc: 'Details for summer 2027 announced by December.', status: 'done', from: ['/offerings#SummerLeagueSkillsClinics'] },
   { path: '/programs/fees/', type: 'page', title: 'Fees', desc: 'Monthly practice fees by group and season.', status: 'done', from: ['/fee-structure'], legacy: ['2026 - 27/2026 - 2027 Fee Summary.docx'] },
   { path: '/programs/financial-assistance/', type: 'page', title: 'Scholarships & Financial Assistance', desc: 'Help is available.', status: 'done', from: ['/scholarships-and-financial-assistance'] },
   { path: '/programs/join/', type: 'link', title: 'Free Assessment', desc: 'Sign up for an assessment to find the right group.', status: 'ready', url: 'https://form.jotform.com/jpmerchant/assessment-sign-up', feature: true },

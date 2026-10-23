@@ -1,1 +1,1 @@
-These programs are only available to swimmers **not** actively registered and involved with USA Swimming affiliated teams.
+These programs are only available to swimmers **not** actively registered and involved with USA Swimming affiliated teams. Dates for each program are posted on its page and on the [Calendar](/meets/calendar/).
