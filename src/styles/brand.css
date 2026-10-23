@@ -142,3 +142,11 @@ main{padding:28px 0 64px;min-height:50vh}
 .prose iframe.map{width:100%;height:520px;border:0;border-radius:8px;margin-bottom:20px}
 .btn-row{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}
 .prose a.btn{display:inline-block;background:var(--coral,#ee492f);color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:600}
+.glossary #gl-search{width:100%;max-width:520px;padding:12px 14px;border:1px solid var(--line,#e2e6e6);border-radius:8px;font:inherit}
+.glossary .alpha{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.glossary .alpha a{padding:4px 10px;border:1px solid var(--line,#e2e6e6);border-radius:6px;text-decoration:none;font-weight:600;color:var(--teal-dark,#006a5c)}
+.glossary .count{color:var(--gray,#676d70);font-size:.9rem}
+.glossary .gl-letter h2{margin:28px 0 8px;border-bottom:2px solid var(--teal,#008675);padding-bottom:4px;scroll-margin-top:90px}
+.glossary dt{font-weight:700}.glossary dd{margin:2px 0 14px}
+.glossary [hidden]{display:none!important}
+.glossary .note{margin-top:32px;padding:14px 16px;background:var(--light-gray,#f4f6f6);border-radius:8px;font-size:.92rem}

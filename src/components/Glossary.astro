@@ -1,0 +1,42 @@
+---
+import glossary from '../data/glossary.json';
+const letters = Object.keys(glossary).sort();
+const total = Object.values(glossary).reduce((n, a) => n + a.length, 0);
+---
+<div class="glossary">
+  <input type="search" id="gl-search" placeholder="Search terms and definitions…" aria-label="Search terms and definitions" autocomplete="off" />
+  <nav class="alpha" aria-label="Jump to letter">
+    {letters.map((l) => <a href={`#letter-${l}`}>{l}</a>)}
+  </nav>
+  <p class="count" id="gl-count" aria-live="polite">{total} terms</p>
+  {letters.map((l) => (
+    <section class="gl-letter" id={`letter-${l}`}>
+      <h2>{l}</h2>
+      <dl>
+        {glossary[l].map((t) => (
+          <div class="gl-term" id={t.id} data-text={(t.term + ' ' + t.def).toLowerCase()}>
+            <dt>{t.termUrl ? <a href={t.termUrl}>{t.term}</a> : t.term}</dt>
+            <dd set:html={t.html || t.def} />
+          </div>
+        ))}
+      </dl>
+    </section>
+  ))}
+  <p class="note"><strong>Note:</strong> USA Swimming meet names change from time to time as title sponsorships are renewed. This glossary is kept current where possible and links out to USA Swimming, NSEA and other official pages. If you spot something out of date, let us know at <a href="mailto:team@nseaswim.com">team@nseaswim.com</a>.</p>
+  <p class="none" id="gl-none" hidden>No terms match your search.</p>
+</div>
+<script>
+  const q = document.getElementById('gl-search') as HTMLInputElement;
+  const terms = [...document.querySelectorAll<HTMLElement>('.gl-term')];
+  const secs = [...document.querySelectorAll<HTMLElement>('.gl-letter')];
+  const count = document.getElementById('gl-count')!;
+  const none = document.getElementById('gl-none')!;
+  q.addEventListener('input', () => {
+    const v = q.value.trim().toLowerCase();
+    let n = 0;
+    terms.forEach((t) => { const show = !v || t.dataset.text!.includes(v); t.hidden = !show; if (show) n++; });
+    secs.forEach((s) => { s.hidden = !s.querySelector('.gl-term:not([hidden])'); });
+    count.textContent = v ? `${n} of ${terms.length} terms` : `${terms.length} terms`;
+    none.hidden = n > 0;
+  });
+</script>

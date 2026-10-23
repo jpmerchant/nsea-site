@@ -99,7 +99,7 @@ export const pages = [
   { path: '/families/', type: 'hub', title: 'Family Guide', desc: 'Everything current and new families need, in one place.', status: 'rebuild' },
   { path: '/families/new-families/', type: 'hub', title: 'New to Swimming', desc: 'Start here: the basics of club swimming.', status: 'new' },
   { path: '/families/new-families/faq/', type: 'page', title: 'FAQ', desc: 'Answers to the questions we hear most.', status: 'done', from: ['/FAQ'] },
-  { path: '/families/new-families/glossary/', type: 'tool', title: 'Glossary', desc: 'Swim words, decoded.', embed: '/embeds/glossary.html', status: 'done', from: ['/glossary'] },
+  { path: '/families/new-families/glossary/', type: 'page', title: 'Glossary', desc: 'Swim words, decoded.', glossary: true, status: 'done', from: ['/glossary'] },
   { path: '/families/new-families/water-safety/', type: 'page', title: 'Fast Facts on Water Safety', desc: '', status: 'done', from: ['/fast-facts-on-water-safety'] },
   { path: '/families/new-families/books/', type: 'page', title: 'Books', desc: 'Recommended reading for swimmers and parents.', status: 'done', from: ['/books'] },
   { path: '/families/new-families/usa-swimming-parents/', type: 'link', title: 'USA Swimming Parents Page', desc: 'National resources for swim parents.', status: 'ready', url: 'https://www.usaswimming.org/swimmers-parents' },
