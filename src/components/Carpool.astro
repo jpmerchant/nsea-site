@@ -87,7 +87,7 @@
         el('p', null, 'Signed in as ', el('strong', null, me.family)),
         el('button', { class: 'cp-link', type: 'button', onclick: function () { api('POST', '/logout', {}).then(function () { me = null; boot(); }); } }, 'Sign out')),
       el('div', { class: 'cp-safety' }, el('strong', null, 'Please note: '), 'Rides are arranged directly between families. NSEA does not screen drivers or vehicles and is not responsible for rides arranged here. Use your own judgment, follow ',
-        el('a', { href: '/about/safe-sport/' }, 'Safe Sport'), ' guidance, and never put phone numbers or street addresses in a post.'),
+        el('a', { href: '/about/safe-sport/' }, 'Safe Sport'), ' guidance, and never put phone numbers or street addresses in a post. Swimmer drivers may offer rides only with their own parent’s or guardian’s agreement, and riders’ parents decide whether they are comfortable with a swimmer driver.'),
       el('div', { class: 'cp-tabs', role: 'tablist' }, tabs.map(function (t) {
         return el('button', { type: 'button', role: 'tab', 'aria-selected': tab === t[0] ? 'true' : 'false', onclick: function () { tab = t[0]; flash = ''; render(); } }, t[1]);
       })),
@@ -166,7 +166,7 @@
       var f = e.target, out = f.querySelector('.cp-out');
       var days = DAYS.filter(function (d) { return f['d_' + d].checked; });
       var groups = GROUPS.filter(function (g) { return f['g_' + g].checked; });
-      var d = { kind: f.kind.value, driver: f.kind.value === 'offer' ? (f.driver.value || '') : '', groups: groups, days: days, time: f.time.value, direction: f.direction.value, area: f.area.value, seats: f.seats.value, cost: f.cost.value, note: f.note.value, swimmer: f.swimmer.value };
+      var d = { kind: f.kind.value, driver: f.kind.value === 'offer' ? (f.driver.value || '') : '', guardianOk: f.driver.value === 'swimmer' && f.guardianOk.checked, groups: groups, days: days, time: f.time.value, direction: f.direction.value, area: f.area.value, seats: f.seats.value, cost: f.cost.value, note: f.note.value, swimmer: f.swimmer.value };
       var another = e.submitter && e.submitter.getAttribute('data-another') === '1';
       api('POST', '/posts', d).then(function () {
         if (another) {
@@ -182,7 +182,9 @@
       el('fieldset', { class: 'cp-driver' }, el('legend', null, 'Who would be driving?'),
         el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'driver', value: 'parent', checked: true }), ' a parent'),
         el('label', { class: 'inline' }, el('input', { type: 'radio', name: 'driver', value: 'swimmer' }), ' a swimmer'),
-        el('p', { class: 'cp-small' }, 'If a swimmer is driving, each rider’s parents decide whether they are comfortable with that.')),
+        el('div', { class: 'cp-swimmer-rules' },
+          el('p', { class: 'cp-small' }, el('strong', null, 'Swimmer drivers: '), 'A swimmer may offer rides only if they hold a valid driver’s license, the vehicle is legally insured and registered, and their own parent or guardian knows about and agrees to the arrangement. Swimmer drivers must follow all North Carolina license restrictions, including limits on passengers and driving hours for newer drivers. Riders’ parents should confirm directly with the driver’s family before a minor rides with a swimmer driver.'),
+          el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'guardianOk' }), ' My parent or guardian knows about and agrees to this, and I meet the requirements above.'))),
       el('fieldset', null, el('legend', null, 'Practice group(s) (optional)'), GROUPS.map(function (g) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'g_' + g }), ' ' + g); })),
       el('fieldset', null, el('legend', null, 'Days'), DAYS.map(function (d) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'd_' + d }), ' ' + d); })),
       el('label', null, 'Which swimmer or group? (optional)', el('input', { name: 'swimmer', maxlength: 60, placeholder: 'e.g. Alex, Surge group' })),
@@ -194,8 +196,8 @@
       el('label', null, 'Note (optional)', el('input', { name: 'note', maxlength: 200, placeholder: 'No phone numbers or addresses' })),
       el('div', { class: 'cp-out' }),
       el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Post to the board'), el('button', { class: 'btn ghost', type: 'submit', 'data-another': '1' }, 'Post and add another')));
-    function syncDriver() { form.querySelector('.cp-driver').style.display = form.kind.value === 'offer' ? '' : 'none'; }
-    form.addEventListener('change', function (e) { if (e.target.name === 'kind') syncDriver(); });
+    function syncDriver() { form.querySelector('.cp-driver').style.display = form.kind.value === 'offer' ? '' : 'none'; form.querySelector('.cp-swimmer-rules').style.display = form.kind.value === 'offer' && form.driver.value === 'swimmer' ? '' : 'none'; }
+    form.addEventListener('change', function (e) { if (e.target.name === 'kind' || e.target.name === 'driver') syncDriver(); });
     syncDriver();
     shell(el('div', { class: 'cp-panel' }, el('h2', null, 'Post a ride'),
       el('p', { class: 'cp-small' }, 'Other families see your family name, the days and times, and the general area. Your email and phone stay private until you accept a request.'),

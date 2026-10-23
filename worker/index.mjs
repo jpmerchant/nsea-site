@@ -143,6 +143,7 @@ export default {
         const time = clean(body.time, 60), area = clean(body.area, 60);
         const driver = kind === 'offer' ? (['parent', 'swimmer'].includes(body.driver) ? body.driver : null) : null;
         if (kind === 'offer' && !driver) return fail(400, 'Please say whether a parent or a swimmer would be driving.');
+        if (driver === 'swimmer' && body.guardianOk !== true) return fail(400, 'A swimmer driver needs a parent or guardian who knows about and agrees to the arrangement. Please check the box.');
         const groups = GROUPS.filter((g) => (Array.isArray(body.groups) ? body.groups : []).includes(g));
         const seats = Math.min(Math.max(parseInt(body.seats, 10) || 1, 1), 8);
         if (!kind || !direction || !days.length || !time || !area) return fail(400, 'Please choose offer or need, days, a time, direction and a general area.');
