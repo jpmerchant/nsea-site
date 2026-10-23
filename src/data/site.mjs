@@ -119,7 +119,7 @@ export const pages = [
   { path: '/families/team-store/group-equipment/', type: 'page', title: 'Equipment by Group', desc: 'What each group needs.', status: 'done', from: ['/practice-equipment'], legacy: ['NSEA_Required_Practice_Equipment.pdf'] },
   { path: '/families/team-store/tech-suit-order/', type: 'link', title: 'Tech Suit Order Form', desc: '', status: 'ready', url: 'https://form.jotform.com/jpmerchant/tech-suit-orders' },
   { path: '/families/team-store/tech-suit-guide/', type: 'page', title: 'Tech Suit Guide', desc: 'Sizing, care and when to buy.', status: 'done', from: ['/tech-suit-info'], legacy: ['FINIS Suit Guide.pdf'] },
-  { path: '/families/carpool/', type: 'page', title: 'Carpool Board', desc: 'Find or offer rides to practice and meets. Members only.', status: 'new', gated: true },
+  { path: '/families/carpool/', type: 'page', title: 'Carpool Board', desc: 'Find or offer rides to practice. NSEA families only.', status: 'done', gated: true, carpool: true },
 
   // ---------------------------------------------------------------- MEETS ----
   { path: '/meets/', type: 'hub', title: 'Meets', desc: 'The calendar, how meets work, and how to prepare.', status: 'rebuild', from: ['/calendar'] },

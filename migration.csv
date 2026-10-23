@@ -48,7 +48,7 @@ new_path,title,type,status,replaces,source_files
 "/families/team-store/group-equipment/","Equipment by Group","page","done","/practice-equipment","NSEA_Required_Practice_Equipment.pdf"
 "/families/team-store/tech-suit-order/","Tech Suit Order Form","link","ready","",""
 "/families/team-store/tech-suit-guide/","Tech Suit Guide","page","done","/tech-suit-info","FINIS Suit Guide.pdf"
-"/families/carpool/","Carpool Board","page","new","",""
+"/families/carpool/","Carpool Board","page","done","",""
 "/meets/","Meets","hub","rebuild","/calendar",""
 "/meets/calendar/","Calendar of Events","tool","ready","/calendar","tools/events/ (site-src)"
 "/meets/guide/","Guide to Swim Meets","tool","done","/about-swim-meets","Project: claude/nsea-guide-to-swim-meets.html"

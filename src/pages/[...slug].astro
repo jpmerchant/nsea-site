@@ -4,6 +4,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import HubGrid from '../components/HubGrid.astro';
 import ToolEmbed from '../components/ToolEmbed.astro';
 import Glossary from '../components/Glossary.astro';
+import Carpool from '../components/Carpool.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 
 export function getStaticPaths() {
@@ -27,15 +28,17 @@ const hasEmbed = p.embed || p.variants;
   <Breadcrumbs path={p.path} />
   <h1 class={p.hideTitle ? 'sr-only' : undefined}>{p.title}</h1>
   {p.desc && !p.hideTitle && <p class="lede">{p.desc}</p>}
-  {p.gated && <p class="chip new">Members only &middot; gated by Cloudflare Access</p>}
+  {p.gated && <p class="chip new">Members only</p>}
 
   {Content && <div class="prose"><Content /></div>}
 
   {p.glossary && <Glossary />}
 
+  {p.carpool && <Carpool />}
+
   {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
 
-  {!Content && !hasEmbed && !p.glossary && p.type !== 'hub' && !live && (
+  {!Content && !hasEmbed && !p.glossary && !p.carpool && p.type !== 'hub' && !live && (
     <div class="todo">
       <h3>Content not migrated yet</h3>
       <dl>

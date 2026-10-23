@@ -4,13 +4,13 @@ NSEA Swim (Northside Elite Aquatics, “NSEA,” “we,” “us”) runs this w
 
 ## What this website collects
 
-This website does not have accounts, sign-ups or checkout, and we do not ask you to enter personal information on its pages (some pages link to forms hosted by other services, described below). We do not use advertising or tracking cookies, and we do not sell, rent or share visitor information for marketing.
+Apart from the members-only Carpool Board described below, this website does not have accounts, sign-ups or checkout, and we do not ask you to enter personal information on its pages (some pages link to forms hosted by other services, described below). We do not use advertising or tracking cookies, and we do not sell, rent or share visitor information for marketing.
 
 Like most websites, the servers that deliver it receive technical information with every request, such as your IP address, browser type, device type, the page requested and the time. Our hosting provider, Cloudflare, uses this to deliver the site, keep it secure and defend it against abuse. We do not combine it with any other information about you.
 
 ## Cookies and analytics
 
-The public pages of this website do not set cookies for tracking or advertising. Our training guides (such as the pre-practice routine and mobility routines) use your browser&rsquo;s local storage to remember your progress and settings. That information stays on your device and is never sent to us.
+The public pages of this website do not set cookies for tracking or advertising. The Carpool Board sets one sign-in cookie for signed-in members. Our training guides (such as the pre-practice routine and mobility routines) use your browser&rsquo;s local storage to remember your progress and settings. That information stays on your device and is never sent to us.
 
 We do not currently run an analytics service on this website. If we add one, we will update this statement first.
 
@@ -23,6 +23,10 @@ Some pages load content from other services, and those services may receive your
 - **Google Maps** displays the parking map on the pool pages.
 - **Forms and guides** on other services, such as Jotform forms and Dubble how-to guides, are linked or embedded from some pages. Anything you enter into them is handled by that service under its own policy.
 - **Links to other sites**, including Captyn, USA Swimming, North Carolina Swimming, meet hosts and vendors, are governed by those sites&rsquo; own policies. We do not control them.
+
+## Carpool Board
+
+The Carpool Board is for approved NSEA families only. If you request access, we collect your family name, email, swimmer name(s) and group, and optionally your mobile number, so an admin can check the roster and approve you. Posts you make show your family name, days, times and general area to other signed-in families. Your email and mobile are shown to another family only after both of you agree to connect. Board administrators can see members, posts and connections. Data is stored in Cloudflare's database, and a sign-in cookie keeps you signed in for up to 90 days. NSEA does not screen drivers or vehicles; rides are arranged directly between families. To leave the board or have your information removed, email [team@nseaswim.com](mailto:team@nseaswim.com).
 
 ## Captyn
 

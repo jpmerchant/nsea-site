@@ -4,7 +4,7 @@ _Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswi
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 67 · ready 14 · new 3
+Counts: rebuild 16 · done 68 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
@@ -176,7 +176,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/families/team-store/group-equipment/` | Equipment by Group | page | done | `/practice-equipment` | NSEA_Required_Practice_Equipment.pdf |
 | `/families/team-store/tech-suit-order/` | Tech Suit Order Form | link | ready | - | - |
 | `/families/team-store/tech-suit-guide/` | Tech Suit Guide | page | done | `/tech-suit-info` | FINIS Suit Guide.pdf |
-| `/families/carpool/` | Carpool Board 🔒 | page | new | - | - |
+| `/families/carpool/` | Carpool Board 🔒 | page | done | - | - |
 | `/meets/` | Meets | hub | rebuild | `/calendar` | - |
 | `/meets/calendar/` | Calendar of Events | tool | ready | `/calendar` | tools/events/ (site-src) |
 | `/meets/guide/` | Guide to Swim Meets | tool | done | `/about-swim-meets` | Project: claude/nsea-guide-to-swim-meets.html |

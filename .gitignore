@@ -4,3 +4,4 @@ dist
 .DS_Store
 legacy/nsea-build-pages.json
 public/assets/cdn/pdf/*ewsletter*
+.wrangler
