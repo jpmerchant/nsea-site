@@ -4,7 +4,7 @@ _Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswi
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 18 · pull 50 · ready 26 · new 12
+Counts: rebuild 16 · done 22 · pull 30 · ready 26 · new 12
 
 ## 1. Live page -> new location
 
@@ -14,7 +14,7 @@ Counts: rebuild 18 · pull 50 · ready 26 · new 12
 | `/records-set-in-2025---26` | `/times/records/this-season/` | pull |
 | `/2025---26-updates` | `/times/top-times/new-additions/` | ready |
 | `/top-10-swims--lcm` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
-| `/offerings` | `/programs/clinics/` + `/programs/clinics/high-school-prep/` + `/programs/clinics/high-school-skills/` + `/programs/clinics/summer-league-prep/` + `/programs/clinics/summer-league-skills/` | rebuild, pull |
+| `/offerings` | `/programs/clinics/` + `/programs/clinics/high-school-prep/` + `/programs/clinics/high-school-skills/` + `/programs/clinics/summer-league-prep/` + `/programs/clinics/summer-league-skills/` | done |
 | `/check-my-time` | `/times/standards/check-my-time/` | ready |
 | `/2023---2024` | `/times/achievements/2023-24/` | pull |
 | `/` | `/` | rebuild |
@@ -23,36 +23,36 @@ Counts: rebuild 18 · pull 50 · ready 26 · new 12
 | `/privacy-policy` | `/privacy/` | pull |
 | `/fee-structure` | `/programs/fees/` | pull |
 | `/shoulder-strength` | `/training/same/strength/` | pull |
-| `/alumni` | `/about/alumni/` | pull |
+| `/alumni` | `/about/alumni/` | done |
 | `/2022---23-achievements` | `/times/achievements/2022-23/` | pull |
 | `/books` | `/families/new-families/books/` | pull |
-| `/ejp-parking` | `/about/practice-locations/parking/` | pull |
-| `/who-to-contact` | `/about/contact/` | pull |
+| `/ejp-parking` | `/about/practice-locations/parking/` | done |
+| `/who-to-contact` | `/about/contact/` | done |
 | `/scy---relay-team-records` | `/times/records/relays/` | ready |
 | `/top-5-relays---scy` | `/times/top-times/` + `/times/top-times/relays/` | rebuild, ready |
 | `/top-times` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
 | `/power-points-explained` | `/times/standards/power-points/` | pull |
 | `/captyn-message-archive` | `/families/how-to/captyn-messages/` | pull |
 | `/2025---2026` | `/times/achievements/2025-26/` | pull |
-| `/scholarships-and-financial-assistance` | `/programs/financial-assistance/` | pull |
+| `/scholarships-and-financial-assistance` | `/programs/financial-assistance/` | done |
 | `/glossary` | `/families/new-families/glossary/` | pull |
 | `/education` | `/training/same/education/` | rebuild |
 | `/fast-facts-on-water-safety` | `/families/new-families/water-safety/` | pull |
-| `/coaching-staff` | `/about/coaching-staff/` | pull |
+| `/coaching-staff` | `/about/coaching-staff/` | done |
 | `/practice-equipment` | `/families/team-store/group-equipment/` | pull |
-| `/general-practice-schedule` | `/programs/schedule/` | pull |
-| `/practice-groups` | `/programs/` + `/programs/practice-groups/` + `/programs/practice-groups/splash/` + `/programs/practice-groups/tidepool/` + `/programs/practice-groups/riptide/` + `/programs/practice-groups/breakers/` + `/programs/practice-groups/surge/` + `/programs/practice-groups/senior/` | rebuild, pull |
-| `/college-swimmers` | `/about/alumni/college-swimmers/` | pull |
+| `/general-practice-schedule` | `/programs/schedule/` | done |
+| `/practice-groups` | `/programs/` + `/programs/practice-groups/` + `/programs/practice-groups/splash/` + `/programs/practice-groups/tidepool/` + `/programs/practice-groups/riptide/` + `/programs/practice-groups/breakers/` + `/programs/practice-groups/surge/` + `/programs/practice-groups/senior/` | rebuild, done |
+| `/college-swimmers` | `/about/alumni/college-swimmers/` | done |
 | `/national--meet--qualifiers` | `/times/standards/national-qualifiers/` | pull |
 | `/calendar` | `/meets/` + `/meets/calendar/` | rebuild, ready |
 | `/opt-out---intent-information` | `/families/how-to/session-opt-out/` | pull |
 | `/2024---2025` | `/times/achievements/2024-25/` | pull |
-| `/about-us` | `/about/` + `/about/who-we-are/` | rebuild, pull |
+| `/about-us` | `/about/` + `/about/who-we-are/` | rebuild, done |
 | `/about-swim-meets` | `/meets/guide/` | pull |
 | `/time-standards` | `/times/standards/` + `/times/standards/understanding/` | rebuild, pull |
-| `/practice-locations` | `/about/practice-locations/` | pull |
+| `/practice-locations` | `/about/practice-locations/` | done |
 | `/meet-pools` | `/meets/pools/` | pull |
-| `/safe-sport` | `/about/safe-sport/` | pull |
+| `/safe-sport` | `/about/safe-sport/` | done |
 | `/newsletters` | `/families/newsletter/` + `/families/newsletter/archive/` | rebuild, ready |
 | `/team-records---lcm` | `/times/records/individual/` | ready |
 | `/imx-progress` | `/times/standards/imx-imr/` + `/times/standards/imx-imr/about/` | rebuild, pull |
@@ -114,30 +114,30 @@ Deliberately **not** pulled: per-athlete biomechanics reports (individual swimme
 | New path | Title | Type | Status | Replaces | Source files |
 |---|---|---|---|---|---|
 | `/about/` | About | hub | rebuild | `/about-us` | - |
-| `/about/who-we-are/` | Who We Are | page | pull | `/about-us` | - |
-| `/about/coaching-staff/` | Coaching Staff | page | pull | `/coaching-staff` | - |
-| `/about/practice-locations/` | Practice Locations | page | pull | `/practice-locations` | - |
-| `/about/practice-locations/parking/` | Parking at Earl Jackson Pool | page | pull | `/ejp-parking` | assets: 2025_26_TEAM_PARKING.png |
-| `/about/alumni/` | Alumni | page | pull | `/alumni` | - |
-| `/about/alumni/college-swimmers/` | College Swimmers | page | pull | `/college-swimmers` | - |
-| `/about/safe-sport/` | Safe Sport | page | pull | `/safe-sport` | - |
-| `/about/contact/` | Contact & Who to Ask | page | pull | `/who-to-contact` | - |
+| `/about/who-we-are/` | Who We Are | page | done | `/about-us` | - |
+| `/about/coaching-staff/` | Coaching Staff | page | done | `/coaching-staff` | - |
+| `/about/practice-locations/` | Practice Locations | page | done | `/practice-locations` | - |
+| `/about/practice-locations/parking/` | Parking at Earl Jackson Pool | page | done | `/ejp-parking` | assets: 2025_26_TEAM_PARKING.png |
+| `/about/alumni/` | Alumni | page | done | `/alumni` | - |
+| `/about/alumni/college-swimmers/` | College Swimmers | page | done | `/college-swimmers` | - |
+| `/about/safe-sport/` | Safe Sport | page | done | `/safe-sport` | - |
+| `/about/contact/` | Contact & Who to Ask | page | done | `/who-to-contact` | - |
 | `/programs/` | Programs | hub | rebuild | `/practice-groups` | - |
-| `/programs/practice-groups/` | Practice Groups | hub | rebuild | `/practice-groups` | - |
-| `/programs/practice-groups/splash/` | Splash | page | pull | `/practice-groups#Splash` | - |
-| `/programs/practice-groups/tidepool/` | Tidepool | page | pull | `/practice-groups#Tidepool` | - |
-| `/programs/practice-groups/riptide/` | Riptide | page | pull | `/practice-groups#Riptide` | - |
-| `/programs/practice-groups/breakers/` | Breakers | page | pull | `/practice-groups#Breakers` | - |
-| `/programs/practice-groups/surge/` | Surge | page | pull | `/practice-groups#Surge` | - |
-| `/programs/practice-groups/senior/` | Senior | page | pull | `/practice-groups#SeniorSurge` | Practice Group Documents/senior surge requirments.docx |
-| `/programs/schedule/` | Practice Schedule | page | pull | `/general-practice-schedule` | - |
-| `/programs/clinics/` | Prep Programs & Clinics | hub | rebuild | `/offerings` | - |
-| `/programs/clinics/high-school-prep/` | High School Prep | page | pull | `/offerings#HighSchoolPrep` | - |
-| `/programs/clinics/high-school-skills/` | High School Skills Clinics | page | pull | `/offerings#HighSchoolSkillsClinics` | - |
-| `/programs/clinics/summer-league-prep/` | Summer League Prep | page | pull | `/offerings#SummerLeaguePrep` | - |
-| `/programs/clinics/summer-league-skills/` | Summer League Skills Clinics | page | pull | `/offerings#SummerLeagueSkillsClinics` | - |
+| `/programs/practice-groups/` | Practice Groups | hub | done | `/practice-groups` | - |
+| `/programs/practice-groups/splash/` | Splash | page | done | `/practice-groups#Splash` | - |
+| `/programs/practice-groups/tidepool/` | Tidepool | page | done | `/practice-groups#Tidepool` | - |
+| `/programs/practice-groups/riptide/` | Riptide | page | done | `/practice-groups#Riptide` | - |
+| `/programs/practice-groups/breakers/` | Breakers | page | done | `/practice-groups#Breakers` | - |
+| `/programs/practice-groups/surge/` | Surge | page | done | `/practice-groups#Surge` | - |
+| `/programs/practice-groups/senior/` | Senior | page | done | `/practice-groups#SeniorSurge` | Practice Group Documents/senior surge requirments.docx |
+| `/programs/schedule/` | Practice Schedule | page | done | `/general-practice-schedule` | - |
+| `/programs/clinics/` | Prep Programs & Clinics | hub | done | `/offerings` | - |
+| `/programs/clinics/high-school-prep/` | High School Prep | page | done | `/offerings#HighSchoolPrep` | - |
+| `/programs/clinics/high-school-skills/` | High School Skills Clinics | page | done | `/offerings#HighSchoolSkillsClinics` | - |
+| `/programs/clinics/summer-league-prep/` | Summer League Prep | page | done | `/offerings#SummerLeaguePrep` | - |
+| `/programs/clinics/summer-league-skills/` | Summer League Skills Clinics | page | done | `/offerings#SummerLeagueSkillsClinics` | - |
 | `/programs/fees/` | Fees | page | pull | `/fee-structure` | 2026 - 27/2026 - 2027 Fee Summary.docx |
-| `/programs/financial-assistance/` | Scholarships & Financial Assistance | page | pull | `/scholarships-and-financial-assistance` | - |
+| `/programs/financial-assistance/` | Scholarships & Financial Assistance | page | done | `/scholarships-and-financial-assistance` | - |
 | `/programs/join/` | Free Assessment | link | ready | - | - |
 | `/families/` | Family Guide | hub | rebuild | - | - |
 | `/families/new-families/` | New to Swimming | hub | new | - | - |

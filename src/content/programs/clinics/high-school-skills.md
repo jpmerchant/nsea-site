@@ -1,0 +1,5 @@
+- General Age Range \| High School Swimmers
+- Previous Swim Experience
+- Clinics will be held on Saturday Mornings (8:30 - 9:30)
+- 1 : 5 \| Coach to Swimmer Ratio
+- Full Schedule will be availble in August

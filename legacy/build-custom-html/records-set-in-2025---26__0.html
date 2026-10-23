@@ -1,0 +1,605 @@
+<div class="dmCustomHtml" data-element-type="html" id="1188917668"> <meta/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>NSEA Swim — New Team Records</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/> <style>:root {
+    --teal: #008675;
+    --teal-dark: #006A5C;
+    --coral: #ee492f;
+    --coral-light: #FCE7E3;
+    --gray: #676d70;
+    --gray-light: #9BA0A3;
+    --line: #E4E7E8;
+    --ink: #1B2325;
+    --panel: #FAFBFB;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #fff;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 28px 60px; }
+  .summary-row {
+    display: flex;
+    gap: 16px;
+    margin: 0 0 32px;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--coral);
+    border-radius: 6px;
+    padding: 16px 20px;
+    flex: 1 1 190px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .stat-card .num {
+    font-family: 'Oswald', sans-serif;
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--teal-dark);
+    line-height: 1;
+  }
+  .stat-card .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray);
+    margin-top: 6px;
+  }
+  .toc {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin-bottom: 36px;
+  }
+  .toc h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--teal-dark);
+    margin: 0 0 10px;
+  }
+  .toc ul { margin: 0; padding-left: 18px; columns: 2; }
+  .toc a { color: var(--ink); text-decoration: none; font-size: 12.5px; }
+  .toc a:hover { color: var(--coral); }
+  h2.section-title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--teal-dark);
+    border-bottom: 2px solid var(--coral);
+    padding-bottom: 8px;
+    margin: 44px 0 18px;
+  }
+  h2.section-title.first { margin-top: 0; }
+  h3 {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 17px;
+    color: var(--ink);
+    margin: 30px 0 10px;
+    padding-top: 6px;
+  }
+  h4 {
+    font-family: 'Space Mono', monospace;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fff;
+    background: var(--teal);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin: 18px 0 8px;
+  }
+  h5 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+    margin: 16px 0 6px;
+    border-left: 3px solid var(--coral);
+    padding-left: 8px;
+  }
+  h5 .count {
+    font-weight: 400;
+    color: var(--gray);
+    font-size: 11.5px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 11.5px;
+  }
+  table th {
+    background: var(--panel);
+    color: var(--gray);
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--line);
+  }
+  table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  table tr:nth-child(even) td { background: #FCFDFD; }
+  td.time, td.rank { font-family: 'Space Mono', monospace; white-space: nowrap; }
+  td.rank { text-align: center; color: var(--teal-dark); font-weight: 700; }
+  .rtable td:nth-child(3) { font-weight: 600; color: var(--coral); }
+  footer.doc-footer {
+    margin-top: 50px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    color: var(--gray-light);
+    text-align: center;
+  }
+  .disclaimer {
+    background: var(--coral-light);
+    border-left: 3px solid var(--coral);
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--ink);
+    margin-bottom: 28px;
+    border-radius: 0 4px 4px 0;
+  }
+  /* Keep an age-group (or gender) block's heading + table together —
+     avoid a page break landing inside a single age group's rows. Blocks
+     too large for one page will still split, but between rows (not
+     mid-row), and repeat the column headers on the continued page. */
+  .keep-block {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  header.compact { padding: 18px 24px 4px; text-align: center; }
+  header.compact .sub {
+    color: var(--gray); font-size: 13px; max-width: 640px; margin: 0 auto; line-height: 1.5;
+  }
+  header.compact .sub strong { color: var(--coral); }</style>
+<header class="compact"> <p class="sub">Team records set during the <strong>2025 - 2026 Season</strong> 
+across SCY and LCM.</p>
+</header>
+<div class="wrap"> <div class="summary-row"> <div class="stat-card"> <div class="num">58</div>
+<div class="label">New Team Records</div>
+</div>
+<div class="stat-card"> <div class="num">50</div>
+<div class="label">Individual · 12 swimmers</div>
+</div>
+<div class="stat-card"> <div class="num">0</div>
+<div class="label">Relay Records</div>
+</div>
+</div>
+<div class="disclaimer">This document reflects meet results on file with NSEA Swim as of the generation date and may not capture every
+  historical swim. Source boards: <strong>jpmerchant.github.io/nsea-swim-boards</strong>(Team Records &amp; All-Time
+  Top 10, SCY and LCM). If you notice a missing or incorrect entry, let a coach know so records can be updated.</div>
+<div class="toc"> <h2>Contents</h2>
+<ul> <li> <a href="#records-scy">Team Records — Short Course Yards (SCY)</a>
+</li>
+<li> <a href="#records-lcm">Team Records — Long Course Meters (LCM)</a>
+</li>
+</ul>
+</div>
+<h3 id="records-scy">Team Records — Short Course Yards (SCY)</h3>
+<div class="keep-block"> <h4>Female</h4>
+<table class="rtable"> <thead> <tr> <th>Age Group</th>
+<th>Event</th>
+<th>Time</th>
+<th>Holder</th>
+<th>Meet</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody> <tr> <td>11-12</td>
+<td>200 Back</td>
+<td class="time">2:31.84</td>
+<td>Eliza Amin</td>
+<td>2026 WOW Tri County Classic</td>
+<td>2026-01-24</td>
+</tr>
+<tr> <td>13-14</td>
+<td>50 Free</td>
+<td class="time">25.07</td>
+<td>Gentry Witmer</td>
+<td>2025 Triad Tropic Invitational</td>
+<td>2025-12-12</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Free</td>
+<td class="time">53.84</td>
+<td>Gentry Witmer</td>
+<td>2026 NCS SC AG CHAMPS</td>
+<td>2026-02-26</td>
+</tr>
+<tr> <td>13-14</td>
+<td>200 Free</td>
+<td class="time">1:59.94</td>
+<td>Gentry Witmer</td>
+<td>2026 NCS SC AG CHAMPS</td>
+<td>2026-02-26</td>
+</tr>
+<tr> <td>13-14</td>
+<td>50 Back</td>
+<td class="time">28.83</td>
+<td>Gentry Witmer</td>
+<td>2026 NCS SC AG CHAMPS</td>
+<td>2026-02-26</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Back</td>
+<td class="time">1:01.79</td>
+<td>Gentry Witmer</td>
+<td>2026 STAR Tar Heel States</td>
+<td>2026-03-20</td>
+</tr>
+<tr> <td>13-14</td>
+<td>200 Back</td>
+<td class="time">2:13.76</td>
+<td>Gentry Witmer</td>
+<td>2026 STAR Tar Heel States</td>
+<td>2026-03-20</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Breast</td>
+<td class="time">1:11.46</td>
+<td>Abigail Blair</td>
+<td>2026 WOW Tri County Classic</td>
+<td>2026-01-24</td>
+</tr>
+<tr> <td>13-14</td>
+<td>50 Fly</td>
+<td class="time">28.17</td>
+<td>Lila Paukovich</td>
+<td>2025 BAC vs NSEA Dual</td>
+<td>2025-09-20</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Fly</td>
+<td class="time">59.88</td>
+<td>Gentry Witmer</td>
+<td>2026 NCS SC AG CHAMPS</td>
+<td>2026-02-26</td>
+</tr>
+<tr> <td>13-14</td>
+<td>200 IM</td>
+<td class="time">2:15.91</td>
+<td>Gentry Witmer</td>
+<td>2026 NCS SC AG CHAMPS</td>
+<td>2026-02-26</td>
+</tr>
+<tr> <td>15-16</td>
+<td>100 Free</td>
+<td class="time">54.40</td>
+<td>Violet Derry</td>
+<td>2025 Triad Tropic Invitational</td>
+<td>2025-12-12</td>
+</tr>
+<tr> <td>15-16</td>
+<td>50 Breast</td>
+<td class="time">33.09</td>
+<td>Sophie Wert</td>
+<td>2025 BAC vs NSEA Dual</td>
+<td>2025-09-20</td>
+</tr>
+<tr> <td>17-18</td>
+<td>50 Free</td>
+<td class="time">24.58</td>
+<td>Sophie Wert</td>
+<td>2026 NCS SC SR Champs</td>
+<td>2026-02-19</td>
+</tr>
+<tr> <td>17-18</td>
+<td>1000 Free</td>
+<td class="time">10:52.46</td>
+<td>Camren Grace Reaves</td>
+<td>2026 STAR Tar Heel States</td>
+<td>2026-03-20</td>
+</tr>
+<tr> <td>Open</td>
+<td>50 Free</td>
+<td class="time">24.58</td>
+<td>Sophie Wert</td>
+<td>2026 NCS SC SR Champs</td>
+<td>2026-02-19</td>
+</tr>
+<tr> <td>Open</td>
+<td>1000 Free</td>
+<td class="time">10:52.46</td>
+<td>Camren Grace Reaves</td>
+<td>2026 STAR Tar Heel States</td>
+<td>2026-03-20</td>
+</tr>
+<tr> <td>Open</td>
+<td>50 Breast</td>
+<td class="time">33.09</td>
+<td>Sophie Wert</td>
+<td>2025 BAC vs NSEA Dual</td>
+<td>2025-09-20</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="keep-block"> <h4>Male</h4>
+<table class="rtable"> <thead> <tr> <th>Age Group</th>
+<th>Event</th>
+<th>Time</th>
+<th>Holder</th>
+<th>Meet</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody> <tr> <td>15-16</td>
+<td>100 Free</td>
+<td class="time">47.62</td>
+<td>Behr Petroff</td>
+<td>2026 STAR Tar Heel States</td>
+<td>2026-03-20</td>
+</tr>
+<tr> <td>15-16</td>
+<td>50 Back</td>
+<td class="time">24.33</td>
+<td>Hance Mayo</td>
+<td>2026 NCS SC SR Champs</td>
+<td>2026-02-19</td>
+</tr>
+<tr> <td>15-16</td>
+<td>50 Breast</td>
+<td class="time">28.49</td>
+<td>Behr Petroff</td>
+<td>2025 BAC vs NSEA Dual</td>
+<td>2025-09-20</td>
+</tr>
+<tr> <td>15-16</td>
+<td>50 Fly</td>
+<td class="time">24.26</td>
+<td>Hance Mayo</td>
+<td>2025 BAC vs NSEA Dual</td>
+<td>2025-09-20</td>
+</tr>
+<tr> <td>15-16</td>
+<td>100 Fly</td>
+<td class="time">51.28</td>
+<td>Hance Mayo</td>
+<td>2026 NCS SC SR Champs</td>
+<td>2026-02-19</td>
+</tr>
+<tr> <td>17-18</td>
+<td>200 Breast</td>
+<td class="time">2:06.40</td>
+<td>Ryker Eder</td>
+<td>2026 NCS SC SR Champs</td>
+<td>2026-02-19</td>
+</tr>
+<tr> <td>Open</td>
+<td>50 Breast</td>
+<td class="time">28.49</td>
+<td>Behr Petroff</td>
+<td>2025 BAC vs NSEA Dual</td>
+<td>2025-09-20</td>
+</tr>
+<tr> <td>Open</td>
+<td>200 Breast</td>
+<td class="time">2:06.40</td>
+<td>Ryker Eder</td>
+<td>2026 NCS SC SR Champs</td>
+<td>2026-02-19</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="keep-block"> <h3 id="records-lcm">Team Records — Long Course Meters (LCM)</h3>
+<div class="keep-block"> <h4>Female</h4>
+<table class="rtable"> <thead> <tr> <th>Age Group</th>
+<th>Event</th>
+<th>Time</th>
+<th>Holder</th>
+<th>Meet</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody> <tr> <td>13-14</td>
+<td>100 Free</td>
+<td class="time">1:03.27</td>
+<td>Gentry Witmer</td>
+<td>2026 SC GAME Summer Classic</td>
+<td>2026-06-12</td>
+</tr>
+<tr> <td>13-14</td>
+<td>50 Back</td>
+<td class="time">32.05</td>
+<td>Gentry Witmer</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Back</td>
+<td class="time">1:11.65</td>
+<td>Gentry Witmer</td>
+<td>2026 SC GAME Summer Classic</td>
+<td>2026-06-12</td>
+</tr>
+<tr> <td>13-14</td>
+<td>50 Breast</td>
+<td class="time">37.62</td>
+<td>Abigail Blair</td>
+<td>2026 GCST MARK MCCAW SUMMER INVITE</td>
+<td>2026-06-19</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Breast</td>
+<td class="time">1:23.50</td>
+<td>Abigail Blair</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>13-14</td>
+<td>200 Breast</td>
+<td class="time">2:59.54</td>
+<td>Abigail Blair</td>
+<td>2026 GCST MARK MCCAW SUMMER INVITE</td>
+<td>2026-06-19</td>
+</tr>
+<tr> <td>13-14</td>
+<td>100 Fly</td>
+<td class="time">1:08.21</td>
+<td>Gentry Witmer</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>13-14</td>
+<td>200 IM</td>
+<td class="time">2:36.32</td>
+<td>Gentry Witmer</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>17-18</td>
+<td>50 Free</td>
+<td class="time">28.63</td>
+<td>Sophie Wert</td>
+<td>2026 GCST MARK MCCAW SUMMER INVITE</td>
+<td>2026-06-19</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="keep-block"> <h4>Male</h4>
+<table class="rtable"> <thead> <tr> <th>Age Group</th>
+<th>Event</th>
+<th>Time</th>
+<th>Holder</th>
+<th>Meet</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody> <tr> <td>15-16</td>
+<td>50 Free</td>
+<td class="time">24.38</td>
+<td>Behr Petroff</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>15-16</td>
+<td>100 Free</td>
+<td class="time">53.97</td>
+<td>Behr Petroff</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>15-16</td>
+<td>50 Breast</td>
+<td class="time">30.08</td>
+<td>Behr Petroff</td>
+<td>2026 Charlotte Open</td>
+<td>2026-05-14</td>
+</tr>
+<tr> <td>15-16</td>
+<td>100 Breast</td>
+<td class="time">1:07.65</td>
+<td>Behr Petroff</td>
+<td>2026 Charlotte Open</td>
+<td>2026-05-14</td>
+</tr>
+<tr> <td>15-16</td>
+<td>200 Breast</td>
+<td class="time">2:32.41</td>
+<td>Behr Petroff</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>17-18</td>
+<td>50 Breast</td>
+<td class="time">29.98</td>
+<td>Behr Petroff</td>
+<td>2026 Futures Championship - Knoxville</td>
+<td>2026-07-29</td>
+</tr>
+<tr> <td>17-18</td>
+<td>100 Breast</td>
+<td class="time">1:07.07</td>
+<td>Behr Petroff</td>
+<td>2026 Futures Championship - Knoxville</td>
+<td>2026-07-29</td>
+</tr>
+<tr> <td>17-18</td>
+<td>200 Breast</td>
+<td class="time">2:37.49</td>
+<td>Ryker Eder</td>
+<td>2026 Futures Championship - Knoxville</td>
+<td>2026-07-29</td>
+</tr>
+<tr> <td>Open</td>
+<td>50 Free</td>
+<td class="time">24.38</td>
+<td>Behr Petroff</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>Open</td>
+<td>50 Breast</td>
+<td class="time">29.98</td>
+<td>Behr Petroff</td>
+<td>2026 Futures Championship - Knoxville</td>
+<td>2026-07-29</td>
+</tr>
+<tr> <td>Open</td>
+<td>100 Breast</td>
+<td class="time">1:07.07</td>
+<td>Behr Petroff</td>
+<td>2026 Futures Championship - Knoxville</td>
+<td>2026-07-29</td>
+</tr>
+<tr> <td>Open</td>
+<td>200 Breast</td>
+<td class="time">2:32.41</td>
+<td>Behr Petroff</td>
+<td>2026 NC LC SR Championships</td>
+<td>2026-07-09</td>
+</tr>
+<tr> <td>10 &amp; U</td>
+<td>50 Breast</td>
+<td class="time">44.51</td>
+<td>Everett Cassidy</td>
+<td>2026 NCS LC AG Championships</td>
+<td>2026-07-16</td>
+</tr>
+<tr> <td>10 &amp; U</td>
+<td>100 Breast</td>
+<td class="time">1:38.58</td>
+<td>Everett Cassidy</td>
+<td>2026 NCS LC AG Championships</td>
+<td>2026-07-16</td>
+</tr>
+<tr> <td>10 &amp; U</td>
+<td>100 Fly</td>
+<td class="time">2:05.42</td>
+<td>Kai Farrell</td>
+<td>2026 WAVE Sprint Into LC</td>
+<td>2026-04-25</td>
+</tr>
+</tbody>
+</table>
+</div>
+<footer class="doc-footer">NSEA Swim · Northside Elite Aquatics · Wilmington, NC<br/>Generated from the Team Records and All-Time Top 10 boards · jpmerchant.github.io/nsea-swim-boards</footer>
+</div>
+</div>
+</div>

@@ -37,6 +37,7 @@ export const breadcrumbs = (path) => {
 };
 
 export const statusLabel = {
+  done: 'Done',
   ready: 'Ready',
   pull: 'Pull from BUILD',
   rebuild: 'Rebuild',

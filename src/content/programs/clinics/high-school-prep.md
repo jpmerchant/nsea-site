@@ -1,0 +1,14 @@
+<!-- REVIEW: STALE: "Monday September 13th" does not match a 2026 weekday (Sept 13, 2026 is a Sunday); registration opened "Monday August 3rd". Confirm dates and the Captyn registration link. -->
+- General Age Range \| High School Swimmers
+- Previous Swim Experience
+- Single Day Options with Multi Day Discounts
+- Practice Offered
+- Monday \| 8:15 - 9:15pm
+- Tuesday \| 8:15 - 9:15pm
+- Wednesday \| 8:15 - 9:15pm
+- Thursday \| 8:15 - 9:15pm
+- Minium of 10 swimmers signed up for a practice day to run
+- First Day \| Monday September 13th
+- Last Day \| Thursday October 29th
+- Registration Opens \| Monday August 3rd @ 8:00am
+- [Click Here to Register](https://nseaswim.captyn.com/find?tag=cmni0o39a00xvn31414aas3wh&type=group)

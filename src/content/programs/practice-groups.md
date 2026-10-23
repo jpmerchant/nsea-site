@@ -1,0 +1,1 @@
+We offer practice groups for swimmers aged 5 & older, with ability levels ranging from beginner to national qualifier. Our goal is to offer developmentally appropriate practices geared towards challenging and developing each athlete to the best of their ability and desire.

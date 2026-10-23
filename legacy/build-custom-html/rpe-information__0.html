@@ -1,0 +1,434 @@
+<div class="dmCustomHtml" data-element-type="html" id="1842407261"> <meta/>
+<title>RPE &amp; Session-RPE</title>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/> <style>:root{
+    --teal:#008675;
+    --teal-dark:#006A5C;
+    --coral:#ee492f;
+    --coral-light:#FCE7E3;
+    --amber:#CA8A04;
+    --amber-light:#FDF3D9;
+    --gray:#676d70;
+    --gray-light:#9BA0A3;
+    --line:#E4E7E8;
+    --ink:#1B2325;
+    --panel:#FAFBFB;
+    --white:#FFFFFF;
+    --bg: var(--white);
+    --text: var(--ink);
+    --text-secondary: var(--gray);
+    --card-bg: var(--white);
+    --card-border: var(--line);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12191A;
+      --text:#EAF1F0;
+      --text-secondary:#A9B4B3;
+      --card-bg:#182122;
+      --card-border:#26302F;
+      --panel:#182122;
+      --coral-light:#3A211C;
+      --amber-light:#332A12;
+      --teal:#2FBBA6;
+      --teal-dark:#1E8E7D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12191A;
+    --text:#EAF1F0;
+    --text-secondary:#A9B4B3;
+    --card-bg:#182122;
+    --card-border:#26302F;
+    --panel:#182122;
+    --coral-light:#3A211C;
+    --amber-light:#332A12;
+    --teal:#2FBBA6;
+    --teal-dark:#1E8E7D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.6;
+  }
+  .wrap{
+    max-width:840px;
+    margin:0 auto;
+    padding:0 24px 80px;
+  }
+  /* Header / lane-stripe */
+  .lane-stripe{
+    height:6px;
+    width:100%;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--coral) 0 48px,
+      transparent 48px 64px
+    );
+  }
+  header{
+    padding:20px 0 18px;
+    border-bottom:1px solid var(--card-border);
+  }
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--coral);
+    font-weight:700;
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:clamp(30px,5vw,42px);
+    letter-spacing:0.01em;
+    margin:0 0 10px;
+    text-wrap:balance;
+    color:var(--text);
+  }
+  .subhead{
+    color:var(--text-secondary);
+    font-size:16px;
+    max-width:58ch;
+    margin:0;
+  }
+  section{ margin-top:18px; break-inside:avoid; page-break-inside:avoid; }
+  /* keep graphics intact across page breaks (PDF export) */
+  .formula,
+  .zone,
+  .card,
+  footer{
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h2{
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  h2{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:22px;
+    letter-spacing:0.01em;
+    margin:0 0 16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .badge{
+    flex:none;
+    width:34px;height:34px;
+    border-radius:50%;
+    background:var(--teal);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Mono',monospace;
+    font-weight:700;
+    font-size:14px;
+  }
+  p{ margin:0 0 14px; max-width:68ch; }
+  .lede{ color:var(--text-secondary); }
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:10px;
+    padding:14px 20px;
+  }
+  /* CR-10 scale — two columns so the whole scale holds on one page */
+  .scale{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-auto-flow:column;
+    grid-template-rows:repeat(6,auto);
+    gap:8px 14px;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  .scale-row{
+    display:flex;
+    align-items:stretch;
+    border:1px solid var(--card-border);
+    border-radius:8px;
+    overflow:hidden;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  .scale-num{
+    flex:none;
+    width:46px;
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:18px;
+    display:flex;align-items:center;justify-content:center;
+    font-variant-numeric:tabular-nums;
+    color:#fff;
+  }
+  .scale-desc{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:1px;
+    padding:8px 12px;
+    background:var(--card-bg);
+  }
+  .scale-desc .term{ font-weight:600; font-size:14.5px; }
+  .scale-desc .feel{ font-size:13px; color:var(--text-secondary); }
+  /* Formula callout */
+  .formula{
+    border-left:4px solid var(--coral);
+    background:var(--coral-light);
+    border-radius:0 10px 10px 0;
+    padding:20px 24px;
+    margin:22px 0;
+  }
+  .formula .label{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--coral);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .formula .eq{
+    font-family:'Oswald',sans-serif;
+    font-size:clamp(18px,3.4vw,24px);
+    font-weight:600;
+    color:var(--text);
+  }
+  .formula .eq .op{ color:var(--coral); margin:0 8px; }
+  .formula .example{
+    margin-top:10px;
+    font-size:14px;
+    color:var(--text-secondary);
+    font-family:'Space Mono',monospace;
+  }
+  /* Zone cards */
+  .zones{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+  }
+  .zone{
+    border-radius:10px;
+    padding:14px 18px;
+    color:#fff;
+  }
+  .zone .rpe{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    opacity:0.85;
+    margin-bottom:6px;
+  }
+  .zone .name{
+    font-family:'Oswald',sans-serif;
+    font-size:20px;
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .zone .detail{ font-size:13.5px; opacity:0.92; margin:0; }
+  .zone.easy{ background:var(--teal); }
+  .zone.mod{ background:var(--amber); }
+  .zone.hard{ background:var(--coral); }
+  /* checklist */
+  .checklist{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; }
+  .checklist li{
+    display:flex; gap:12px; align-items:flex-start;
+    font-size:15px;
+  }
+  .checklist .mark{
+    flex:none; width:22px;height:22px; border-radius:6px;
+    background:var(--teal-dark);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px; font-weight:700; margin-top:2px;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:14.5px; }
+  th,td{ text-align:left; padding:10px 12px; border-bottom:1px solid var(--card-border); }
+  th{ font-family:'Space Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-secondary); font-weight:700; }
+  .table-wrap{ overflow-x:auto; }
+  footer{
+    margin-top:8px;
+    background:var(--teal-dark);
+    border-radius:12px;
+    padding:18px 24px;
+    color:#fff;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+  }
+  footer .brand{
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    background:var(--coral);
+    color:#fff;
+    padding:5px 10px;
+    border-radius:5px;
+    font-weight:700;
+  }
+  footer .note{ font-size:13.5px; opacity:0.92; max-width:52ch; }
+  .sources{ margin-top:10px; font-size:13px; color:var(--text-secondary); }
+  .sources h2{ font-size:16px; }
+  .sources ul{ padding-left:18px; margin:0; }
+  .sources li{ margin-bottom:6px; }
+  .sources a{ color:var(--teal-dark); }
+  :root[data-theme="dark"] .sources a, @media (prefers-color-scheme:dark){ .sources a{ color:var(--teal); } }
+  /* tighter rhythm for print/PDF export only — screen page keeps its normal spacing */
+  @media print{
+    body{ font-size:14.5px; }
+    header{ padding:12px 0 14px; }
+    section{ margin-top:14px; }
+    .card{ padding:12px 18px; }
+    .checklist{ gap:7px; }
+    .zone{ padding:12px 16px; }
+    .zones{ gap:10px; }
+    .formula{ padding:14px 20px; margin:14px 0; }
+    .scale-desc{ padding:6px 10px; }
+    .scale{ gap:6px 12px; }
+    .sources{ margin-top:8px; }
+    footer{ margin-top:6px; padding:14px 22px; }
+  }</style>
+<div class="lane-stripe"></div>
+<div class="wrap"> <header> <p class="eyebrow">NSEA Swim · Coaching Reference</p>
+<h1>RPE &amp; Session-RPE</h1>
+<p class="subhead">A working guide to rating perceived exertion and turning it into a trackable training-load number — with the breakpoints that are specific to swimming.</p>
+</header>
+<section> <h2> <span class="badge">1</span> 
+What RPE is</h2>
+<p class="lede">Rate of Perceived Exertion (RPE) is a swimmer's own read on how hard something felt — muscles, lungs, and mental fatigue rolled into one number. It needs no equipment, and it catches what a pace clock can't: heat, poor sleep, travel, or illness all raise perceived effort at a pace that used to feel easy.</p>
+<p>Two scales are in use. The original <strong>Borg 6–20 scale</strong> 
+is built so the rating × 10 roughly approximates heart rate (13 ≈ 130 bpm) — it's the standard in most published research. Most coaches and athlete apps now default to the simpler <strong>CR-10 scale</strong> 
+below, because its spacing better matches how effort actually feels as it climbs.</p>
+<div class="scale"> <div class="scale-row"> <div class="scale-num" style="background:var(--teal)">0</div>
+<div class="scale-desc"> <span class="term">Rest</span>
+<span class="feel">No effort at all</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--teal)">1</div>
+<div class="scale-desc"> <span class="term">Very easy</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--teal)">2</div>
+<div class="scale-desc"> <span class="term">Easy</span>
+<span class="feel">Conversation is easy</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--teal-dark)">3</div>
+<div class="scale-desc"> <span class="term">Moderate</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--amber)">4</div>
+<div class="scale-desc"> <span class="term">Somewhat hard</span>
+<span class="feel">Short sentences still comfortable</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--amber)">5</div>
+<div class="scale-desc"> <span class="term">Hard</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--amber)">6</div>
+<div class="scale-desc"> <span class="term">Hard+</span>
+<span class="feel">Few words at a time</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--coral)">7</div>
+<div class="scale-desc"> <span class="term">Very hard</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--coral)">8</div>
+<div class="scale-desc"> <span class="term">Very hard+</span>
+<span class="feel">Gasping, minimal speech</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:var(--coral)">9</div>
+<div class="scale-desc"> <span class="term">Nearly maximal</span>
+</div>
+</div>
+<div class="scale-row"> <div class="scale-num" style="background:#B23A26">10</div>
+<div class="scale-desc"> <span class="term">Maximal</span>
+<span class="feel">All-out effort</span>
+</div>
+</div>
+</div>
+</section>
+<section> <h2> <span class="badge">2</span> 
+Session-RPE: the load formula</h2>
+<p class="lede">Session-RPE (Foster et al.) turns one post-practice number into a training-load figure for the whole session — comparable across a technique swim, a race-pace set, or a dryland session.</p>
+<div class="formula"> <div class="label">Training load, in arbitrary units</div>
+<div class="eq">Session RPE (0–10) <span class="op">×</span> 
+Duration (minutes) <span class="op">=</span> 
+Load (AU)</div>
+<div class="example">87 min practice · rated "somewhat hard" (4) → 4 × 87 = 348 AU</div>
+</div>
+<p>Collect one overall rating <strong>15–30 minutes after practice ends</strong> 
+— not mid-set — so the number reflects the whole session rather than however the last five minutes felt. Logged consistently across a squad, this builds a simple per-athlete load history that flags a spike or a flat week without any equipment beyond a whiteboard or a text.</p>
+</section>
+<section> <h2> <span class="badge">3</span> 
+Swimming's RPE zones run differently</h2>
+<p class="lede">Research on elite open-water swimmers found perceived-exertion breakpoints for lactate threshold that don't match land-based endurance sports — water resistance rises exponentially with speed, which widens the middle zone.</p>
+<div class="zones"> <div class="zone easy"> <div class="rpe">RPE ≤ 3</div>
+<div class="name">Easy</div>
+<p class="detail">Below the first lactate threshold. Aerobic base work, ~1.2–1.3 mmol/L lactate.</p>
+</div>
+<div class="zone mod"> <div class="rpe">RPE 4–6</div>
+<div class="name">Moderate</div>
+<p class="detail">Between LT1 and LT2 — a wider band than in running or cycling. ~1.7–3.0 mmol/L lactate.</p>
+</div>
+<div class="zone hard"> <div class="rpe">RPE ≥ 7</div>
+<div class="name">Hard</div>
+<p class="detail">At or above the second lactate threshold. Race-pace and above, ~4.0+ mmol/L lactate.</p>
+</div>
+</div>
+<p style="margin-top:16px;">Because pace and RPE can decouple in the pool — technique, taper state, or even pool speed all shift the relationship — sRPE is a useful cross-check on intended zones. A set built as "moderate aerobic" that keeps coming back at RPE 7+ is worth a second look, either at the pacing target or the athlete's readiness.</p>
+</section>
+<section> <h2> <span class="badge">4</span> 
+Using it week to week</h2>
+<div class="card"> <ul class="checklist"> <li> <span class="mark">✓</span>
+<span> <strong>Total load</strong> 
+— sum daily AU across a week or block and compare against the plan's intended trend.</span>
+</li>
+<li> <span class="mark">✓</span>
+<span> <strong>Load ratio</strong> 
+— a rolling week vs. a rolling 4-week average; a sharp spike is one signal worth a look, not a hard stop rule on its own.</span>
+</li>
+<li> <span class="mark">✓</span>
+<span> <strong>Monotony</strong> 
+— near-identical daily loads combined with high total load has been linked to higher injury/illness risk in other sports.</span>
+</li>
+<li> <span class="mark">✓</span>
+<span> <strong>Collection habit</strong> 
+— one number per athlete, 15–30 min post-practice, logged the same way every day so the trend stays comparable.</span>
+</li>
+</ul>
+</div>
+</section>
+<section class="sources"> <h2>Sources</h2>
+<ul> <li> <a href="https://www.frontiersin.org/journals/neuroscience/articles/10.3389/fnins.2017.00612/full">Session-RPE Method for Training Load Monitoring: Validity, Ecological Usefulness, and Influencing Factors</a> 
+— Frontiers in Physiology, 2017</li>
+<li> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7739345/">Session RPE Breakpoints Corresponding to Intensity Thresholds in Elite Open Water Swimmers</a> 
+— PMC</li>
+<li> <a href="https://journals.lww.com/nsca-scj/fulltext/2008/12000/using_session_rpe_to_monitor_training_load_in.11.aspx">Using Session-RPE to Monitor Training Load in Swimmers</a> 
+— Strength &amp; Conditioning Journal, 2008</li>
+<li> <a href="https://www.trainingzones.io/en/guides/rpe-borg-scale">RPE Scale: The Complete Guide to Rating Perceived Exertion</a> 
+— TrainingZones</li>
+<li> <a href="https://www.sralab.org/rehabilitation-measures/borg-rating-scale-perceived-exertion">Borg Rating Scale of Perceived Exertion</a> 
+— Shirley Ryan AbilityLab</li>
+</ul>
+</section>
+<footer> <span class="brand">NSEA Swim</span>
+<span class="note">Coaching reference — RPE &amp; session-RPE for training-load monitoring. Keep alongside your training plan.</span>
+</footer>
+</div>
+</div>

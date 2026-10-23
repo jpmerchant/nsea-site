@@ -15,7 +15,8 @@
 //             'page' content page
 //             'tool' interactive tool (listed in the tool library)
 //             'link' external link (shows as a card / menu item, no page built)
-//   status    'ready'    already built - HTML saved under legacy/
+//   status    'done'     content migrated (src/content/<path>.md exists)
+//             'ready'    already built - HTML saved under legacy/
 //             'pull'     lives on the current BUILD site - content to be pulled
 //             'rebuild'  exists today but is merged/redesigned in the new structure
 //             'new'      does not exist yet
@@ -66,32 +67,32 @@ export const SITE = {
 export const pages = [
   // ---------------------------------------------------------------- ABOUT ----
   { path: '/about/', type: 'hub', title: 'About', desc: 'Who we are, who coaches, and where we train.', status: 'rebuild', from: ['/about-us'] },
-  { path: '/about/who-we-are/', type: 'page', title: 'Who We Are', desc: 'Our mission, vision and values, and how the club is run.', status: 'pull', from: ['/about-us'] },
-  { path: '/about/coaching-staff/', type: 'page', title: 'Coaching Staff', desc: 'Meet the NSEA coaches.', status: 'pull', from: ['/coaching-staff'] },
-  { path: '/about/practice-locations/', type: 'page', title: 'Practice Locations', desc: 'Where and when we practice.', status: 'pull', from: ['/practice-locations'] },
-  { path: '/about/practice-locations/parking/', type: 'page', title: 'Parking at Earl Jackson Pool', desc: 'Where to park for practice and meets.', status: 'pull', from: ['/ejp-parking'], legacy: ['assets: 2025_26_TEAM_PARKING.png'] },
-  { path: '/about/alumni/', type: 'page', title: 'Alumni', desc: 'Where NSEA swimmers go next.', status: 'pull', from: ['/alumni'] },
-  { path: '/about/alumni/college-swimmers/', type: 'page', title: 'College Swimmers', desc: 'NSEA alumni swimming in college.', status: 'pull', from: ['/college-swimmers'] },
-  { path: '/about/safe-sport/', type: 'page', title: 'Safe Sport', desc: 'How we keep athletes safe, and how to report a concern.', status: 'pull', from: ['/safe-sport'] },
-  { path: '/about/contact/', type: 'page', title: 'Contact & Who to Ask', desc: 'The right person for every question.', status: 'pull', from: ['/who-to-contact'] },
+  { path: '/about/who-we-are/', type: 'page', title: 'Who We Are', desc: 'Our mission, vision and values, and how the club is run.', status: 'done', from: ['/about-us'] },
+  { path: '/about/coaching-staff/', type: 'page', title: 'Coaching Staff', desc: 'Meet the NSEA coaches.', status: 'done', from: ['/coaching-staff'] },
+  { path: '/about/practice-locations/', type: 'page', title: 'Practice Locations', desc: 'Where and when we practice.', status: 'done', from: ['/practice-locations'] },
+  { path: '/about/practice-locations/parking/', type: 'page', title: 'Parking at Earl Jackson Pool', desc: 'Where to park for practice and meets.', status: 'done', from: ['/ejp-parking'], legacy: ['assets: 2025_26_TEAM_PARKING.png'] },
+  { path: '/about/alumni/', type: 'page', title: 'Alumni', desc: 'Where NSEA swimmers go next.', status: 'done', from: ['/alumni'] },
+  { path: '/about/alumni/college-swimmers/', type: 'page', title: 'College Swimmers', desc: 'NSEA alumni swimming in college.', status: 'done', from: ['/college-swimmers'] },
+  { path: '/about/safe-sport/', type: 'page', title: 'Safe Sport', desc: 'How we keep athletes safe, and how to report a concern.', status: 'done', from: ['/safe-sport'] },
+  { path: '/about/contact/', type: 'page', title: 'Contact & Who to Ask', desc: 'The right person for every question.', status: 'done', from: ['/who-to-contact'] },
 
   // ------------------------------------------------------------- PROGRAMS ----
   { path: '/programs/', type: 'hub', title: 'Programs', desc: 'Find the right group, see the schedule, and get started.', status: 'rebuild', from: ['/practice-groups'] },
-  { path: '/programs/practice-groups/', type: 'hub', title: 'Practice Groups', desc: 'Six groups, from first strokes to senior training.', status: 'rebuild', from: ['/practice-groups'] },
-  { path: '/programs/practice-groups/splash/', type: 'page', title: 'Splash', desc: 'Our entry group.', status: 'pull', from: ['/practice-groups#Splash'] },
-  { path: '/programs/practice-groups/tidepool/', type: 'page', title: 'Tidepool', desc: 'Building fundamentals.', status: 'pull', from: ['/practice-groups#Tidepool'] },
-  { path: '/programs/practice-groups/riptide/', type: 'page', title: 'Riptide', desc: 'Developing competitive swimmers.', status: 'pull', from: ['/practice-groups#Riptide'] },
-  { path: '/programs/practice-groups/breakers/', type: 'page', title: 'Breakers', desc: 'Advancing racing skills.', status: 'pull', from: ['/practice-groups#Breakers'] },
-  { path: '/programs/practice-groups/surge/', type: 'page', title: 'Surge', desc: 'High-level age group training.', status: 'pull', from: ['/practice-groups#Surge'] },
-  { path: '/programs/practice-groups/senior/', type: 'page', title: 'Senior', desc: 'Senior-level training.', status: 'pull', from: ['/practice-groups#SeniorSurge'], legacy: ['Practice Group Documents/senior surge requirments.docx'] },
-  { path: '/programs/schedule/', type: 'page', title: 'Practice Schedule', desc: 'The general practice schedule for every group.', status: 'pull', from: ['/general-practice-schedule'] },
-  { path: '/programs/clinics/', type: 'hub', title: 'Prep Programs & Clinics', desc: 'High school and summer league prep, plus skills clinics.', status: 'rebuild', from: ['/offerings'] },
-  { path: '/programs/clinics/high-school-prep/', type: 'page', title: 'High School Prep', desc: '', status: 'pull', from: ['/offerings#HighSchoolPrep'] },
-  { path: '/programs/clinics/high-school-skills/', type: 'page', title: 'High School Skills Clinics', desc: '', status: 'pull', from: ['/offerings#HighSchoolSkillsClinics'] },
-  { path: '/programs/clinics/summer-league-prep/', type: 'page', title: 'Summer League Prep', desc: '', status: 'pull', from: ['/offerings#SummerLeaguePrep'] },
-  { path: '/programs/clinics/summer-league-skills/', type: 'page', title: 'Summer League Skills Clinics', desc: '', status: 'pull', from: ['/offerings#SummerLeagueSkillsClinics'] },
+  { path: '/programs/practice-groups/', type: 'hub', title: 'Practice Groups', desc: 'Six groups, from first strokes to senior training.', status: 'done', from: ['/practice-groups'] },
+  { path: '/programs/practice-groups/splash/', type: 'page', title: 'Splash', desc: 'Ages 5–10 · previous swim experience', status: 'done', from: ['/practice-groups#Splash'] },
+  { path: '/programs/practice-groups/tidepool/', type: 'page', title: 'Tidepool', desc: 'Ages 6–10 · building a competitive foundation', status: 'done', from: ['/practice-groups#Tidepool'] },
+  { path: '/programs/practice-groups/riptide/', type: 'page', title: 'Riptide', desc: 'Ages 10–13 · training and competition skills', status: 'done', from: ['/practice-groups#Riptide'] },
+  { path: '/programs/practice-groups/breakers/', type: 'page', title: 'Breakers', desc: 'Ages 13 & older · competitive experience', status: 'done', from: ['/practice-groups#Breakers'] },
+  { path: '/programs/practice-groups/surge/', type: 'page', title: 'Surge', desc: 'Ages 14 & older · at least a year in Breakers', status: 'done', from: ['/practice-groups#Surge'] },
+  { path: '/programs/practice-groups/senior/', type: 'page', title: 'Senior', desc: 'Ages 15 & older · A / AA time standards', status: 'done', from: ['/practice-groups#SeniorSurge'], legacy: ['Practice Group Documents/senior surge requirments.docx'] },
+  { path: '/programs/schedule/', type: 'page', title: 'Practice Schedule', desc: 'The general practice schedule for every group.', status: 'done', from: ['/general-practice-schedule'] },
+  { path: '/programs/clinics/', type: 'hub', title: 'Prep Programs & Clinics', desc: 'High school and summer league prep, plus skills clinics.', status: 'done', from: ['/offerings'] },
+  { path: '/programs/clinics/high-school-prep/', type: 'page', title: 'High School Prep', desc: '', status: 'done', from: ['/offerings#HighSchoolPrep'] },
+  { path: '/programs/clinics/high-school-skills/', type: 'page', title: 'High School Skills Clinics', desc: '', status: 'done', from: ['/offerings#HighSchoolSkillsClinics'] },
+  { path: '/programs/clinics/summer-league-prep/', type: 'page', title: 'Summer League Prep', desc: '', status: 'done', from: ['/offerings#SummerLeaguePrep'] },
+  { path: '/programs/clinics/summer-league-skills/', type: 'page', title: 'Summer League Skills Clinics', desc: '', status: 'done', from: ['/offerings#SummerLeagueSkillsClinics'] },
   { path: '/programs/fees/', type: 'page', title: 'Fees', desc: 'What it costs and how billing works.', status: 'pull', from: ['/fee-structure'], legacy: ['2026 - 27/2026 - 2027 Fee Summary.docx'] },
-  { path: '/programs/financial-assistance/', type: 'page', title: 'Scholarships & Financial Assistance', desc: 'Help is available.', status: 'pull', from: ['/scholarships-and-financial-assistance'] },
+  { path: '/programs/financial-assistance/', type: 'page', title: 'Scholarships & Financial Assistance', desc: 'Help is available.', status: 'done', from: ['/scholarships-and-financial-assistance'] },
   { path: '/programs/join/', type: 'link', title: 'Free Assessment', desc: 'Sign up for an assessment to find the right group.', status: 'ready', url: 'https://form.jotform.com/jpmerchant/assessment-sign-up', feature: true },
 
   // ------------------------------------------------------------- FAMILIES ----
