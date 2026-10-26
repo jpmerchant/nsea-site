@@ -113,6 +113,7 @@ export const pages = [
   { path: '/families/newsletter/', type: 'hub', title: 'Newsletter', desc: 'The current issue and every past issue.', status: 'rebuild', from: ['/current', '/newsletters'] },
   { path: '/families/newsletter/current/', type: 'tool', title: 'Current Issue', desc: '', embed: '/embeds/newsletter-current.html', status: 'done', from: ['/current'], legacy: ['content/newsletters/nsea-newsletter-10-17-2026.html'] },
   { path: '/families/newsletter/archive/', type: 'page', title: 'Newsletter Archive', desc: '', status: 'done', from: ['/newsletters'], legacy: ['content/newsletters/nsea-newsletter-10-03-2026.html'] },
+  { path: '/families/newsletter/thought-of-the-month/', type: 'tool', title: 'Thought of the Month', desc: 'This month\'s thought, and every past one.', embed: '/embeds/thought-of-the-month.html', status: 'done', legacy: ['public/embeds/thoughts.json (the archive: add one entry per month)'], height: 1100 },
   { path: '/families/team-store/', type: 'hub', title: 'Team Store', desc: 'Apparel, caps, practice equipment and tech suits.', status: 'rebuild' },
   { path: '/families/team-store/apparel/', type: 'link', title: 'Apparel Store', desc: 'Team apparel and spirit wear.', status: 'ready', url: 'https://shop.creativeadscreenprinting.com/index.php/product-category/nsea_swim' },
   { path: '/families/team-store/caps/', type: 'link', title: 'Cap Order Form', desc: 'Order team caps.', status: 'ready', url: 'https://form.jotform.com/jpmerchant/team-caps' },

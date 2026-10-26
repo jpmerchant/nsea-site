@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 100 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 101 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 68 · ready 14 · new 2
+Counts: rebuild 16 · done 69 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
@@ -169,6 +169,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/families/newsletter/` | Newsletter | hub | rebuild | `/current`, `/newsletters` | - |
 | `/families/newsletter/current/` | Current Issue | tool | done | `/current` | content/newsletters/nsea-newsletter-10-17-2026.html |
 | `/families/newsletter/archive/` | Newsletter Archive | page | done | `/newsletters` | content/newsletters/nsea-newsletter-10-03-2026.html |
+| `/families/newsletter/thought-of-the-month/` | Thought of the Month | tool | done | - | public/embeds/thoughts.json (the archive: add one entry per month) |
 | `/families/team-store/` | Team Store | hub | rebuild | - | - |
 | `/families/team-store/apparel/` | Apparel Store | link | ready | - | - |
 | `/families/team-store/caps/` | Cap Order Form | link | ready | - | - |

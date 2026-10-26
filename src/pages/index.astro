@@ -37,6 +37,16 @@ const featured = ['/times/standards/check-my-time/', '/meets/calendar/', '/times
   <div class="section-title">Popular tools</div>
   <HubGrid items={featured} cta="Open" />
 
+  <div class="section-title">Thought of the Month</div>
+  <iframe class="embed" id="thought-frame" src="/embeds/thought-of-the-month.html?view=current&archive=%2Ffamilies%2Fnewsletter%2Fthought-of-the-month%2F" title="Thought of the Month" style="height:340px" loading="lazy"></iframe>
+  <script>
+    // The widget reports its own height so the tile never clips or leaves a gap (phones stack it taller).
+    const tf = document.getElementById('thought-frame');
+    window.addEventListener('message', (e) => {
+      if (e.source === tf?.contentWindow && e.data && e.data.type === 'nsea-thoughts-height') tf.style.height = Math.ceil(e.data.height) + 8 + 'px';
+    });
+  </script>
+
   <div class="section-title">Coach&rsquo;s Corner</div>
   <div class="prose"><p>Coach&rsquo;s Corner is coming soon.</p></div>
 </Base>
