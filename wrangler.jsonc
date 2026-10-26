@@ -11,6 +11,8 @@
   },
   "vars": {
     "ACCESS_TEAM_DOMAIN": "nseaswim.cloudflareaccess.com",
+    "EVENTS_REPO": "jpmerchant/nsea-events",
+    "EVENTS_BRANCH": "main",
     "ACCESS_AUD": "c3b6669fefd29e9f5f9a704f443f86ecc21770eba6499e054f56a6693bcaea2a"
   },
   "d1_databases": [

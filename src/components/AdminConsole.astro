@@ -112,9 +112,19 @@
 
   // ---------- events / content (stage 2) ----------
   function vEvents() {
-    shell(el('div', null, el('h2', null, 'Events & Calendar'),
-      el('div', { class: 'cp-panel' }, el('p', null, 'The events calendar still has its own admin page for now. It is moving into this console in a later stage.'),
-        el('p', null, el('a', { class: 'btn small', href: 'https://events.nseaswimteam.com/admin/', target: '_blank', rel: 'noopener' }, 'Open the events admin')))));
+    var box = el('div', null, loading()); shell(el('div', null, el('h2', null, 'Events & Calendar'), box));
+    api('GET', '/events/status').then(function (o) {
+      if (!o.configured) {
+        box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'One-time setup needed'),
+          el('p', null, 'The events editor needs a GitHub token stored as a Cloudflare secret. Ask the site owner to finish this step (JP has the instructions). Until then, the old events admin still works.'),
+          el('p', null, el('a', { class: 'btn small', href: 'https://events.nseaswimteam.com/admin/', target: '_blank', rel: 'noopener' }, 'Open the old events admin'))));
+        return;
+      }
+      box.replaceChildren(
+        el('p', { class: 'cp-small' }, 'Publishing saves your changes to the calendar. The public calendar, widget and Google Calendar feeds update in about a minute or two. Every save is kept in the calendar’s history, so a change can be undone. ',
+          el('a', { href: '/admin/events/', target: '_blank', rel: 'noopener' }, 'Open in its own page')),
+        el('iframe', { src: '/admin/events/', title: 'Events editor', class: 'ac-frame' }));
+    }).catch(function (e) { fail(box, e); });
   }
   function vContent() {
     var box = el('div', null, loading()); shell(el('div', null, el('h2', null, 'Content'), box));

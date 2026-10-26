@@ -3,6 +3,7 @@
 import { json, fail, sha, rand, clean, EMAIL, cookieOf, setCookie, readRequest } from './util.mjs';
 import { newMemberInvite } from './carpool.mjs';
 import { handleContentAdmin } from './content.mjs';
+import { eventsData, eventsPublish, configured as eventsConfigured } from './events.mjs';
 
 export const MODULES = ['carpool', 'events', 'content'];
 const ROLE_NAMES = ['owner', ...MODULES];
@@ -163,6 +164,14 @@ export async function handleAdmin(req, env, url) {
         await audit(env, me, 'carpool', 'close post', '#' + m[1]);
         return json({ ok: true });
       }
+    }
+
+    // ----- events module -----
+    if (path.startsWith('/events')) {
+      if (!can(me, 'events')) return fail(403, 'You do not have access to the Events module.');
+      if (method === 'GET' && path === '/events/status') return json({ configured: eventsConfigured(env) });
+      if (method === 'GET' && path === '/events/data') return eventsData(env);
+      if (method === 'POST' && path === '/events/publish') return eventsPublish(env, me, body, (m, a, d) => audit(env, me, m, a, d));
     }
 
     // ----- content module -----
