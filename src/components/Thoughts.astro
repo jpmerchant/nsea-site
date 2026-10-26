@@ -1,0 +1,75 @@
+---
+// Thought of the Month. mode="current": newest thought + link to archive. mode="archive": search, theme filter, browse by season.
+// Data comes from /api/content/thoughts (edited in the admin console). Text is inserted with textContent only.
+const { mode = 'archive' } = Astro.props;
+---
+<div class={'tm tm-' + mode} data-mode={mode}><p class="cp-loading">Loading…</p></div>
+<noscript><p>The Thought of the Month needs JavaScript.</p></noscript>
+
+<script is:inline>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var ART = {
+    path: 'M3 36 C14 36 14 12 26 12 S38 30 45 8',
+    lanes: 'M4 8 H44 M4 18 H44 M4 28 H44 M4 38 H44',
+    steps: 'M4 40 H16 V30 H28 V20 H40 V10',
+    wave: 'M2 24 Q8 10 14 24 T26 24 T38 24 T50 24',
+    clock: 'M24 6 A18 18 0 1 0 24.1 6 M24 14 V24 L32 28',
+    star: 'M24 5 L29 18 L43 19 L32 28 L36 42 L24 34 L12 42 L16 28 L5 19 L19 18 Z'
+  };
+  var KEYS = Object.keys(ART);
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+    }
+    (function add(list) { for (var i = 0; i < list.length; i++) { var c = list[i]; if (c == null || c === false) continue; if (Array.isArray(c)) add(c); else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  function art(t) {
+    var key = ART[t.art] ? t.art : KEYS[parseInt(t.month.replace('-', ''), 10) % KEYS.length];
+    var s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 48 48'); s.setAttribute('class', 'tm-art'); s.setAttribute('aria-hidden', 'true');
+    var p = document.createElementNS(NS, 'path'); p.setAttribute('d', ART[key]); s.appendChild(p); return s;
+  }
+  var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function label(m) { return MON[parseInt(m.slice(5), 10) - 1] + ' ' + m.slice(0, 4); }
+  function season(m) { var y = +m.slice(0, 4), mo = +m.slice(5); var a = mo >= 9 ? y : y - 1; return a + '–' + String(a + 1).slice(2); }
+  function quote(t) {
+    var q = el('p', { class: 'tm-quote' }), i = t.emphasis ? t.quote.indexOf(t.emphasis) : -1;
+    if (i < 0) q.appendChild(document.createTextNode('“' + t.quote + '”'));
+    else { q.appendChild(document.createTextNode('“' + t.quote.slice(0, i))); q.appendChild(el('strong', null, t.emphasis)); q.appendChild(document.createTextNode(t.quote.slice(i + t.emphasis.length) + '”')); }
+    return q;
+  }
+  function card(t, big) {
+    return el('article', { class: 'tm-card' + (big ? ' big' : ''), id: t.month }, art(t),
+      el('div', null, el('p', { class: 'tm-month' }, label(t.month)), quote(t),
+        t.author ? el('p', { class: 'tm-author' }, '— ' + t.author) : null,
+        t.tags.length ? el('p', { class: 'tm-tags' }, t.tags.map(function (g) { return el('span', null, g); })) : null));
+  }
+  document.querySelectorAll('.tm').forEach(function (root) {
+    var mode = root.getAttribute('data-mode');
+    fetch('/api/content/thoughts').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+      var all = d.thoughts || [];
+      if (!all.length) { root.replaceChildren(el('p', { class: 'cp-empty' }, 'The first thought is coming soon.')); return; }
+      if (mode === 'current') {
+        root.replaceChildren(card(all[0], true), el('p', null, el('a', { class: 'btn small', href: '/families/thought-of-the-month/' }, 'Explore past thoughts')));
+        return;
+      }
+      var q = '', tag = '', list = el('div', { class: 'tm-list' });
+      var search = el('input', { type: 'search', placeholder: 'Search thoughts', 'aria-label': 'Search thoughts', oninput: function (e) { q = e.target.value.toLowerCase(); draw(); } });
+      var tags = {}; all.forEach(function (t) { t.tags.forEach(function (g) { tags[g] = 1; }); });
+      var sel = el('select', { 'aria-label': 'Filter by theme', onchange: function (e) { tag = e.target.value; draw(); } }, el('option', { value: '' }, 'All themes'), Object.keys(tags).sort().map(function (g) { return el('option', { value: g }, g); }));
+      function draw() {
+        var shown = all.filter(function (t) { return (!tag || t.tags.indexOf(tag) >= 0) && (!q || (t.quote + ' ' + t.author + ' ' + t.tags.join(' ')).toLowerCase().indexOf(q) >= 0); });
+        var out = [], last = '';
+        shown.forEach(function (t) { var s = season(t.month); if (s !== last) { out.push(el('h2', { class: 'tm-season' }, s + ' season')); last = s; } out.push(card(t, false)); });
+        list.replaceChildren.apply(list, out.length ? out : [el('p', { class: 'cp-empty' }, 'No thoughts match.')]);
+      }
+      root.replaceChildren(card(all[0], true), el('div', { class: 'tm-filters' }, search, sel), list);
+      draw();
+    }).catch(function () { root.replaceChildren(el('p', { class: 'cp-empty' }, 'The Thought of the Month could not load. Please try again later.')); });
+  });
+})();
+</script>

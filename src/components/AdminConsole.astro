@@ -117,8 +117,41 @@
         el('p', null, el('a', { class: 'btn small', href: 'https://events.nseaswimteam.com/admin/', target: '_blank', rel: 'noopener' }, 'Open the events admin')))));
   }
   function vContent() {
-    shell(el('div', null, el('h2', null, 'Content'),
-      el('div', { class: 'cp-panel' }, el('p', null, 'Coming next: Coach’s Corner, Thought of the Month, and the Fees and Offerings dates, edited through forms here instead of in the code.'))));
+    var box = el('div', null, loading()); shell(el('div', null, el('h2', null, 'Content'), box));
+    api('GET', '/content/thoughts').then(function (o) {
+      var editing = null;
+      var form = el('form', { class: 'cp-form', onsubmit: function (e) {
+        e.preventDefault();
+        var f = e.target;
+        api('POST', '/content/thoughts', { month: f.month.value, quote: f.quote.value, emphasis: f.emphasis.value, author: f.author.value, tags: f.tags.value, art: f.art.value })
+          .then(function (r) { flash = r.updated ? 'Thought updated.' : 'Thought added.'; vContent(); })
+          .catch(function (err) { f.querySelector('.cp-out').replaceChildren(msg('err', err.message)); });
+      } },
+        el('label', null, 'Month (YYYY-MM)', el('input', { name: 'month', required: true, pattern: '\\d{4}-(0[1-9]|1[0-2])', placeholder: o.now, maxlength: 7 })),
+        el('label', null, 'Quote', el('textarea', { name: 'quote', required: true, rows: 3, maxlength: 600 })),
+        el('label', null, 'Part to bold (optional, must match the quote exactly)', el('input', { name: 'emphasis', maxlength: 300 })),
+        el('label', null, 'Author (optional)', el('input', { name: 'author', maxlength: 80 })),
+        el('label', null, 'Themes (comma separated, reuse existing ones)', el('input', { name: 'tags', placeholder: 'effort, teamwork' })),
+        el('label', null, 'Picture', el('select', { name: 'art' }, el('option', { value: '' }, 'Choose automatically'), o.art.map(function (a) { return el('option', { value: a }, a); }))),
+        el('div', { class: 'cp-out' }),
+        el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save thought'), btn('Clear', function () { form.reset(); }, 'ghost')));
+      function load(t) {
+        form.month.value = t.month; form.quote.value = t.quote; form.emphasis.value = t.emphasis; form.author.value = t.author;
+        form.tags.value = t.tags.join(', '); form.art.value = t.art; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); form.quote.focus();
+      }
+      box.replaceChildren(
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Thought of the Month'),
+          el('p', { class: 'cp-small' }, 'Saving a month that already exists replaces it. A thought shows on the site from the first day of its month, so you can add them ahead of time. Changes appear on the site within about a minute.'), form),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'All thoughts (' + o.thoughts.length + ')'),
+          o.thoughts.length ? o.thoughts.map(function (t) {
+            return el('div', { class: 'cp-row' },
+              el('div', null, el('strong', null, t.month), t.month > o.now ? ' (scheduled)' : '', el('p', null, t.quote.length > 140 ? t.quote.slice(0, 140) + '…' : t.quote),
+                el('p', { class: 'cp-small' }, (t.author ? t.author + ' · ' : '') + t.tags.join(', ') + (t.updated_by ? ' · last edit ' + t.updated_by : ''))),
+              el('div', { class: 'cp-btns' }, btn('Edit', function () { load(t); }),
+                btn('Delete', function () { if (confirm('Delete the thought for ' + t.month + '?')) api('POST', '/content/thoughts/' + t.month + '/delete', {}).then(function () { flash = 'Thought deleted.'; vContent(); }).catch(function (e) { alert(e.message); }); }, 'ghost')));
+          }) : el('p', { class: 'cp-empty' }, 'No thoughts yet. Add the first one above.')),
+        el('div', { class: 'cp-panel' }, el('p', { class: 'cp-small' }, 'Coming next: Coach’s Corner and the Fees and Offerings dates.')));
+    }).catch(function (e) { fail(box, e); });
   }
 
   // ---------- admins ----------

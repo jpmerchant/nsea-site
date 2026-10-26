@@ -5,6 +5,7 @@ import HubGrid from '../components/HubGrid.astro';
 import ToolEmbed from '../components/ToolEmbed.astro';
 import Glossary from '../components/Glossary.astro';
 import Carpool from '../components/Carpool.astro';
+import Thoughts from '../components/Thoughts.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 
 export function getStaticPaths() {
@@ -36,9 +37,11 @@ const hasEmbed = p.embed || p.variants;
 
   {p.carpool && <Carpool />}
 
+  {p.thoughts && <Thoughts mode="archive" />}
+
   {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
 
-  {!Content && !hasEmbed && !p.glossary && !p.carpool && p.type !== 'hub' && !live && (
+  {!Content && !hasEmbed && !p.glossary && !p.carpool && !p.thoughts && p.type !== 'hub' && !live && (
     <div class="todo">
       <h3>Content not migrated yet</h3>
       <dl>

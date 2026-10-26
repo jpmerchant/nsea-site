@@ -2,6 +2,7 @@
 // Sign-in: Cloudflare Access (when ACCESS_TEAM_DOMAIN and ACCESS_AUD are set) or, until then, single-use admin invite links.
 import { json, fail, sha, rand, clean, EMAIL, cookieOf, setCookie, readRequest } from './util.mjs';
 import { newMemberInvite } from './carpool.mjs';
+import { handleContentAdmin } from './content.mjs';
 
 export const MODULES = ['carpool', 'events', 'content'];
 const ROLE_NAMES = ['owner', ...MODULES];
@@ -162,6 +163,13 @@ export async function handleAdmin(req, env, url) {
         await audit(env, me, 'carpool', 'close post', '#' + m[1]);
         return json({ ok: true });
       }
+    }
+
+    // ----- content module -----
+    if (path.startsWith('/content')) {
+      if (!can(me, 'content')) return fail(403, 'You do not have access to the Content module.');
+      const r = await handleContentAdmin(env, me, method, path, body, (module, action, detail) => audit(env, me, module, action, detail));
+      if (r) return r;
     }
 
     // ----- admins (owner only) -----

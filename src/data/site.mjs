@@ -109,6 +109,7 @@ export const pages = [
   { path: '/families/how-to/opt-in-to-meets/', type: 'page', title: 'Opt In to Meets', desc: '', status: 'done', from: ['/opt-in-to-meets'], also: ['/meets/'] },
   { path: '/families/how-to/opt-out-of-meets/', type: 'page', title: 'Opt Out of Meets', desc: '', status: 'done', from: ['/opt-out-of-meets'], also: ['/meets/'] },
   { path: '/families/how-to/session-opt-out/', type: 'page', title: 'Session & Season Opt-Out', desc: '', status: 'done', from: ['/opt-out---intent-information'], legacy: ['2026 - 27/2026 - 27 Session and Season Opt Out.odt'] },
+  { path: '/families/thought-of-the-month/', type: 'page', title: 'Thought of the Month', desc: 'This month’s thought, and every one before it.', thoughts: true, status: 'done' },
   { path: '/families/newsletter/', type: 'hub', title: 'Newsletter', desc: 'The current issue and every past issue.', status: 'rebuild', from: ['/current', '/newsletters'] },
   { path: '/families/newsletter/current/', type: 'tool', title: 'Current Issue', desc: '', embed: '/embeds/newsletter-current.html', status: 'done', from: ['/current'], legacy: ['content/newsletters/nsea-newsletter-10-17-2026.html'] },
   { path: '/families/newsletter/archive/', type: 'page', title: 'Newsletter Archive', desc: '', status: 'done', from: ['/newsletters'], legacy: ['content/newsletters/nsea-newsletter-10-03-2026.html'] },
