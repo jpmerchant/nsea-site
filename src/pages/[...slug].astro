@@ -5,6 +5,8 @@ import HubGrid from '../components/HubGrid.astro';
 import ToolEmbed from '../components/ToolEmbed.astro';
 import Glossary from '../components/Glossary.astro';
 import Carpool from '../components/Carpool.astro';
+import FeesTable from '../components/FeesTable.astro';
+import OfferingStatus from '../components/OfferingStatus.astro';
 import Thoughts from '../components/Thoughts.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 
@@ -30,6 +32,9 @@ const hasEmbed = p.embed || p.variants;
   <h1 class={p.hideTitle ? 'sr-only' : undefined}>{p.title}</h1>
   {p.desc && !p.hideTitle && <p class="lede">{p.desc}</p>}
   {p.gated && <p class="chip new">Members only</p>}
+
+  {p.fees && <FeesTable />}
+  {p.offering && <OfferingStatus slug={p.offering} />}
 
   {Content && <div class="prose"><Content /></div>}
 

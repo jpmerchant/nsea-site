@@ -6,4 +6,4 @@ Skills clinics are only for swimmers who are **not** currently registered with a
 - **When:** Saturday mornings, 8:30 – 9:30 am
 - **Coaching ratio:** 1 coach to 5 swimmers
 
-The 2026–27 clinic schedule has not been announced yet. Watch this page and the [Calendar](/meets/calendar/), or email [team@nseaswim.com](mailto:team@nseaswim.com) to be told when it is posted.
+Dates also appear on the [Calendar](/meets/calendar/).

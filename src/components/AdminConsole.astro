@@ -126,8 +126,7 @@
         el('iframe', { src: '/api/admin/events/app', title: 'Events editor', class: 'ac-frame' }));
     }).catch(function (e) { fail(box, e); });
   }
-  function vContent() {
-    var box = el('div', null, loading()); shell(el('div', null, el('h2', null, 'Content'), box));
+  function vThoughts(box) {
     api('GET', '/content/thoughts').then(function (o) {
       var editing = null;
       var form = el('form', { class: 'cp-form', onsubmit: function (e) {
@@ -159,8 +158,68 @@
                 el('p', { class: 'cp-small' }, (t.author ? t.author + ' · ' : '') + t.tags.join(', ') + (t.updated_by ? ' · last edit ' + t.updated_by : ''))),
               el('div', { class: 'cp-btns' }, btn('Edit', function () { load(t); }),
                 btn('Delete', function () { if (confirm('Delete the thought for ' + t.month + '?')) api('POST', '/content/thoughts/' + t.month + '/delete', {}).then(function () { flash = 'Thought deleted.'; vContent(); }).catch(function (e) { alert(e.message); }); }, 'ghost')));
-          }) : el('p', { class: 'cp-empty' }, 'No thoughts yet. Add the first one above.')),
-        el('div', { class: 'cp-panel' }, el('p', { class: 'cp-small' }, 'Coming next: Coach’s Corner and the Fees and Offerings dates.')));
+          }) : el('p', { class: 'cp-empty' }, 'No thoughts yet. Add the first one above.')));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  var ctab = 'thoughts';
+  function vContent() {
+    var box = el('div', null, loading());
+    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics']];
+    shell(el('div', null, el('h2', null, 'Content'),
+      el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': ctab === t[0] ? 'page' : 'false', onclick: function () { ctab = t[0]; vContent(); } }, t[1]); })),
+      box));
+    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms })[ctab](box);
+  }
+  function siteSave(key, payload, out, okMsg) {
+    api('POST', '/content/site/' + encodeURIComponent(key), payload).then(function () { flash = okMsg; vContent(); })
+      .catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+  }
+  function siteReset(key, what) {
+    if (!confirm('Go back to the starting ' + what + '? Your saved changes will be removed.')) return;
+    api('POST', '/content/site/' + encodeURIComponent(key) + '/reset', {}).then(function () { flash = 'Reset to the starting values.'; vContent(); }).catch(function (e) { alert(e.message); });
+  }
+  function vFees(box) {
+    api('GET', '/content/site').then(function (o) {
+      var f = (o.stored.fees && o.stored.fees.data) || o.defaults.fees, st = o.stored.fees;
+      var inputs = {};
+      var grid = el('div', { class: 'fee-grid' }, el('span', { class: 'h' }, 'Group'), el('span', { class: 'h' }, 'SCY (Sept–Mar)'), el('span', { class: 'h' }, 'Spring (Apr–May)'), el('span', { class: 'h' }, 'Summer (Jun–Jul)'),
+        f.rows.map(function (r) {
+          inputs[r.group] = ['scy', 'spring', 'summer'].map(function (k) { return el('input', { type: 'number', min: 0, max: 5000, step: 1, required: true, value: String(r[k]), 'aria-label': r.group + ' ' + k }); });
+          return [el('strong', null, r.group)].concat(inputs[r.group]);
+        }));
+      var out = el('div', { class: 'cp-out' });
+      var note = el('textarea', { rows: 2, maxlength: 300 }, f.note || ''), pdf = el('input', { maxlength: 300, value: f.pdf_url || '' });
+      var form = el('form', { class: 'cp-form', onsubmit: function (e) {
+        e.preventDefault();
+        siteSave('fees', { rows: f.rows.map(function (r) { var v = inputs[r.group]; return { group: r.group, scy: v[0].value, spring: v[1].value, summer: v[2].value }; }), note: note.value, pdf_url: pdf.value }, out, 'Fees saved. They show on the site within about a minute.');
+      } }, grid,
+        el('label', null, 'Note under the table', note), el('label', null, 'Fee schedule link (PDF)', pdf), out,
+        el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save fees'), st ? btn('Reset to starting values', function () { siteReset('fees', 'fees'); }, 'ghost') : null));
+      box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Monthly practice fees'),
+        el('p', { class: 'cp-small' }, 'Whole dollars per month. Group names are fixed. ' + (st ? 'Last saved ' + date(st.updated_at) + ' by ' + st.updated_by + '.' : 'Showing the starting values; nothing saved yet.')), form));
+    }).catch(function (e) { fail(box, e); });
+  }
+  function vPrograms(box) {
+    api('GET', '/content/site').then(function (o) {
+      var keys = Object.keys(o.defaults).filter(function (k) { return k.indexOf('offering:') === 0; });
+      var cur = window.__prog && keys.indexOf(window.__prog) >= 0 ? window.__prog : keys[0];
+      var st = o.stored[cur], p = (st && st.data) || o.defaults[cur];
+      var out = el('div', { class: 'cp-out' });
+      var sel = el('select', { 'aria-label': 'Program', onchange: function (e) { window.__prog = e.target.value; vContent(); } }, keys.map(function (k) { return el('option', { value: k, selected: k === cur ? 'selected' : null }, o.defaults[k].title); }));
+      var head = el('input', { required: true, maxlength: 200, value: p.headline }), body = el('textarea', { rows: 4, maxlength: 800 }, p.body || ''),
+        bl = el('input', { maxlength: 60, value: p.button_label || '' }), bu = el('input', { maxlength: 300, value: p.button_url || '', placeholder: 'https://… or mailto:…' });
+      var form = el('form', { class: 'cp-form', onsubmit: function (e) {
+        e.preventDefault();
+        siteSave(cur, { headline: head.value, body: body.value, button_label: bl.value, button_url: bu.value }, out, 'Saved. The page updates within about a minute.');
+      } },
+        el('label', null, 'Headline (session dates or status)', head),
+        el('label', null, 'Details (a blank line starts a new paragraph)', body),
+        el('label', null, 'Button label (optional)', bl), el('label', null, 'Button link (optional)', bu), out,
+        el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save'), st ? btn('Reset to starting values', function () { siteReset(cur, 'text'); }, 'ghost') : null));
+      box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Dates and registration status'),
+        el('p', { class: 'cp-small' }, 'This block appears at the top of each program page. The standing details (who, experience, practice times) are part of the page itself. ' + (st ? 'Last saved ' + date(st.updated_at) + ' by ' + st.updated_by + '.' : 'Showing the starting text; nothing saved yet.')),
+        el('label', { class: 'cp-form' }, 'Program', sel), form));
     }).catch(function (e) { fail(box, e); });
   }
 

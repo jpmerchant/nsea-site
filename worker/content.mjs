@@ -1,5 +1,6 @@
 // Editable site content stored in D1. Public reads: /api/content/*. Admin writes go through handleContentAdmin (called from admin.mjs).
 import { json, fail, clean } from './util.mjs';
+import { defaults, FEE_GROUPS, OFFERINGS } from '../src/data/site-data-defaults.mjs';
 
 export const ART = ['path', 'lanes', 'steps', 'wave', 'clock', 'star'];
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -13,7 +14,44 @@ export async function handleContent(req, env, url) {
     const { results } = await env.DB.prepare(`SELECT month, quote, emphasis, author, tags, art FROM thoughts WHERE month <= ? ORDER BY month DESC`).bind(now).all();
     return json({ thoughts: results.map(row) }, 200, { 'cache-control': 'public, max-age=60' });
   }
+  if (path === '/site') return json(await mergedSite(env), 200, { 'cache-control': 'public, max-age=60' });
   return fail(404, 'Not found');
+}
+
+async function storedSite(env) {
+  const { results } = await env.DB.prepare(`SELECT key, json, updated_at, updated_by FROM site_data`).all();
+  const out = {};
+  for (const r of results) { try { out[r.key] = { data: JSON.parse(r.json), updated_at: r.updated_at, updated_by: r.updated_by }; } catch {} }
+  return out;
+}
+async function mergedSite(env) {
+  const d = defaults(), st = await storedSite(env);
+  for (const k of Object.keys(d)) if (st[k]) d[k] = st[k].data;
+  return d;
+}
+const URL_OK = /^(https?:\/\/|mailto:|\/)[^\s]*$/;
+function parseSite(key, b) {
+  if (key === 'fees') {
+    const rows = FEE_GROUPS.map((g) => {
+      const r = (Array.isArray(b.rows) ? b.rows : []).find((x) => x && x.group === g) || {};
+      const n = (v) => { const x = Number(v); return Number.isInteger(x) && x >= 0 && x <= 5000 ? x : NaN; };
+      return { group: g, scy: n(r.scy), spring: n(r.spring), summer: n(r.summer) };
+    });
+    if (rows.some((r) => [r.scy, r.spring, r.summer].some(Number.isNaN))) return { error: 'Every fee must be a whole dollar amount.' };
+    const pdf = clean(b.pdf_url, 300);
+    if (pdf && !URL_OK.test(pdf)) return { error: 'The fee schedule link must start with https:// or /.' };
+    return { data: { rows, note: clean(b.note, 300), pdf_url: pdf } };
+  }
+  const m = key.match(/^offering:(.+)$/);
+  if (m && OFFERINGS[m[1]]) {
+    const url = clean(b.button_url, 300), label = clean(b.button_label, 60);
+    if (url && !URL_OK.test(url)) return { error: 'The button link must start with https://, mailto: or /.' };
+    if (url && !label) return { error: 'Please give the button a label.' };
+    const headline = clean(b.headline, 200);
+    if (!headline) return { error: 'Please enter the headline.' };
+    return { data: { title: OFFERINGS[m[1]].title, headline, body: String(b.body ?? '').replace(/\r/g, '').trim().slice(0, 800), button_label: url ? label : '', button_url: url } };
+  }
+  return { error: 'Unknown block.' };
 }
 
 function parseThought(b) {
@@ -46,6 +84,25 @@ export async function handleContentAdmin(env, me, method, path, body, audit) {
       .bind(t.month, t.quote, t.emphasis, t.author, t.tags, t.art, me.email).run();
     await audit('content', existed ? 'edit thought' : 'add thought', t.month);
     return json({ ok: true, updated: !!existed });
+  }
+  if (method === 'GET' && path === '/content/site') {
+    return json({ defaults: defaults(), stored: await storedSite(env) });
+  }
+  let sm = path.match(/^\/content\/site\/([^/]+)$/);
+  if (sm && (method === 'POST')) {
+    const key = decodeURIComponent(sm[1]);
+    const r = parseSite(key, body);
+    if (r.error) return fail(400, r.error);
+    await env.DB.prepare(`INSERT INTO site_data (key, json, updated_by) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET json = excluded.json, updated_at = datetime('now'), updated_by = excluded.updated_by`)
+      .bind(key, JSON.stringify(r.data), me.email).run();
+    await audit('content', 'edit ' + (key === 'fees' ? 'fees' : 'program dates'), key);
+    return json({ ok: true });
+  }
+  sm = path.match(/^\/content\/site\/([^/]+)\/reset$/);
+  if (sm && method === 'POST') {
+    await env.DB.prepare(`DELETE FROM site_data WHERE key = ?`).bind(decodeURIComponent(sm[1])).run();
+    await audit('content', 'reset to starting values', decodeURIComponent(sm[1]));
+    return json({ ok: true });
   }
   const m = path.match(/^\/content\/thoughts\/(\d{4}-\d{2})\/delete$/);
   if (method === 'POST' && m) {

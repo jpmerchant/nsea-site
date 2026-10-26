@@ -1,0 +1,34 @@
+---
+// Monthly fees. Rendered from the starting values, then replaced with the saved values from /api/content/site (edited in the admin console).
+import { FEES } from '../data/site-data-defaults.mjs';
+const f = FEES;
+---
+<div class="fees-live prose" data-fees>
+  <p>Practice fees are monthly and depend on your swimmer&rsquo;s group and the season.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Group</th><th>Monthly SCY<br />(Sept – March)</th><th>Monthly Spring<br />(April – May)</th><th>Monthly Summer<br />(June – July)</th></tr></thead>
+      <tbody>{f.rows.map((r) => <tr><td>{r.group}</td><td>${r.scy}</td><td>${r.spring}</td><td>${r.summer}</td></tr>)}</tbody>
+    </table>
+  </div>
+  <p data-fees-note>{f.note}</p>
+  <p data-fees-pdf><a href={f.pdf_url}>Download the 2026–27 fee schedule (PDF)</a></p>
+</div>
+<script is:inline>
+(function () {
+  var root = document.querySelector('[data-fees]');
+  if (!root) return;
+  fetch('/api/content/site').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    var f = d && d.fees; if (!f || !f.rows) return;
+    var body = root.querySelector('tbody'); body.replaceChildren();
+    f.rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      [r.group, '$' + r.scy, '$' + r.spring, '$' + r.summer].forEach(function (t) { var td = document.createElement('td'); td.textContent = t; tr.appendChild(td); });
+      body.appendChild(tr);
+    });
+    var note = root.querySelector('[data-fees-note]'); note.textContent = f.note || ''; note.hidden = !f.note;
+    var pdf = root.querySelector('[data-fees-pdf]'); pdf.hidden = !f.pdf_url;
+    if (f.pdf_url) pdf.querySelector('a').setAttribute('href', f.pdf_url);
+  }).catch(function () {});
+})();
+</script>

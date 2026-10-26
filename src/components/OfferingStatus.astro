@@ -1,0 +1,26 @@
+---
+// Dates and registration status for a prep program or clinic. Starting values below; the saved values from the admin console replace them.
+import { OFFERINGS } from '../data/site-data-defaults.mjs';
+const { slug } = Astro.props;
+const o = OFFERINGS[slug];
+const paras = (o.body || '').split(/\n\s*\n/).filter(Boolean);
+---
+<div class="offer-status" data-offering={slug}>
+  <p class="offer-head"><strong data-o="headline">{o.headline}</strong></p>
+  <div data-o="body">{paras.map((t) => <p>{t}</p>)}</div>
+  <p data-o="button" hidden={!o.button_url}>{o.button_url && <a class="btn" href={o.button_url}>{o.button_label}</a>}</p>
+</div>
+<script is:inline>
+(function () {
+  document.querySelectorAll('[data-offering]').forEach(function (root) {
+    fetch('/api/content/site').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var o = d && d['offering:' + root.getAttribute('data-offering')]; if (!o) return;
+      root.querySelector('[data-o=headline]').textContent = o.headline;
+      var body = root.querySelector('[data-o=body]'); body.replaceChildren();
+      String(o.body || '').split(/\n\s*\n/).filter(Boolean).forEach(function (t) { var p = document.createElement('p'); p.textContent = t; body.appendChild(p); });
+      var b = root.querySelector('[data-o=button]'); b.replaceChildren(); b.hidden = !o.button_url;
+      if (o.button_url) { var a = document.createElement('a'); a.className = 'btn'; a.setAttribute('href', o.button_url); a.textContent = o.button_label; b.appendChild(a); }
+    }).catch(function () {});
+  });
+})();
+</script>
