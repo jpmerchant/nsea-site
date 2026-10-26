@@ -162,14 +162,37 @@
     }).catch(function (e) { fail(box, e); });
   }
 
+  function vAlumni(box) {
+    api('GET', '/content/alumni').then(function (o) {
+      function post(path, body, okMsg) { api('POST', path, body || {}).then(function (r) { flash = typeof okMsg === 'function' ? okMsg(r) : okMsg; vContent(); }).catch(function (e) { alert(e.message); }); }
+      box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Alumni results'),
+        el('p', { class: 'cp-small' }, 'Each day the site reads the swimmer’s official college roster page. Best times update on their own; season highlights wait here until you approve them. Nothing shows on the College Swimmers page until you tick “OK to feature” (get the swimmer’s or family’s OK first).')),
+        o.alumni.map(function (a) {
+          var pending = a.items.filter(function (i) { return i.status === 'pending'; }), rest = a.items.filter(function (i) { return i.status !== 'pending'; });
+          function item(i) {
+            return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, i.season), ' · ' + i.text + (i.status === 'hidden' ? ' (hidden)' : i.status === 'approved' ? ' (showing)' : '')),
+              el('div', { class: 'cp-btns' }, i.status !== 'approved' ? btn('Approve', function () { post('/content/alumni/items/' + i.id + '/approve', {}, 'Approved.'); }) : null,
+                i.status !== 'hidden' ? btn('Hide', function () { post('/content/alumni/items/' + i.id + '/hide', {}, 'Hidden.'); }, 'ghost') : null));
+          }
+          return el('div', { class: 'cp-panel' }, el('h3', null, a.name + ' · ' + a.school + (a.class_year ? ' · ' + a.class_year : '')),
+            el('p', { class: 'cp-small' }, (a.synced_at ? 'Last checked ' + date(a.synced_at) + ' UTC · ' + a.sync_status : 'Not checked yet') + ' · ' + a.marks.length + ' best times found'),
+            el('label', { class: 'inline' }, el('input', { type: 'checkbox', checked: a.consent ? 'checked' : null, onchange: function (e) { post('/content/alumni/' + a.id + '/consent', { consent: e.target.checked }, e.target.checked ? 'Now featured on the site.' : 'Removed from the site.'); } }), ' OK to feature on the College Swimmers page'),
+            el('div', { class: 'cp-btns' }, btn('Check roster page now', function () { post('/content/alumni/' + a.id + '/sync', {}, function (r) { return r.ok ? 'Checked: ' + r.added + ' new highlight(s) waiting for approval.' : 'Could not read the page: ' + r.status; }); }, 'ghost'),
+              pending.length ? btn('Approve all ' + pending.length, function () { post('/content/alumni/' + a.id + '/approve-all', {}, 'All approved.'); }) : null),
+            el('h4', null, 'Waiting for approval (' + pending.length + ')'), pending.length ? pending.map(item) : el('p', { class: 'cp-empty' }, 'Nothing waiting.'),
+            rest.length ? [el('h4', null, 'Reviewed (' + rest.length + ')'), rest.map(item)] : null);
+        }));
+    }).catch(function (e) { fail(box, e); });
+  }
+
   var ctab = 'thoughts';
   function vContent() {
     var box = el('div', null, loading());
-    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics']];
+    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics'], ['alumni', 'Alumni results']];
     shell(el('div', null, el('h2', null, 'Content'),
       el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': ctab === t[0] ? 'page' : 'false', onclick: function () { ctab = t[0]; vContent(); } }, t[1]); })),
       box));
-    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms })[ctab](box);
+    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms, alumni: vAlumni })[ctab](box);
   }
   function siteSave(key, payload, out, okMsg) {
     api('POST', '/content/site/' + encodeURIComponent(key), payload).then(function () { flash = okMsg; vContent(); })

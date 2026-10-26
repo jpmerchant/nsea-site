@@ -8,6 +8,7 @@ import Carpool from '../components/Carpool.astro';
 import FeesTable from '../components/FeesTable.astro';
 import OfferingStatus from '../components/OfferingStatus.astro';
 import Thoughts from '../components/Thoughts.astro';
+import AlumniUpdates from '../components/AlumniUpdates.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 
 export function getStaticPaths() {
@@ -37,6 +38,8 @@ const hasEmbed = p.embed || p.variants;
   {p.offering && <OfferingStatus slug={p.offering} />}
 
   {Content && <div class="prose"><Content /></div>}
+
+  {p.alumniUpdates && <AlumniUpdates />}
 
   {p.glossary && <Glossary />}
 

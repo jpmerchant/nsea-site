@@ -3,6 +3,7 @@ import { fail } from './util.mjs';
 import { handleCarpool } from './carpool.mjs';
 import { handleAdmin } from './admin.mjs';
 import { handleContent } from './content.mjs';
+import { syncAll } from './alumni.mjs';
 
 export default {
   async fetch(req, env) {
@@ -12,4 +13,6 @@ export default {
     if (url.pathname.startsWith('/api/admin/')) return handleAdmin(req, env, url);
     return fail(404, 'Not found');
   },
+  // Daily cron (see wrangler.jsonc): refresh alumni roster pages.
+  async scheduled(_event, env, ctx) { ctx.waitUntil(syncAll(env)); },
 };

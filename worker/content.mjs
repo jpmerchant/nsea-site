@@ -1,6 +1,7 @@
 // Editable site content stored in D1. Public reads: /api/content/*. Admin writes go through handleContentAdmin (called from admin.mjs).
 import { json, fail, clean } from './util.mjs';
 import { defaults, FEE_GROUPS, OFFERINGS } from '../src/data/site-data-defaults.mjs';
+import { publicAlumni, handleAlumniAdmin } from './alumni.mjs';
 
 export const ART = ['path', 'lanes', 'steps', 'wave', 'clock', 'star'];
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -14,6 +15,7 @@ export async function handleContent(req, env, url) {
     const { results } = await env.DB.prepare(`SELECT month, quote, emphasis, author, tags, art FROM thoughts WHERE month <= ? ORDER BY month DESC`).bind(now).all();
     return json({ thoughts: results.map(row) }, 200, { 'cache-control': 'public, max-age=60' });
   }
+  if (path === '/alumni') return publicAlumni(env);
   if (path === '/site') return json(await mergedSite(env), 200, { 'cache-control': 'public, max-age=60' });
   return fail(404, 'Not found');
 }
@@ -69,6 +71,8 @@ function parseThought(b) {
 
 // Returns a Response, or null if the path is not a content path.
 export async function handleContentAdmin(env, me, method, path, body, audit) {
+  const al = await handleAlumniAdmin(env, me, method, path, body, audit);
+  if (al) return al;
   if (method === 'GET' && path === '/content/thoughts') {
     const { results } = await env.DB.prepare(`SELECT month, quote, emphasis, author, tags, art, updated_at, updated_by FROM thoughts ORDER BY month DESC`).all();
     return json({ thoughts: results.map((r) => ({ ...row(r), updated_at: r.updated_at, updated_by: r.updated_by })), art: ART, now: new Date().toISOString().slice(0, 7) });

@@ -1,0 +1,51 @@
+---
+// "Where they are now": latest college results for alumni who agreed to be featured.
+// Data: /api/content/alumni (approved items only). Hidden entirely until there is something to show.
+---
+<section class="alumni-now" id="alumni-now" hidden>
+  <h2>Where they are now</h2>
+  <p class="alumni-note">Best times and highlights from each college team’s official roster page. Updated regularly.</p>
+  <div class="alumni-grid" data-grid></div>
+</section>
+<style>
+  .alumni-now { margin-top: 2.5rem; }
+  .alumni-note { color: var(--gray); }
+  .alumni-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 1rem; margin-top: 1rem; }
+  .alumni-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; }
+  .alumni-card h3 { margin: 0; font-family: var(--f-head); color: var(--teal-dark); }
+  .alumni-card .school { margin: 0 0 .6rem; color: var(--gray); font-size: .9rem; }
+  .alumni-card dl { display: grid; grid-template-columns: auto 1fr; gap: .15rem .8rem; margin: 0 0 .6rem; font-family: var(--f-mono); font-size: .9rem; }
+  .alumni-card dt { color: var(--gray); }
+  .alumni-card dd { margin: 0; font-weight: 700; }
+  .alumni-card ul { margin: .4rem 0 0; padding-left: 1.1rem; }
+  .alumni-card .season { font-weight: 700; margin: .7rem 0 0; }
+  .alumni-card .src { font-size: .85rem; margin: .7rem 0 0; }
+</style>
+<script is:inline>
+(function () {
+  var root = document.getElementById('alumni-now'); if (!root) return;
+  function el(tag, cls, txt) { var n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; }
+  fetch('/api/content/alumni').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d || !d.alumni || !d.alumni.length) return;
+    var grid = root.querySelector('[data-grid]');
+    d.alumni.forEach(function (a) {
+      var card = el('article', 'alumni-card');
+      card.appendChild(el('h3', null, a.name));
+      card.appendChild(el('p', 'school', a.school + (a.class_year ? ' · Class of ' + a.class_year : '')));
+      if (a.marks.length) {
+        var dl = el('dl'); a.marks.forEach(function (m) { dl.appendChild(el('dt', null, m.event)); dl.appendChild(el('dd', null, m.time)); });
+        card.appendChild(el('p', 'season', 'Best times')); card.appendChild(dl);
+      }
+      var seasons = []; a.updates.forEach(function (u) { if (seasons.indexOf(u.season) < 0) seasons.push(u.season); });
+      seasons.slice(0, 2).forEach(function (s) {
+        card.appendChild(el('p', 'season', s));
+        var ul = el('ul'); a.updates.filter(function (u) { return u.season === s; }).forEach(function (u) { ul.appendChild(el('li', null, u.text)); });
+        card.appendChild(ul);
+      });
+      if (/^https:\/\//.test(a.source || '')) { var p = el('p', 'src'); var l = el('a', null, 'Official roster page'); l.href = a.source; l.rel = 'noopener'; p.appendChild(l); card.appendChild(p); }
+      grid.appendChild(card);
+    });
+    root.hidden = false;
+  }).catch(function () {});
+})();
+</script>

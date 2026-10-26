@@ -72,7 +72,7 @@ export const pages = [
   { path: '/about/practice-locations/', type: 'page', title: 'Practice Locations', desc: 'Where and when we practice.', status: 'done', from: ['/practice-locations'] },
   { path: '/about/practice-locations/parking/', type: 'page', title: 'Parking at Earl Jackson Pool', desc: 'Where to park for practice and meets.', status: 'done', from: ['/ejp-parking'], legacy: ['assets: 2025_26_TEAM_PARKING.png'] },
   { path: '/about/alumni/', type: 'page', title: 'Alumni', desc: 'Where NSEA swimmers go next.', status: 'done', from: ['/alumni'] },
-  { path: '/about/alumni/college-swimmers/', type: 'page', title: 'College Swimmers', desc: 'NSEA alumni swimming in college.', status: 'done', from: ['/college-swimmers'] },
+  { path: '/about/alumni/college-swimmers/', type: 'page', title: 'College Swimmers', desc: 'NSEA alumni swimming in college.', alumniUpdates: true, status: 'done', from: ['/college-swimmers'] },
   { path: '/about/safe-sport/', type: 'page', title: 'Safe Sport', desc: 'How we keep athletes safe, and how to report a concern.', status: 'done', from: ['/safe-sport'] },
   { path: '/about/contact/', type: 'page', title: 'Contact & Who to Ask', desc: 'Being updated. Email the team inbox in the meantime.', status: 'done', from: ['/who-to-contact'] },
 

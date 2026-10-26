@@ -15,6 +15,7 @@
     "EVENTS_BRANCH": "main",
     "ACCESS_AUD": "c3b6669fefd29e9f5f9a704f443f86ecc21770eba6499e054f56a6693bcaea2a"
   },
+  "triggers": { "crons": ["17 11 * * *"] },
   "d1_databases": [
     {
       "binding": "DB",
