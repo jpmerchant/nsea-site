@@ -157,10 +157,11 @@ export async function syncAll(env, fetchImpl = fetch) {
 export async function publicAlumni(env) {
   const { results: people } = await env.DB.prepare(`SELECT id, slug, name, school, class_year, roster_url, swimcloud_url, marks, synced_at FROM alumni WHERE consent = 1 AND current = 1 ORDER BY name`).all();
   const { results: items } = await env.DB.prepare(`SELECT alumni_id, season, text FROM alumni_items WHERE status = 'approved' ORDER BY season DESC, id`).all();
+  // A card with nothing on it is worse than no card: skip people who have no best times and no approved highlights yet.
   return json({ alumni: people.map((p) => ({
     slug: p.slug, name: p.name, school: p.school, class_year: p.class_year, source: p.roster_url, swimcloud: p.swimcloud_url, updated: p.synced_at,
     marks: JSON.parse(p.marks || '[]'), updates: items.filter((i) => i.alumni_id === p.id).map((i) => ({ season: i.season, text: i.text })),
-  })) }, 200, { 'cache-control': 'public, max-age=300' });
+  })).filter((p) => p.marks.length || p.updates.length) }, 200, { 'cache-control': 'public, max-age=300' });
 }
 
 // Admin (Content module). Returns a Response or null.
@@ -168,7 +169,8 @@ export async function handleAlumniAdmin(env, me, method, path, body, audit, fetc
   if (method === 'GET' && path === '/content/alumni') {
     const { results: people } = await env.DB.prepare(`SELECT id, slug, name, school, class_year, roster_url, swimcloud_url, current, consent, marks, synced_at, sync_status FROM alumni ORDER BY name`).all();
     const { results: items } = await env.DB.prepare(`SELECT id, alumni_id, season, text, status, first_seen FROM alumni_items ORDER BY season DESC, id`).all();
-    return json({ alumni: people.map((p) => ({ ...p, marks: JSON.parse(p.marks || '[]'), items: items.filter((i) => i.alumni_id === p.id) })) });
+    // A card with nothing on it is worse than no card: skip people who have no best times and no approved highlights yet.
+  return json({ alumni: people.map((p) => ({ ...p, marks: JSON.parse(p.marks || '[]'), items: items.filter((i) => i.alumni_id === p.id) })) });
   }
   let m = path.match(/^\/content\/alumni\/(\d+)\/(sync|consent|approve-all)$/);
   if (m && method === 'POST') {
