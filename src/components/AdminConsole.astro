@@ -1,0 +1,183 @@
+---
+// Single admin console. Talks to the Worker at /api/admin/*. All text is inserted with textContent.
+---
+<div id="ac" class="ac"><p class="cp-loading">Loading…</p></div>
+<noscript><p>The admin console needs JavaScript.</p></noscript>
+
+<script is:inline>
+(function () {
+  var root = document.getElementById('ac');
+  var me = null, view = 'overview', flash = '', linkBox = null;
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content' };
+
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
+    }
+    (function add(list) {
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (c == null || c === false) continue;
+        if (Array.isArray(c)) add(c);
+        else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      }
+    })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  function api(method, path, body) {
+    return fetch('/api/admin' + path, { method: method, credentials: 'same-origin', headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) { var e = new Error(d.error || 'Something went wrong.'); e.status = r.status; throw e; } return d; }); });
+  }
+  function mount() { root.replaceChildren.apply(root, Array.prototype.filter.call(arguments, function (x) { return x != null; })); }
+  function msg(kind, t) { return t ? el('p', { class: 'cp-msg ' + kind, role: kind === 'err' ? 'alert' : 'status' }, t) : null; }
+  function date(s) { return s ? s.slice(0, 16).replace('T', ' ') : ''; }
+  function btn(label, fn, cls) { return el('button', { class: 'btn small ' + (cls || ''), type: 'button', onclick: fn }, label); }
+  function act(label, path, cls, after, body) {
+    return btn(label, function () {
+      api('POST', path, body || {}).then(function (r) {
+        if (r.link) { linkBox = { name: after, link: r.link }; flash = ''; } else flash = '';
+        go(view);
+      }).catch(function (e) { flash = ''; alert(e.message); });
+    }, cls);
+  }
+  function showLink() {
+    if (!linkBox) return null;
+    var lb = linkBox, inp = el('input', { readonly: true, value: lb.link, 'aria-label': 'Sign-in link', onfocus: function (e) { e.target.select(); } });
+    return el('div', { class: 'cp-panel cp-link-box' }, el('strong', null, 'Sign-in link for ' + lb.name + ' (works once, valid 14 days):'), inp,
+      btn('Copy', function () { inp.select(); if (navigator.clipboard) navigator.clipboard.writeText(lb.link); }),
+      el('p', { class: 'cp-small' }, 'Send it privately. This is the only time it is shown. ', el('button', { class: 'cp-link', type: 'button', onclick: function () { linkBox = null; go(view); } }, 'Hide')));
+  }
+
+  // ---------- shell ----------
+  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
+  function shell(content) {
+    mount(
+      el('div', { class: 'ac-top' }, el('p', null, 'Signed in as ', el('strong', null, me.name), ' (' + me.email + ')'),
+        me.via === 'link' ? el('button', { class: 'cp-link', type: 'button', onclick: function () { api('POST', '/logout', {}).then(function () { me = null; boot(); }); } }, 'Sign out') : el('span', { class: 'cp-small' }, 'Cloudflare Access')),
+      el('div', { class: 'ac-layout' },
+        el('nav', { class: 'ac-nav', 'aria-label': 'Admin sections' }, NAV.filter(allowed).map(function (n) {
+          return el('button', { type: 'button', 'aria-current': view === n[0] ? 'page' : 'false', onclick: function () { go(n[0]); } }, n[1]);
+        })),
+        el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
+  }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, admins: vAdmins, audit: vAudit })[v](); }
+  function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
+  function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
+
+  // ---------- overview ----------
+  function vOverview() {
+    var box = el('div', null, loading()); shell(box);
+    api('GET', '/overview').then(function (o) {
+      var cards = [];
+      if (o.carpool) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Carpool'),
+        el('p', null, el('strong', null, String(o.carpool.pending)), ' waiting for approval'),
+        el('p', { class: 'cp-small' }, o.carpool.members + ' families · ' + o.carpool.openPosts + ' open posts · ' + o.carpool.matches + ' matches'),
+        btn('Open Carpool', function () { go('carpool'); }, o.carpool.pending ? '' : 'ghost')));
+      if (me.modules.indexOf('events') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Events & Calendar'), el('p', { class: 'cp-small' }, 'Edit the 2026–27 events and venues.'), btn('Open', function () { go('events'); }, 'ghost')));
+      if (o.admins != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Admins'), el('p', null, el('strong', null, String(o.admins)), ' people'), btn('Manage admins', function () { go('admins'); }, 'ghost')));
+      box.replaceChildren(el('h2', null, 'Overview'), el('div', { class: 'ac-cards' }, cards),
+        o.recent && o.recent.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Recent activity'), o.recent.map(logLine)) : null);
+    }).catch(function (e) { fail(box, e); });
+  }
+  function logLine(r) { return el('p', { class: 'cp-small' }, date(r.at) + ' UTC · ' + r.admin_email + ' · ' + r.module + ': ' + r.action + (r.detail ? ' — ' + r.detail : '')); }
+
+  // ---------- carpool ----------
+  function vCarpool() {
+    var box = el('div', null, loading()); shell(box);
+    api('GET', '/carpool').then(function (o) {
+      var pending = o.members.filter(function (m) { return m.status === 'pending'; });
+      var others = o.members.filter(function (m) { return m.status !== 'pending'; });
+      var openPosts = o.posts.filter(function (p) { return p.status === 'open'; });
+      box.replaceChildren(el('h2', null, 'Carpool'),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Waiting for approval (' + pending.length + ')'),
+          el('p', { class: 'cp-small' }, 'Check each family against the roster before approving. Approving creates a one-time sign-in link to send them privately.'),
+          pending.length ? pending.map(function (m) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, m.family_name), ' · ' + m.swimmers, el('p', { class: 'cp-small' }, m.email + (m.phone ? ' · ' + m.phone : '') + ' · requested ' + date(m.created_at).slice(0, 10))),
+            el('div', { class: 'cp-btns' }, act('Approve', '/carpool/members/' + m.id + '/approve', '', m.family_name), act('Reject', '/carpool/members/' + m.id + '/reject', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'No requests waiting.')),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Families (' + others.length + ')'),
+          others.map(function (m) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, m.family_name), m.status === 'disabled' ? ' (disabled)' : '', ' · ' + m.swimmers, el('p', { class: 'cp-small' }, m.email)),
+            el('div', { class: 'cp-btns' }, m.status === 'active' ? act('New link', '/carpool/members/' + m.id + '/link', '', m.family_name) : null,
+              act(m.status === 'disabled' ? 'Re-enable' : 'Disable', '/carpool/members/' + m.id + (m.status === 'disabled' ? '/enable' : '/disable'), 'ghost'))); })),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Open posts (' + openPosts.length + ')'),
+          openPosts.length ? openPosts.map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.family_name), ' · ' + (p.kind === 'offer' ? 'offers' + (p.driver ? ' (' + p.driver + ' driver)' : '') : 'needs') + (p.groups ? ' · ' + p.groups.split(',').join('/') : '') + (p.swimmer ? ' · ' + p.swimmer : '') + ' · ' + p.days.split(',').join(' · ') + ' · ' + p.time_label + ' · ' + p.area, el('p', { class: 'cp-small' }, 'posted ' + date(p.created_at).slice(0, 10))),
+            el('div', { class: 'cp-btns' }, act('Close', '/carpool/posts/' + p.id + '/close', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'No open posts.')),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Recent connections'),
+          o.connections.length ? o.connections.slice(0, 50).map(function (c) { return el('p', { class: 'cp-small' }, c.requester + ' → ' + c.poster + ' (' + c.kind + ', ' + c.area + ') · ' + c.status + ' · ' + date(c.updated_at).slice(0, 10)); }) : el('p', { class: 'cp-empty' }, 'None yet.')));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- events / content (stage 2) ----------
+  function vEvents() {
+    shell(el('div', null, el('h2', null, 'Events & Calendar'),
+      el('div', { class: 'cp-panel' }, el('p', null, 'The events calendar still has its own admin page for now. It is moving into this console in a later stage.'),
+        el('p', null, el('a', { class: 'btn small', href: 'https://events.nseaswimteam.com/admin/', target: '_blank', rel: 'noopener' }, 'Open the events admin')))));
+  }
+  function vContent() {
+    shell(el('div', null, el('h2', null, 'Content'),
+      el('div', { class: 'cp-panel' }, el('p', null, 'Coming next: Coach’s Corner, Thought of the Month, and the Fees and Offerings dates, edited through forms here instead of in the code.'))));
+  }
+
+  // ---------- admins ----------
+  function vAdmins() {
+    var box = el('div', null, loading()); shell(box);
+    api('GET', '/admins').then(function (o) {
+      var f = el('form', { class: 'cp-form', onsubmit: function (e) {
+        e.preventDefault();
+        var fm = e.target, roles = Object.keys(ROLE_LABEL).filter(function (r) { return fm['r_' + r].checked; });
+        api('POST', '/admins', { name: fm.name.value, email: fm.email.value, roles: roles }).then(function (r) {
+          linkBox = r.link ? { name: fm.name.value, link: r.link } : null; flash = r.link ? '' : 'Admin added. They can sign in through Cloudflare Access.'; vAdmins();
+        }).catch(function (err) { fm.querySelector('.cp-out').replaceChildren(msg('err', err.message)); });
+      } },
+        el('label', null, 'Name', el('input', { name: 'name', required: true, maxlength: 60 })),
+        el('label', null, 'Email', el('input', { name: 'email', type: 'email', required: true, maxlength: 120 })),
+        el('fieldset', null, el('legend', null, 'Access'), Object.keys(ROLE_LABEL).map(function (r) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'r_' + r }), ' ' + ROLE_LABEL[r]); })),
+        el('div', { class: 'cp-out' }), el('button', { class: 'btn', type: 'submit' }, 'Add admin'));
+      box.replaceChildren(el('h2', null, 'Admins'),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Who has access'),
+          o.admins.map(function (a) {
+            var roles = a.roles.split(',').filter(Boolean);
+            var boxes = el('div', { class: 'ac-roles' }, Object.keys(ROLE_LABEL).map(function (r) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', 'data-r': r, checked: roles.indexOf(r) >= 0 }), ' ' + ROLE_LABEL[r]); }));
+            return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, a.name), a.email === me.email ? ' (you)' : '', el('p', { class: 'cp-small' }, a.email + (a.last_seen ? ' · last seen ' + date(a.last_seen) + ' UTC' : ' · never signed in')), boxes),
+              el('div', { class: 'cp-btns' },
+                btn('Save access', function () {
+                  var rs = Array.prototype.map.call(boxes.querySelectorAll('input:checked'), function (i) { return i.getAttribute('data-r'); });
+                  api('POST', '/admins/' + encodeURIComponent(a.email) + '/roles', { roles: rs }).then(function () { flash = 'Saved.'; vAdmins(); }).catch(function (e) { alert(e.message); });
+                }, 'ghost'),
+                o.via === 'link' ? act('New link', '/admins/' + encodeURIComponent(a.email) + '/link', '', a.name) : null,
+                a.email !== me.email ? btn('Remove', function () { if (confirm('Remove ' + a.name + ' as an admin?')) api('POST', '/admins/' + encodeURIComponent(a.email) + '/remove', {}).then(function () { flash = 'Removed.'; vAdmins(); }).catch(function (e) { alert(e.message); }); }, 'ghost') : null));
+          })),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Add an admin'),
+          el('p', { class: 'cp-small' }, o.via === 'access' ? 'Their email must also be allowed in the Cloudflare Access policy for /admin.' : 'You will get a one-time sign-in link to send them privately.'), f));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- audit ----------
+  function vAudit() {
+    var box = el('div', null, loading()); shell(box);
+    api('GET', '/audit').then(function (rows) {
+      box.replaceChildren(el('h2', null, 'Activity log'), el('div', { class: 'cp-panel' }, rows.length ? rows.map(logLine) : el('p', { class: 'cp-empty' }, 'Nothing yet.')));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- sign-in / boot ----------
+  function signedOut(note) {
+    mount(msg('err', note), el('div', { class: 'cp-panel' }, el('h2', null, 'Admins only'),
+      el('p', null, 'Open the personal sign-in link an owner sent you. Each link works once. If yours has expired, ask an owner for a new one.')));
+  }
+  function boot() {
+    var k = new URLSearchParams(location.search).get('k');
+    var start = k ? api('POST', '/session', { token: k }).then(function () { history.replaceState(null, '', location.pathname); return null; })
+      .catch(function (e) { history.replaceState(null, '', location.pathname); return e.message; }) : Promise.resolve(null);
+    start.then(function (err) {
+      var why = err;
+      api('GET', '/me').then(function (m) { me = m; }, function (e) { me = null; why = why || (e.status === 401 ? null : e.message); })
+        .then(function () { if (me) go('overview'); else signedOut(why); });
+    });
+  }
+  boot();
+})();
+</script>

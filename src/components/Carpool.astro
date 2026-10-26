@@ -81,7 +81,6 @@
   // ---------- shell ----------
   function shell(content) {
     var tabs = [['board', 'Board'], ['post', 'Post a ride'], ['mine', 'My rides']];
-    if (me.admin) tabs.push(['admin', 'Admin']);
     mount(
       el('div', { class: 'cp-top' },
         el('p', null, 'Signed in as ', el('strong', null, me.family)),
@@ -93,7 +92,7 @@
       })),
       msg('ok', flash), content);
   }
-  function render() { ({ board: viewBoard, post: viewPost, mine: viewMine, admin: viewAdmin })[tab](); }
+  function render() { ({ board: viewBoard, post: viewPost, mine: viewMine })[tab](); }
 
   // ---------- board ----------
   function viewBoard() {
@@ -235,48 +234,6 @@
           mine.length ? mine.map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.kind === 'offer' ? 'Offering' : 'Needing'), ' · ' + (p.driver ? DRIVER[p.driver] + ' · ' : '') + (p.swimmer ? p.swimmer + ' · ' : '') + when(p) + ' · ' + DIR[p.direction] + ' · ' + p.area),
             el('div', { class: 'cp-btns' }, act('Close post', '/posts/' + p.id + '/close', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'You have no open posts.')),
         el('div', { class: 'cp-panel' }, phone));
-    }).catch(function (e) { box.replaceChildren(msg('err', e.message)); });
-  }
-
-  // ---------- admin ----------
-  function viewAdmin() {
-    var box = el('div', null, el('p', { class: 'cp-empty' }, 'Loading…'));
-    shell(box);
-    api('GET', '/admin/overview').then(function (o) {
-      var linkOut = el('div');
-      function show(name, link) {
-        var inp = el('input', { readonly: true, value: link, 'aria-label': 'Sign-in link', onfocus: function (e) { e.target.select(); } });
-        linkOut.replaceChildren(el('div', { class: 'cp-panel cp-link-box' }, el('strong', null, 'Sign-in link for ' + name + ' (works once, valid 14 days):'), inp,
-          el('button', { class: 'btn small', type: 'button', onclick: function () { inp.select(); navigator.clipboard && navigator.clipboard.writeText(link); } }, 'Copy'),
-          el('p', { class: 'cp-small' }, 'Send it to them privately (Captyn message or text). This is the only time it is shown.')));
-        linkOut.scrollIntoView({ block: 'nearest' });
-      }
-      function act(label, path, cls, after) { return el('button', { class: 'btn small ' + (cls || ''), type: 'button', onclick: function () {
-        api('POST', path, {}).then(function (r) { if (r.link) show(after, r.link); else viewAdmin(); if (r.link) { /* keep link visible; refresh list quietly */ api('GET', '/admin/overview').then(function (n) { drawLists(n); }); } })
-          .catch(function (e) { alert(e.message); }); } }, label); }
-      var lists = el('div');
-      function drawLists(o) {
-        var pending = o.members.filter(function (m) { return m.status === 'pending'; });
-        var others = o.members.filter(function (m) { return m.status !== 'pending'; });
-        lists.replaceChildren(
-          el('div', { class: 'cp-panel' }, el('h3', null, 'Waiting for approval (' + pending.length + ')'),
-            el('p', { class: 'cp-small' }, 'Check each family against the roster before approving.'),
-            pending.length ? pending.map(function (m) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, m.family_name), ' · ' + m.swimmers, el('p', { class: 'cp-small' }, m.email + (m.phone ? ' · ' + m.phone : '') + ' · requested ' + fmtDate(m.created_at))),
-              el('div', { class: 'cp-btns' }, act('Approve', '/admin/members/' + m.id + '/approve', '', m.family_name), act('Reject', '/admin/members/' + m.id + '/reject', 'ghost'))); }) : el('p', { class: 'cp-empty' }, 'No requests waiting.')),
-          el('div', { class: 'cp-panel' }, el('h3', null, 'Members (' + others.length + ')'),
-            others.map(function (m) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, m.family_name), m.is_admin ? ' (admin)' : '', m.status === 'disabled' ? ' (disabled)' : '', ' · ' + m.swimmers, el('p', { class: 'cp-small' }, m.email)),
-              el('div', { class: 'cp-btns' },
-                m.status === 'active' ? act('New link', '/admin/members/' + m.id + '/link', '', m.family_name) : null,
-                m.status === 'active' ? act(m.is_admin ? 'Remove admin' : 'Make admin', '/admin/members/' + m.id + (m.is_admin ? '/demote' : '/promote'), 'ghost') : null,
-                m.id !== me.id ? act(m.status === 'disabled' ? 'Re-enable' : 'Disable', '/admin/members/' + m.id + (m.status === 'disabled' ? '/enable' : '/disable'), 'ghost') : null)); })),
-          el('div', { class: 'cp-panel' }, el('h3', null, 'All posts (' + o.posts.filter(function (p) { return p.status === 'open'; }).length + ' open)'),
-            o.posts.slice(0, 60).map(function (p) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, p.family_name), ' · ' + (p.kind === 'offer' ? 'offers' + (p.driver ? ' (' + p.driver + ' driver)' : '') : 'needs') + (p.groups ? ' · ' + p.groups.split(',').join('/') : '') + ' · ' + p.days.split(',').join(' · ') + ' · ' + p.time_label + ' · ' + p.area, el('p', { class: 'cp-small' }, p.status + ' · posted ' + fmtDate(p.created_at))),
-              el('div', { class: 'cp-btns' }, p.status === 'open' ? act('Close', '/posts/' + p.id + '/close', 'ghost') : null)); })),
-          el('div', { class: 'cp-panel' }, el('h3', null, 'Recent connections'),
-            o.connections.length ? o.connections.slice(0, 50).map(function (c) { return el('p', { class: 'cp-small' }, c.requester + ' → ' + c.poster + ' (' + c.kind + ', ' + c.area + ') · ' + c.status + ' · ' + fmtDate(c.updated_at)); }) : el('p', { class: 'cp-empty' }, 'None yet.')));
-      }
-      drawLists(o);
-      box.replaceChildren(linkOut, lists);
     }).catch(function (e) { box.replaceChildren(msg('err', e.message)); });
   }
 

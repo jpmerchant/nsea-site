@@ -176,3 +176,7 @@ A subdomain is optional. Use the free `workers.dev` address Cloudflare assigns w
 ```
 
 See `MIGRATION.md` for what replaces what, the full page list with sources, and the list of components that moved.
+
+## Admin console
+
+`/admin/` is the single admin console (Worker API in `worker/admin.mjs`, UI in `src/components/AdminConsole.astro`). One login, per-module roles (owner, carpool, events, content) and an audit log. Sign-in is by single-use admin links until Cloudflare Access is switched on: create an Access application covering `/admin*` and `/api/admin/*`, then put its team domain and AUD tag in `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.jsonc`. Once those are set, link sign-in is turned off and the Access email must match a row in the Admins list. Add `Disallow: /admin/` to the live `robots.txt` at go-live. Schema changes are in `migrations/` and are applied to the D1 database by hand.

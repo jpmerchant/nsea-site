@@ -202,3 +202,20 @@ main{padding:28px 0 64px;min-height:50vh}
 .cp-link-box input{width:100%;font-family:var(--f-mono);font-size:12px}
 .cp-swimmer{font-weight:600;color:var(--teal-dark);margin:0}
 .cp-tag{display:inline-block;font:600 11px/1 var(--f-mono);padding:4px 7px;border-radius:4px;background:#E6F4F1;color:var(--teal-dark);border:1px solid #BFE3DC}.cp-tag.swimmer{background:#FFF4D6;color:#8a5a00;border-color:#F1DC9B}.cp-filters input[type=search]{min-width:200px}
+
+/* ---- admin console ---- */
+.ac{max-width:1100px}
+.ac-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px}
+.ac-top p{margin:0}
+.ac-layout{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start}
+.ac-nav{display:flex;flex-direction:column;gap:2px;position:sticky;top:90px}
+.ac-nav button{text-align:left;background:none;border:0;border-left:3px solid transparent;padding:10px 12px;font:500 14px var(--f-head);letter-spacing:.6px;text-transform:uppercase;cursor:pointer;color:var(--ink)}
+.ac-nav button[aria-current=page]{color:var(--teal-dark);border-left-color:var(--coral);background:var(--panel)}
+.ac-main{min-width:0}
+.ac-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.ac-roles{margin-top:6px}
+.ac .btn,.ac button.btn,.ac a.btn{display:inline-block;background:var(--coral);color:#fff;border:0;border-radius:6px;padding:10px 16px;font:600 13px var(--f-head);letter-spacing:.6px;text-transform:uppercase;cursor:pointer;text-decoration:none}
+.ac .btn.small{padding:6px 12px;font-size:12px}
+.ac .btn.ghost{background:#fff;color:var(--teal-dark);border:1px solid var(--teal)}
+.ac select,.ac input:not([type=checkbox]):not([type=radio]){font:inherit;padding:8px 10px;border:1px solid var(--gray-light);border-radius:6px;background:#fff;max-width:100%}
+@media(max-width:760px){.ac-layout{grid-template-columns:1fr}.ac-nav{flex-direction:row;flex-wrap:wrap;position:static}.ac-nav button{border-left:0;border-bottom:3px solid transparent}.ac-nav button[aria-current=page]{border-bottom-color:var(--coral)}}
