@@ -19,6 +19,7 @@
   .alumni-card dd { margin: 0; font-weight: 700; }
   .alumni-card ul { margin: .4rem 0 0; padding-left: 1.1rem; }
   .alumni-card .season { font-weight: 700; margin: .7rem 0 0; }
+  .alumni-card .soon { margin: .2rem 0 0; padding: .6rem .8rem; background: var(--coral-light); border-radius: var(--radius); color: var(--ink); font-size: .95rem; }
   .alumni-card .src { font-size: .85rem; margin: .7rem 0 0; }
 </style>
 <script is:inline>
@@ -36,6 +37,7 @@
         var dl = el('dl'); a.marks.forEach(function (m) { dl.appendChild(el('dt', null, m.event)); dl.appendChild(el('dd', null, m.time + (m.meet ? ' · ' + m.meet : ''))); });
         card.appendChild(el('p', 'season', 'Best times')); card.appendChild(dl);
       }
+      if (!a.marks.length && !a.updates.length) card.appendChild(el('p', 'soon', 'Results coming soon. Their team hasn’t posted this season’s information yet, and we’ll add it as soon as it’s available.'));
       var seasons = []; a.updates.forEach(function (u) { if (seasons.indexOf(u.season) < 0) seasons.push(u.season); });
       seasons.slice(0, 2).forEach(function (s) {
         card.appendChild(el('p', 'season', s));

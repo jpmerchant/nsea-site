@@ -107,10 +107,10 @@ test('nickname matches the roster page name (Madi / Madison); other people do no
 });
 
 import { publicAlumni } from '../worker/alumni.mjs';
-test('public list hides alumni who have nothing to show yet', async () => {
+test('public list keeps featured alumni even before they have results (the page shows a "coming soon" note)', async () => {
   const people = [{ id: 1, slug: 'a', name: 'A', school: 'S', class_year: 2024, roster_url: '', swimcloud_url: '', marks: '[{"event":"50 Free","time":"20.26"}]', synced_at: null },
                   { id: 2, slug: 'b', name: 'B', school: 'S', class_year: 2026, roster_url: '', swimcloud_url: '', marks: '[]', synced_at: null }];
   const env = { DB: { prepare: (sql) => ({ all: async () => ({ results: /FROM alumni WHERE/.test(sql) ? people : [] }) }) } };
   const body = await (await publicAlumni(env)).json();
-  assert.deepEqual(body.alumni.map((x) => x.name), ['A']);
+  assert.deepEqual(body.alumni.map((x) => [x.name, x.marks.length, x.updates.length]), [['A', 1, 0], ['B', 0, 0]]);
 });
