@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NSEA Swim — Thought of the Month</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#008675; --teal-dark:#006A5C; --coral:#ee492f; --coral-light:#FCE7E3;
+    --gray:#676d70; --gray-light:#9BA0A3; --line:#E4E7E8; --ink:#1B2325; --panel:#FAFBFB; --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:transparent;}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);line-height:1.5;}
+  button,input,select{font:inherit;color:inherit;}
+  .tom{max-width:1200px;margin:0 auto;padding:4px;}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+  :focus-visible{outline:3px solid var(--coral);outline-offset:2px;}
+
+  /* ---------- feature card ---------- */
+  .feature{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);}
+  .f-art{width:min(340px,38%);flex-shrink:0;background:var(--teal);display:flex;align-items:center;justify-content:center;}
+  .f-art svg{width:100%;height:100%;display:block;min-height:240px;}
+  .f-body{flex:1;min-width:0;padding:28px 32px;display:flex;flex-direction:column;justify-content:center;}
+  .f-eyebrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px;}
+  .badge{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;border-radius:14px;padding:4px 10px;}
+  .badge.now{background:var(--coral);color:var(--white);}
+  .badge.month{color:var(--teal-dark);background:#E6F3F1;}
+  .qmark{font-family:'Oswald',sans-serif;font-size:84px;line-height:.7;height:38px;color:var(--coral);}
+  .quote{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:clamp(19px,2.6vw,26px);line-height:1.45;margin:0;color:var(--ink);}
+  .quote em{font-style:normal;font-weight:700;color:var(--teal-dark);}
+  .author{margin:10px 0 0;font-size:14px;color:var(--gray);}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+  .tag{font-size:12px;font-weight:600;color:var(--teal-dark);background:#E6F3F1;border:0;border-radius:20px;padding:4px 11px;cursor:pointer;}
+  .tag:hover{background:#D3EBE7;}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;}
+  .btn{font-size:13px;font-weight:600;color:var(--teal);background:var(--white);border:1px solid var(--teal);border-radius:20px;padding:7px 16px;cursor:pointer;text-decoration:none;display:inline-block;}
+  .btn:hover:not([disabled]){background:var(--teal);color:var(--white);}
+  .btn[disabled]{opacity:.4;cursor:default;}
+  .btn.solid{background:var(--teal);color:var(--white);}
+  .btn.solid:hover{background:var(--teal-dark);}
+
+  /* ---------- explore ---------- */
+  .explore{margin-top:30px;}
+  h2{font-family:'Oswald',sans-serif;font-weight:600;font-size:24px;text-transform:uppercase;letter-spacing:.01em;margin:0 0 14px;padding-left:12px;border-left:4px solid var(--coral);}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px;}
+  .bar input[type=search]{flex:1 1 220px;min-width:0;border:1px solid var(--line);border-radius:20px;padding:8px 16px;background:var(--white);font-size:14px;}
+  .bar select{border:1px solid var(--line);border-radius:20px;padding:8px 14px;background:var(--white);font-size:14px;}
+  .count{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin:8px 2px 4px;}
+  .season{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);margin:20px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--line);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:14px;}
+  .card{display:flex;flex-direction:column;text-align:left;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--white);padding:0;cursor:pointer;}
+  .card:hover{border-color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .card[aria-current=true]{border-color:var(--coral);box-shadow:0 0 0 2px var(--coral-light);}
+  .c-art{background:var(--teal);height:150px;}
+  .c-art svg{width:100%;height:100%;display:block;}
+  .c-body{padding:12px 14px 14px;}
+  .c-month{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);}
+  .c-text{font-family:Georgia,serif;font-style:italic;font-size:14.5px;line-height:1.45;margin:6px 0 0;color:var(--ink);}
+  .empty{border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--gray);font-size:14px;background:var(--panel);}
+
+  /* compact (homepage tile) */
+  .compact .f-art{width:min(220px,32%);}
+  .compact .f-art svg{min-height:170px;}
+  .compact .f-body{padding:20px 24px;}
+  .compact .quote{font-size:clamp(17px,2.2vw,21px);}
+  .compact .qmark{font-size:64px;height:28px;}
+
+  @media (max-width:640px){
+    .feature{flex-direction:column;}
+    .f-art{width:100%;}
+    .f-art svg{min-height:0;height:170px;}
+    .f-body{padding:22px 18px;}
+    .compact .f-art{width:100%;}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .feature.swap .f-body,.feature.swap .f-art{animation:fade .35s ease;}
+    @keyframes fade{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
+  }
+  @media print{
+    body{background:#fff;} .explore,.actions{display:none;} .feature{break-inside:avoid;}
+    .f-art{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="tom" id="app">
+  <section class="feature" id="feature" aria-live="polite" aria-label="Thought of the Month"></section>
+  <section class="explore" id="explore" hidden>
+    <h2>Explore Past Thoughts</h2>
+    <div class="bar">
+      <label class="sr" for="q">Search thoughts</label>
+      <input id="q" type="search" placeholder="Search thoughts or themes">
+      <label class="sr" for="tagSel">Filter by theme</label>
+      <select id="tagSel"><option value="">All themes</option></select>
+      <button class="btn" id="surprise" type="button">Surprise me</button>
+    </div>
+    <div class="count" id="count" aria-live="polite"></div>
+    <div id="results"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* Embedded copy of thoughts.json, used only if the fetch below fails (e.g. opened as a local file). */
+  var EMBEDDED = {"updated": "2026-10-26", "thoughts": [{"month": "2026-10", "quote": "You are never given a dream without also being given the ability to accomplish that dream. You may need to work for it, however.", "emphasis": "You may need to work for it, however.", "author": "", "tags": ["dreams", "effort"], "art": "path"}]};
+
+  var params = new URLSearchParams(location.search);
+  var VIEW = params.get('view') === 'current' ? 'current' : 'archive';
+  var ARCHIVE_URL = params.get('archive') || (location.pathname + '?view=archive');
+  var DATA_URL = params.get('data') || 'thoughts.json';
+
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var all = [], shown = [], currentId = null;
+
+  /* ---------- helpers ---------- */
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function monthLabel(m){ var p = m.split('-'); return MONTHS[+p[1]-1] + ' ' + p[0]; }
+  function seasonOf(m){ var p = m.split('-'), y = +p[0], mo = +p[1]; var s = mo >= 8 ? y : y-1; return s + '–' + String(s+1).slice(2); }
+  function quoteNode(t, cls){
+    var q = el('p', cls);
+    var i = t.emphasis ? t.quote.indexOf(t.emphasis) : -1;
+    if(i < 0){ q.textContent = t.quote; return q; }
+    q.appendChild(document.createTextNode(t.quote.slice(0,i)));
+    q.appendChild(el('em', null, t.emphasis));
+    q.appendChild(document.createTextNode(t.quote.slice(i + t.emphasis.length)));
+    return q;
+  }
+
+  /* ---------- art: original lane-line motifs in brand colors ---------- */
+  var W = '#FFFFFF', C = '#ee492f', D = '#006A5C', P = '#FFD2C9';
+  function lanes(n){
+    var s = '<g stroke="#fff" stroke-opacity=".28" stroke-width="2">', d = '<g fill="'+C+'">';
+    for(var i=1;i<=n;i++){ var y = i*200/(n+1); s += '<line x1="0" y1="'+y+'" x2="260" y2="'+y+'"/>';
+      for(var x = (i%2?20:40); x < 230; x += 40) d += '<circle cx="'+x+'" cy="'+y+'" r="3"/>'; }
+    return s + '</g>' + d + '</g>';
+  }
+  function star(cx, cy, r){
+    var pts = [], k; for(k=0;k<10;k++){ var rr = k%2 ? r*0.48 : r, a = -Math.PI/2 + k*Math.PI/5; pts.push((cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1)); }
+    return '<polygon points="'+pts.join(' ')+'" fill="'+P+'" stroke="'+C+'" stroke-width="2.5" stroke-linejoin="round"/>';
+  }
+  var ART = {
+    path: function(){ return lanes(3) +
+      '<rect x="14" y="108" width="26" height="34" rx="3" fill="'+D+'"/><rect x="14" y="108" width="26" height="6" rx="3" fill="'+W+'"/>' +
+      '<path d="M44 124 C 90 128, 100 96, 140 98 S 190 70, 216 58" fill="none" stroke="'+W+'" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 9"/>' +
+      '<g fill="'+W+'"><circle cx="86" cy="118" r="4"/><circle cx="132" cy="98" r="4"/><circle cx="176" cy="80" r="4"/></g>' +
+      '<rect x="226" y="20" width="10" height="160" fill="'+D+'"/>' + star(212,44,15); },
+    lanes: function(){ var g = lanes(5), i, x; g += '<g fill="'+W+'">';
+      for(i=1;i<=5;i++){ for(x=0;x<i;x++) g += '<rect x="'+(24+x*22)+'" y="'+(i*200/6-5)+'" width="14" height="10" rx="5"/>'; } return g + '</g><rect x="226" y="20" width="10" height="160" fill="'+D+'"/>'; },
+    steps: function(){ var g = lanes(3), i; for(i=0;i<4;i++) g += '<rect x="'+(34+i*46)+'" y="'+(150-i*30)+'" width="40" height="'+(30+i*30)+'" rx="3" fill="'+(i==3?W:D)+'" fill-opacity="'+(i==3?1:.9)+'"/>';
+      return g + star(206,46,16); },
+    wave: function(){ var g = '', i; for(i=0;i<5;i++){ var y = 40+i*30; g += '<path d="M0 '+y+' Q 32 '+(y-16)+' 65 '+y+' T 130 '+y+' T 195 '+y+' T 260 '+y+'" fill="none" stroke="'+W+'" stroke-opacity="'+(.9-i*.14)+'" stroke-width="3" stroke-linecap="round"/>'; }
+      return g + '<circle cx="196" cy="58" r="9" fill="'+C+'"/><circle cx="196" cy="58" r="3.5" fill="'+W+'"/>'; },
+    clock: function(){ var g = lanes(3), i; g += '<circle cx="130" cy="108" r="58" fill="'+D+'" stroke="'+W+'" stroke-width="5"/><rect x="120" y="36" width="20" height="12" rx="3" fill="'+W+'"/>';
+      for(i=0;i<12;i++){ var a = i*Math.PI/6; g += '<line x1="'+(130+46*Math.sin(a)).toFixed(1)+'" y1="'+(108-46*Math.cos(a)).toFixed(1)+'" x2="'+(130+52*Math.sin(a)).toFixed(1)+'" y2="'+(108-52*Math.cos(a)).toFixed(1)+'" stroke="'+W+'" stroke-width="3" stroke-linecap="round"/>'; }
+      return g + '<line x1="130" y1="108" x2="160" y2="80" stroke="'+C+'" stroke-width="5" stroke-linecap="round"/><circle cx="130" cy="108" r="6" fill="'+W+'"/>'; },
+    star: function(){ var g = lanes(3), i; for(i=0;i<10;i++){ var a = i*Math.PI/5; g += '<line x1="'+(130+50*Math.cos(a)).toFixed(1)+'" y1="'+(104+50*Math.sin(a)).toFixed(1)+'" x2="'+(130+82*Math.cos(a)).toFixed(1)+'" y2="'+(104+82*Math.sin(a)).toFixed(1)+'" stroke="'+W+'" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>'; }
+      return g + star(130,104,44); }
+  };
+  var ART_KEYS = Object.keys(ART);
+  function artSvg(t){
+    var key = ART[t.art] ? t.art : ART_KEYS[(parseInt(String(t.month||'').replace('-',''),10) || 0) % ART_KEYS.length];
+    return '<svg viewBox="0 0 260 200" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lane-line illustration: '+key+'"><rect width="260" height="200" fill="#008675"/>' + ART[key]() + '</svg>';
+  }
+
+  /* ---------- feature ---------- */
+  function renderFeature(t, animate){
+    var f = document.getElementById('feature'); f.textContent = '';
+    var art = el('div','f-art'); art.innerHTML = artSvg(t);
+    var body = el('div','f-body');
+    var eb = el('div','f-eyebrow');
+    if(t.id === all[0].id) eb.appendChild(el('span','badge now','Thought of the Month'));
+    eb.appendChild(el('span','badge month', monthLabel(t.month)));
+    body.appendChild(eb);
+    body.appendChild(el('div','qmark','“'));
+    body.appendChild(quoteNode(t,'quote'));
+    if(t.author) body.appendChild(el('p','author','— ' + t.author));
+    if(VIEW !== 'current' && t.tags && t.tags.length){
+      var tg = el('div','tags'); t.tags.forEach(function(x){ var b = el('button','tag','#'+x); b.type='button'; b.title='Show thoughts about '+x; b.onclick=function(){ document.getElementById('tagSel').value=x; applyFilters(); document.getElementById('explore').scrollIntoView({behavior:'smooth',block:'start'}); }; tg.appendChild(b); });
+      body.appendChild(tg);
+    }
+    var ac = el('div','actions');
+    if(VIEW === 'current'){
+      var a = el('a','btn solid','Explore past thoughts →'); a.href = ARCHIVE_URL; a.target = '_top'; ac.appendChild(a);
+    } else {
+      var idx = all.indexOf(t);
+      var older = el('button','btn','← Older'); older.type='button'; older.disabled = idx >= all.length-1; older.onclick=function(){ select(all[idx+1].id, true); };
+      var newer = el('button','btn','Newer →'); newer.type='button'; newer.disabled = idx <= 0; newer.onclick=function(){ select(all[idx-1].id, true); };
+      ac.appendChild(older); ac.appendChild(newer);
+    }
+    var cp = el('button','btn','Copy quote'); cp.type='button'; cp.onclick=function(){ copy('“'+t.quote+'”'+(t.author?' — '+t.author:'')+' — NSEA Swim Thought of the Month', cp); };
+    ac.appendChild(cp);
+    body.appendChild(ac);
+    f.appendChild(art); f.appendChild(body);
+    if(animate){ f.classList.remove('swap'); void f.offsetWidth; f.classList.add('swap'); }
+    currentId = t.id; markCurrent(); postHeight();
+  }
+  function copy(text, btn){
+    function done(ok){ var o = btn.textContent; btn.textContent = ok ? 'Copied ✓' : 'Press Ctrl/⌘+C'; setTimeout(function(){ btn.textContent = o; }, 1600); }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){done(true);}, function(){done(false);}); return; }
+    var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ done(document.execCommand('copy')); }catch(e){ done(false); } document.body.removeChild(ta);
+  }
+
+  /* ---------- explore ---------- */
+  function applyFilters(){
+    var q = document.getElementById('q').value.trim().toLowerCase(), tag = document.getElementById('tagSel').value;
+    shown = all.filter(function(t){
+      if(tag && (t.tags||[]).indexOf(tag) < 0) return false;
+      if(!q) return true;
+      return (t.quote + ' ' + (t.author||'') + ' ' + (t.tags||[]).join(' ') + ' ' + monthLabel(t.month)).toLowerCase().indexOf(q) >= 0;
+    });
+    renderResults();
+  }
+  function renderResults(){
+    var box = document.getElementById('results'); box.textContent = '';
+    document.getElementById('count').textContent = shown.length + ' of ' + all.length + ' thought' + (all.length===1?'':'s');
+    if(!shown.length){ box.appendChild(el('div','empty', all.length ? 'No thoughts match that search.' : 'Past thoughts will appear here as each month is added.')); postHeight(); return; }
+    var lastSeason = null, grid = null;
+    shown.forEach(function(t){
+      var s = seasonOf(t.month);
+      if(s !== lastSeason){ box.appendChild(el('div','season', s + ' season')); grid = el('div','grid'); box.appendChild(grid); lastSeason = s; }
+      var c = el('button','card'); c.type='button'; c.dataset.id = t.id;
+      var a = el('div','c-art'); a.innerHTML = artSvg(t);
+      var b = el('div','c-body'); b.appendChild(el('div','c-month', monthLabel(t.month)));
+      b.appendChild(el('p','c-text', t.quote.length > 120 ? t.quote.slice(0,117).replace(/\s+\S*$/,'') + '…' : t.quote));
+      c.appendChild(a); c.appendChild(b);
+      c.onclick = function(){ select(t.id, true); document.getElementById('feature').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto':'smooth', block:'start'}); };
+      grid.appendChild(c);
+    });
+    markCurrent(); postHeight();
+  }
+  function markCurrent(){ [].forEach.call(document.querySelectorAll('.card'), function(c){ if(c.dataset.id === currentId) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); }); }
+  function select(id, animate){
+    var t = all.filter(function(x){ return x.id === id; })[0] || all[0];
+    renderFeature(t, animate);
+    if(VIEW !== 'current'){ try{ history.replaceState(null,'', t === all[0] ? location.pathname + location.search : '#'+t.id); }catch(e){} }
+  }
+
+  /* ---------- iframe height (parent page may listen; harmless otherwise) ---------- */
+  function postHeight(){ try{ parent.postMessage({type:'nsea-thoughts-height', height: Math.ceil(document.getElementById('app').getBoundingClientRect().height) + 8}, '*'); }catch(e){} }
+  window.addEventListener('resize', postHeight);
+
+  /* ---------- boot ---------- */
+  function boot(data){
+    all = (data.thoughts || []).filter(function(t){ return t && t.quote && /^\d{4}-\d{2}$/.test(t.month||''); })
+      .map(function(t){ t.id = t.id || t.month; return t; })
+      .sort(function(a,b){ return a.month < b.month ? 1 : -1; });
+    var app = document.getElementById('app');
+    if(!all.length){ document.getElementById('feature').appendChild(el('div','f-body','The first thought of the month is coming soon.')); return; }
+    if(VIEW === 'current'){ app.classList.add('compact'); select(all[0].id, false); return; }
+    var tags = {}; all.forEach(function(t){ (t.tags||[]).forEach(function(x){ tags[x] = 1; }); });
+    var sel = document.getElementById('tagSel'); Object.keys(tags).sort().forEach(function(x){ var o = el('option',null,x); o.value = x; sel.appendChild(o); });
+    document.getElementById('explore').hidden = false;
+    document.getElementById('q').addEventListener('input', applyFilters);
+    sel.addEventListener('change', applyFilters);
+    document.getElementById('surprise').onclick = function(){ var pool = all.filter(function(t){ return t.id !== currentId; }); if(pool.length) select(pool[Math.floor(Math.random()*pool.length)].id, true); };
+    document.addEventListener('keydown', function(e){ if(/input|select|textarea/i.test(e.target.tagName)) return; var i = all.map(function(t){return t.id;}).indexOf(currentId);
+      if(e.key === 'ArrowLeft' && i < all.length-1) select(all[i+1].id, true); if(e.key === 'ArrowRight' && i > 0) select(all[i-1].id, true); });
+    var hash = location.hash.replace('#','');
+    select(hash || all[0].id, false);
+    shown = all.slice(); renderResults();
+  }
+  fetch(DATA_URL, {cache:'no-cache'}).then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(boot, function(){ if(EMBEDDED) boot(EMBEDDED); else document.getElementById('feature').appendChild(el('div','f-body','Could not load thoughts.')); });
+})();
+</script>
+</body>
+</html>
