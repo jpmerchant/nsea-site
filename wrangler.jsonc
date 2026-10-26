@@ -10,8 +10,8 @@
     "run_worker_first": ["/api/*"]
   },
   "vars": {
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ACCESS_TEAM_DOMAIN": "nseaswim.cloudflareaccess.com",
+    "ACCESS_AUD": "c3b6669fefd29e9f5f9a704f443f86ecc21770eba6499e054f56a6693bcaea2a"
   },
   "d1_databases": [
     {
