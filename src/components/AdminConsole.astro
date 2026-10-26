@@ -122,8 +122,8 @@
       }
       box.replaceChildren(
         el('p', { class: 'cp-small' }, 'Publishing saves your changes to the calendar. The public calendar, widget and Google Calendar feeds update in about a minute or two. Every save is kept in the calendar’s history, so a change can be undone. ',
-          el('a', { href: '/admin/events/', target: '_blank', rel: 'noopener' }, 'Open in its own page')),
-        el('iframe', { src: '/admin/events/', title: 'Events editor', class: 'ac-frame' }));
+          el('a', { href: '/api/admin/events/app', target: '_blank', rel: 'noopener' }, 'Open in its own page')),
+        el('iframe', { src: '/api/admin/events/app', title: 'Events editor', class: 'ac-frame' }));
     }).catch(function (e) { fail(box, e); });
   }
   function vContent() {

@@ -1,64 +1,78 @@
-// Events calendar admin: reads and publishes the data files in the nsea-events GitHub repo (the calendar site itself stays on GitHub Pages).
-// Needs the secret EVENTS_GITHUB_TOKEN (fine-grained token, Contents read/write on that one repo). Vars EVENTS_REPO and EVENTS_BRANCH.
+// Events calendar admin. The calendar site itself stays on GitHub Pages (repo nsea-events). This module:
+//  - serves that repo's own admin page (site-src/admin.html) inside the console, so edits to the editor in the repo show up here automatically;
+//  - proxies the few GitHub calls that editor makes, using a token held as a Cloudflare secret (EVENTS_GITHUB_TOKEN), limited to the data files.
 import { json, fail, clean } from './util.mjs';
 
-const FILES = { events: 'data/events.csv', venues: 'data/venues.csv', standards: 'data/standards.csv', settings: 'data/settings.json' };
-const HEADERS = {
-  events: 'id,title,start,end,precision,month_hint,type,groups,eligibility,venue,status,tags,description,link,needs_review,review_note,signup_deadline,signup_link,has_selection,selection_link,selection_notes,has_standards,standards,standards_link',
-  venues: 'key,name,city,state,address,map_query,home,verified',
-  standards: 'key,name,group,link,notes',
-};
-const MAX = 400_000;
+export const configured = (env) => !!(env.EVENTS_GITHUB_TOKEN && env.EVENTS_REPO);
+const branch = (env) => env.EVENTS_BRANCH || 'main';
+const DATA_FILE = /^data\/[\w.-]+\.(csv|json)$/;
+const HEX = /^[0-9a-f]{40}$/;
 
-async function gh(env, path, opt = {}, fetchImpl = fetch) {
-  const r = await fetchImpl(`https://api.github.com/repos/${env.EVENTS_REPO}${path}`, {
+function upstream(env, path, opt = {}, fetchImpl = fetch) {
+  return fetchImpl(`https://api.github.com/repos/${env.EVENTS_REPO}${path}`, {
     ...opt,
     headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${env.EVENTS_GITHUB_TOKEN}`, 'x-github-api-version': '2022-11-28', 'user-agent': 'nsea-site-admin', ...(opt.headers || {}) },
   });
-  if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch {} const e = new Error(`GitHub ${r.status}${m ? ': ' + m : ''}`); e.status = r.status; throw e; }
-  return r;
-}
-const branch = (env) => encodeURIComponent(env.EVENTS_BRANCH || 'main');
-
-export function configured(env) { return !!(env.EVENTS_GITHUB_TOKEN && env.EVENTS_REPO); }
-
-export async function eventsData(env, fetchImpl = fetch) {
-  if (!configured(env)) return fail(503, 'The events connection is not set up yet. An owner needs to add the GitHub token.');
-  try {
-    const ref = await (await gh(env, `/git/ref/heads/${branch(env)}`, { headers: { 'cache-control': 'no-cache' } }, fetchImpl)).json();
-    const head = ref.object.sha;
-    const raw = (p) => gh(env, `/contents/${p}?ref=${head}`, { headers: { accept: 'application/vnd.github.raw+json' } }, fetchImpl).then((r) => r.text());
-    const opt = (p) => raw(p).catch(() => '');
-    const [events, venues, standards, settings] = await Promise.all([raw(FILES.events), raw(FILES.venues), opt(FILES.standards), opt(FILES.settings)]);
-    return json({ head, repo: env.EVENTS_REPO, events, venues, standards, settings });
-  } catch (e) { return fail(502, e.message); }
 }
 
-// body: { head, message, files: { events?, venues?, standards?, settings? } }
-export async function eventsPublish(env, me, body, audit, fetchImpl = fetch) {
+// The editor page from the repo, with its GitHub calls pointed at this Worker and the connect step done automatically.
+const SHIM = `<script>
+(function(){
+  gh=async function(path,opt){opt=opt||{};
+    var r=await fetch('/api/admin/events/gh'+path,{method:opt.method||'GET',credentials:'same-origin',cache:'no-store',headers:Object.assign({},opt.headers||{},opt.body?{'content-type':'application/json'}:{}),body:opt.body});
+    if(!r.ok){var m='';try{var d=await r.json();m=d.message||d.error||''}catch(e){}throw new Error('GitHub '+r.status+(m?': '+m:''))}
+    return r};
+  var c=document.getElementById('conn');if(c)c.style.display='none';
+  var t=document.getElementById('token');if(t)t.value='console';
+  var rm=document.getElementById('remember');if(rm)rm.checked=false;
+  connect();
+})();
+</script>`;
+
+export async function eventsApp(env, fetchImpl = fetch) {
   if (!configured(env)) return fail(503, 'The events connection is not set up yet.');
-  const head = clean(body.head, 60);
-  const files = body.files && typeof body.files === 'object' ? body.files : {};
-  const keys = Object.keys(files);
-  if (!/^[0-9a-f]{40}$/.test(head) || !keys.length) return fail(400, 'Nothing to publish.');
-  const tree = [];
-  for (const k of keys) {
-    if (!FILES[k]) return fail(400, `Unknown file: ${k}`);
-    const c = files[k];
-    if (typeof c !== 'string' || c.length > MAX) return fail(400, `${k} is empty or too large.`);
-    if (k === 'settings') { try { JSON.parse(c); } catch { return fail(400, 'Settings are not valid.'); } }
-    else if (c.split('\n')[0].trim() !== HEADERS[k]) return fail(400, `The ${k} columns do not match what the calendar expects.`);
-    tree.push({ path: FILES[k], mode: '100644', type: 'blob', content: c });
+  const r = await upstream(env, `/contents/site-src/admin.html?ref=${encodeURIComponent(branch(env))}`, { headers: { accept: 'application/vnd.github.raw+json' } }, fetchImpl);
+  if (!r.ok) return fail(502, `Could not load the events editor (GitHub ${r.status}).`);
+  const html = await r.text();
+  if (!html.includes('</body>')) return fail(502, 'The events editor page looks incomplete.');
+  return new Response(html.replace('</body>', SHIM + '</body>'), {
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'content-security-policy': "frame-ancestors 'self'" },
+  });
+}
+
+// path is what follows /api/admin/events/gh, e.g. /git/ref/heads/main. body is the parsed JSON for POST/PATCH.
+export async function eventsProxy(env, me, method, path, body, audit, fetchImpl = fetch) {
+  if (!configured(env)) return fail(503, 'The events connection is not set up yet.');
+  const br = branch(env);
+  let m;
+  const pass = async (p, opt) => {
+    const r = await upstream(env, p, opt, fetchImpl);
+    return new Response(await r.text(), { status: r.status, headers: { 'content-type': r.headers.get('content-type') || 'application/json', 'cache-control': 'no-store' } });
+  };
+  if (method === 'GET' && path === '') return pass('', {});
+  if (method === 'GET' && path === `/git/ref/heads/${br}`) return pass(path, {});
+  if (method === 'GET' && (m = path.match(/^\/contents\/([^?]+)\?ref=[\w.%/-]+$/)) && DATA_FILE.test(m[1])) {
+    return pass(path, { headers: { accept: 'application/vnd.github.raw+json' } });
   }
-  const message = `${clean(body.message, 120) || 'Update events calendar'}\n\nEdited in the NSEA admin console by ${me.email}`;
-  try {
-    const ref = await (await gh(env, `/git/ref/heads/${branch(env)}`, { headers: { 'cache-control': 'no-cache' } }, fetchImpl)).json();
-    if (ref.object.sha !== head) return fail(409, 'Someone else changed the calendar since you loaded it. Reload this page, then re-apply your edit.');
-    const base = await (await gh(env, `/git/commits/${head}`, {}, fetchImpl)).json();
-    const t = await (await gh(env, '/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: base.tree.sha, tree }) }, fetchImpl)).json();
-    const c = await (await gh(env, '/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: t.sha, parents: [head] }) }, fetchImpl)).json();
-    await gh(env, `/git/refs/heads/${branch(env)}`, { method: 'PATCH', body: JSON.stringify({ sha: c.sha, force: false }) }, fetchImpl);
-    await audit('events', 'publish calendar', clean(body.message, 120) || keys.join(', '));
-    return json({ ok: true, head: c.sha });
-  } catch (e) { return fail(e.status === 422 ? 409 : 502, e.status === 422 ? 'Someone else changed the calendar since you loaded it. Reload this page, then re-apply your edit.' : e.message); }
+  if (method === 'GET' && (m = path.match(/^\/git\/commits\/([0-9a-f]{40})$/))) return pass(path, {});
+  if (method === 'POST' && path === '/git/trees') {
+    const tree = Array.isArray(body.tree) ? body.tree : [];
+    if (!HEX.test(body.base_tree || '') || !tree.length || tree.length > 12) return fail(400, 'Bad request');
+    for (const t of tree) {
+      if (!DATA_FILE.test(t.path || '') || t.mode !== '100644' || t.type !== 'blob' || typeof t.content !== 'string' || t.content.length > 400_000) return fail(400, 'Only the calendar data files can be changed.');
+    }
+    return pass('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: body.base_tree, tree: tree.map((t) => ({ path: t.path, mode: t.mode, type: t.type, content: t.content })) }) });
+  }
+  if (method === 'POST' && path === '/git/commits') {
+    if (!HEX.test(body.tree || '') || !Array.isArray(body.parents) || body.parents.length !== 1 || !HEX.test(body.parents[0])) return fail(400, 'Bad request');
+    const message = `${String(body.message || 'Update events calendar').slice(0, 200)}\n\nEdited in the NSEA admin console by ${me.email}`;
+    return pass('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: body.tree, parents: body.parents }) });
+  }
+  if (method === 'PATCH' && path === `/git/refs/heads/${br}`) {
+    if (!HEX.test(body.sha || '')) return fail(400, 'Bad request');
+    const res = await pass(path, { method: 'PATCH', body: JSON.stringify({ sha: body.sha, force: false }) });
+    if (res.ok) await audit('events', 'publish calendar', body.sha.slice(0, 7));
+    return res;
+  }
+  return fail(404, 'Not found');
 }

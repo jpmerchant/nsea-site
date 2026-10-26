@@ -3,7 +3,7 @@
 import { json, fail, sha, rand, clean, EMAIL, cookieOf, setCookie, readRequest } from './util.mjs';
 import { newMemberInvite } from './carpool.mjs';
 import { handleContentAdmin } from './content.mjs';
-import { eventsData, eventsPublish, configured as eventsConfigured } from './events.mjs';
+import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 
 export const MODULES = ['carpool', 'events', 'content'];
 const ROLE_NAMES = ['owner', ...MODULES];
@@ -170,8 +170,13 @@ export async function handleAdmin(req, env, url) {
     if (path.startsWith('/events')) {
       if (!can(me, 'events')) return fail(403, 'You do not have access to the Events module.');
       if (method === 'GET' && path === '/events/status') return json({ configured: eventsConfigured(env) });
-      if (method === 'GET' && path === '/events/data') return eventsData(env);
-      if (method === 'POST' && path === '/events/publish') return eventsPublish(env, me, body, (m, a, d) => audit(env, me, m, a, d));
+      if (method === 'GET' && path === '/events/app') return eventsApp(env);
+      const g = path.match(/^\/events\/gh(\/.*)?$/);
+      if (g) {
+        let b = body;
+        if (method === 'PATCH') { try { b = await req.json(); } catch { b = {}; } }
+        return eventsProxy(env, me, method, (g[1] || '') + url.search, b, (m, a, d) => audit(env, me, m, a, d));
+      }
     }
 
     // ----- content module -----
