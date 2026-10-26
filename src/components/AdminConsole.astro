@@ -165,9 +165,8 @@
   function vAlumni(box) {
     api('GET', '/content/alumni').then(function (o) {
       function post(path, body, okMsg) { api('POST', path, body || {}).then(function (r) { flash = typeof okMsg === 'function' ? okMsg(r) : okMsg; vContent(); }).catch(function (e) { alert(e.message); }); }
-      box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Alumni results'),
-        el('p', { class: 'cp-small' }, 'Each day the site reads the swimmer’s official college roster page. Best times update on their own; season highlights wait here until you approve them. Nothing shows on the College Swimmers page until you tick “OK to feature” (get the swimmer’s or family’s OK first).')),
-        o.alumni.map(function (a) {
+      box.replaceChildren.apply(box, [el('div', { class: 'cp-panel' }, el('h3', null, 'Alumni results'),
+        el('p', { class: 'cp-small' }, 'Each day the site reads the swimmer’s official college roster page. Best times update on their own; season highlights wait here until you approve them. Nothing shows on the College Swimmers page until you tick “OK to feature” (get the swimmer’s or family’s OK first).'))].concat(o.alumni.map(function (a) {
           var pending = a.items.filter(function (i) { return i.status === 'pending'; }), rest = a.items.filter(function (i) { return i.status !== 'pending'; });
           function item(i) {
             return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, i.season), ' · ' + i.text + (i.status === 'hidden' ? ' (hidden)' : i.status === 'approved' ? ' (showing)' : '')),
@@ -181,7 +180,7 @@
               pending.length ? btn('Approve all ' + pending.length, function () { post('/content/alumni/' + a.id + '/approve-all', {}, 'All approved.'); }) : null),
             el('h4', null, 'Waiting for approval (' + pending.length + ')'), pending.length ? pending.map(item) : el('p', { class: 'cp-empty' }, 'Nothing waiting.'),
             rest.length ? [el('h4', null, 'Reviewed (' + rest.length + ')'), rest.map(item)] : null);
-        }));
+        })));
     }).catch(function (e) { fail(box, e); });
   }
 
