@@ -181,6 +181,6 @@ See `MIGRATION.md` for what replaces what, the full page list with sources, and 
 
 `/admin/` is the single admin console (Worker API in `worker/admin.mjs`, UI in `src/components/AdminConsole.astro`). One login, per-module roles (owner, carpool, events, content) and an audit log. Sign-in is by single-use admin links until Cloudflare Access is switched on: create an Access application covering `/admin*` and `/api/admin/*`, then put its team domain and AUD tag in `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.jsonc`. Once those are set, link sign-in is turned off and the Access email must match a row in the Admins list. Add `Disallow: /admin/` to the live `robots.txt` at go-live. Schema changes are in `migrations/` and are applied to the D1 database by hand.
 
-## Automatic deploys (GitHub Actions)
+## Backup deploy (GitHub Actions)
 
-`.github/workflows/deploy.yml` runs the tests, builds, and runs `wrangler deploy` on every push to `main` (or by hand from the repo's Actions tab). It needs two repository secrets, `CLOUDFLARE_API_TOKEN` (the "Edit Cloudflare Workers" token template) and `CLOUDFLARE_ACCOUNT_ID`. If Cloudflare's own Git builds are also turned on for this project, turn them off so the two don't both deploy. Database migrations are still applied by hand.
+Cloudflare's own Git builds deploy every push to `main`. `.github/workflows/deploy.yml` is a backup you can run by hand from the repo's Actions tab ("Run workflow"). It needs two repository secrets, `CLOUDFLARE_API_TOKEN` (the "Edit Cloudflare Workers" token template) and `CLOUDFLARE_ACCOUNT_ID`. Database migrations are still applied by hand.

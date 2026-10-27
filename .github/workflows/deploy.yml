@@ -1,12 +1,10 @@
-# Builds, tests and deploys the site to Cloudflare on every push to main.
+# Backup deploy, run by hand from the Actions tab (Cloudflare's own Git builds deploy every push to main).
 # One-time setup: in the GitHub repo, Settings > Secrets and variables > Actions, add
 #   CLOUDFLARE_API_TOKEN  (a token with the "Edit Cloudflare Workers" template)
 #   CLOUDFLARE_ACCOUNT_ID (your Cloudflare account id)
 # Database changes in migrations/ are still applied by hand (see README).
 name: Deploy
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 concurrency:
   group: deploy
