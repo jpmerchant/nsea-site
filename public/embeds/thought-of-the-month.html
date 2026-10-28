@@ -113,7 +113,7 @@
   var params = new URLSearchParams(location.search);
   var VIEW = params.get('view') === 'current' ? 'current' : 'archive';
   var ARCHIVE_URL = params.get('archive') || (location.pathname + '?view=archive');
-  var DATA_URL = params.get('data') || 'thoughts.json';
+  var DATA_URL = params.get('data') || '/api/content/thoughts';
 
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var all = [], shown = [], currentId = null;

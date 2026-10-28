@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import HubGrid from '../components/HubGrid.astro';
-import Thoughts from '../components/Thoughts.astro';
 import { SITE, pages } from '../data/site.mjs';
 import { topLevel, getPage } from '../lib/nav.mjs';
 const quick = ['/programs/practice-groups/', '/about/coaching-staff/', '/meets/calendar/', '/programs/join/'].map(getPage);
@@ -27,9 +26,6 @@ const featured = ['/times/standards/check-my-time/', '/meets/calendar/', '/times
       <HubGrid items={quick} cta="Go" />
     </div>
   </div>
-
-  <div class="section-title">Thought of the Month</div>
-  <Thoughts mode="current" />
 
   <div class="section-title">Explore</div>
   <HubGrid items={topLevel} cta="Explore" />

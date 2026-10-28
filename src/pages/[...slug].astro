@@ -7,7 +7,6 @@ import Glossary from '../components/Glossary.astro';
 import Carpool from '../components/Carpool.astro';
 import FeesTable from '../components/FeesTable.astro';
 import OfferingStatus from '../components/OfferingStatus.astro';
-import Thoughts from '../components/Thoughts.astro';
 import AlumniUpdates from '../components/AlumniUpdates.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 
@@ -45,11 +44,9 @@ const hasEmbed = p.embed || p.variants;
 
   {p.carpool && <Carpool />}
 
-  {p.thoughts && <Thoughts mode="archive" />}
-
   {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
 
-  {!Content && !hasEmbed && !p.glossary && !p.carpool && !p.thoughts && p.type !== 'hub' && !live && (
+  {!Content && !hasEmbed && !p.glossary && !p.carpool && p.type !== 'hub' && !live && (
     <div class="todo">
       <h3>Content not migrated yet</h3>
       <dl>
