@@ -50,7 +50,7 @@ rows.push('|---|---|---|---|');
 const comps = [
   ['Top 10 / records / relay boards (12 HTML files + JSON)', 'GitHub Pages: `jpmerchant/nsea-swim-boards`, iframed in BUILD', 'Top Times and Team Records tools. Embedded by URL now; can be absorbed natively later', '`legacy/tools/boards/`'],
   ['IMX / IMR board', 'GitHub Pages (boards repo)', '`/times/standards/imx-imr/progress/`', '`legacy/tools/boards/imx-imr-scy.html`'],
-  ['Events calendar (+ `/admin`, `/widget`, .ics feeds)', 'GitHub Pages: `jpmerchant/nsea-events` at `events.nseaswimteam.com`', '`/meets/calendar/` and the home-page deadlines widget', '`legacy/tools/events/`'],
+  ['Events calendar (+ `/admin`, `/widget`, .ics feeds)', 'GitHub Pages: `jpmerchant/nsea-events` at `events.nseaswimteam.com`', '`/meets/calendar/` and the home-page deadlines widget. Edited in the admin console (Events & Calendar), which publishes to the same repo', '`legacy/tools/events/`'],
   ['Check My Time (standards explorer)', 'BUILD `/check-my-time`', '`/times/standards/check-my-time/` (featured in the Times & Records menu)', '`legacy/tools/standards/nsea-standards-explorer.html`'],
   ['SCY comparison (by age group / all ages)', 'BUILD pages', '`/times/standards/compare-*`', '`legacy/tools/standards/`'],
   ['NC Age Group + Senior standards embeds', 'BUILD pages', '`/times/standards/nc-*`', '`legacy/tools/standards/`'],
@@ -62,9 +62,9 @@ const comps = [
   ['Countdown widget ("STAR Triad Tropic")', 'BUILD home page', 'Not carried over. The deadlines widget does the same job and is data-driven', '-'],
   ['Upcoming-deadlines widget', 'BUILD home page (iframe of `events.nseaswimteam.com/widget/`)', 'Home page, same iframe', '`legacy/tools/events/`'],
   ['Partner logo bar', 'BUILD home page + footer', 'Footer (`src/components/Footer.astro`, data in `SITE.partners`)', '-'],
-  ['Coach’s Corner post', 'BUILD home page', 'Markdown feed on the home page', '-'],
+  ['Coach’s Corner post', 'BUILD home page', 'Staff blog: home-page tile + `/training/coaches-corner/`, written in the admin console (coach role, review then publish)', '-'],
   ['Captyn Login button', 'BUILD header', 'Header CTA + mobile menu', '-'],
-  ['Carpool board (planned)', 'Not built', '`/families/carpool/` (gated)', '-'],
+  ['Carpool board', 'Was a Jotform behind a BUILD password page', '`/families/carpool/` (Cloudflare Worker + D1, invite-link sign-in; managed in the admin console)', '-'],
 ];
 for (const c of comps) rows.push(`| ${c.join(' | ')} |`);
 rows.push('');

@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 101 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 102 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 69 · ready 14 · new 2
+Counts: rebuild 16 · done 70 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
@@ -91,7 +91,7 @@ Merges worth noting: Top 10 Swimmers/Swims/Relays and Team Records collapse from
 |---|---|---|---|
 | Top 10 / records / relay boards (12 HTML files + JSON) | GitHub Pages: `jpmerchant/nsea-swim-boards`, iframed in BUILD | Top Times and Team Records tools. Embedded by URL now; can be absorbed natively later | `legacy/tools/boards/` |
 | IMX / IMR board | GitHub Pages (boards repo) | `/times/standards/imx-imr/progress/` | `legacy/tools/boards/imx-imr-scy.html` |
-| Events calendar (+ `/admin`, `/widget`, .ics feeds) | GitHub Pages: `jpmerchant/nsea-events` at `events.nseaswimteam.com` | `/meets/calendar/` and the home-page deadlines widget | `legacy/tools/events/` |
+| Events calendar (+ `/admin`, `/widget`, .ics feeds) | GitHub Pages: `jpmerchant/nsea-events` at `events.nseaswimteam.com` | `/meets/calendar/` and the home-page deadlines widget. Edited in the admin console (Events & Calendar), which publishes to the same repo | `legacy/tools/events/` |
 | Check My Time (standards explorer) | BUILD `/check-my-time` | `/times/standards/check-my-time/` (featured in the Times & Records menu) | `legacy/tools/standards/nsea-standards-explorer.html` |
 | SCY comparison (by age group / all ages) | BUILD pages | `/times/standards/compare-*` | `legacy/tools/standards/` |
 | NC Age Group + Senior standards embeds | BUILD pages | `/times/standards/nc-*` | `legacy/tools/standards/` |
@@ -103,9 +103,9 @@ Merges worth noting: Top 10 Swimmers/Swims/Relays and Team Records collapse from
 | Countdown widget ("STAR Triad Tropic") | BUILD home page | Not carried over. The deadlines widget does the same job and is data-driven | - |
 | Upcoming-deadlines widget | BUILD home page (iframe of `events.nseaswimteam.com/widget/`) | Home page, same iframe | `legacy/tools/events/` |
 | Partner logo bar | BUILD home page + footer | Footer (`src/components/Footer.astro`, data in `SITE.partners`) | - |
-| Coach’s Corner post | BUILD home page | Markdown feed on the home page | - |
+| Coach’s Corner post | BUILD home page | Staff blog: home-page tile + `/training/coaches-corner/`, written in the admin console (coach role, review then publish) | - |
 | Captyn Login button | BUILD header | Header CTA + mobile menu | - |
-| Carpool board (planned) | Not built | `/families/carpool/` (gated) | - |
+| Carpool board | Was a Jotform behind a BUILD password page | `/families/carpool/` (Cloudflare Worker + D1, invite-link sign-in; managed in the admin console) | - |
 
 Deliberately **not** pulled: per-athlete biomechanics reports (individual swimmers’ data, which should never be on a public site), and the Fall 2026 internal documents in the NSEA Swim folder.
 
@@ -169,7 +169,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/families/newsletter/` | Newsletter | hub | rebuild | `/current`, `/newsletters` | - |
 | `/families/newsletter/current/` | Current Issue | tool | done | `/current` | content/newsletters/nsea-newsletter-10-17-2026.html |
 | `/families/newsletter/archive/` | Newsletter Archive | page | done | `/newsletters` | content/newsletters/nsea-newsletter-10-03-2026.html |
-| `/families/newsletter/thought-of-the-month/` | Thought of the Month | tool | done | - | public/embeds/thoughts.json (the archive: add one entry per month) |
+| `/families/newsletter/thought-of-the-month/` | Thought of the Month | tool | done | - | The archive is edited in the admin console (Content, Thought of the Month) |
 | `/families/team-store/` | Team Store | hub | rebuild | - | - |
 | `/families/team-store/apparel/` | Apparel Store | link | ready | - | - |
 | `/families/team-store/caps/` | Cap Order Form | link | ready | - | - |
@@ -216,6 +216,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/achievements/2023-24/` | 2023 – 2024 | tool | done | `/2023---2024` | - |
 | `/times/achievements/2022-23/` | 2022 – 2023 | tool | done | `/2022---23-achievements` | - |
 | `/training/` | Training | hub | rebuild | - | - |
+| `/training/coaches-corner/` | Coach’s Corner | page | done | - | - |
 | `/training/zones/` | Training Zone Cheat Sheet | tool | done | `/training-zone-cheat-sheet` | NSEASwim-KB-Repo/NSEA_Training_Zones_Cheat_Sheet.pdf |
 | `/training/rpe/` | RPE & Session RPE | tool | done | `/rpe-information` | content/guides/rpe-session-rpe-handout.html; Project: claude/rpe-session-rpe-reference.md |
 | `/training/same/` | S.A.M.E. | hub | rebuild | - | - |

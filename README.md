@@ -179,7 +179,9 @@ See `MIGRATION.md` for what replaces what, the full page list with sources, and 
 
 ## Admin console
 
-`/admin/` is the single admin console (Worker API in `worker/admin.mjs`, UI in `src/components/AdminConsole.astro`). One login, per-module roles (owner, carpool, events, content) and an audit log. Sign-in is by single-use admin links until Cloudflare Access is switched on: create an Access application covering `/admin*` and `/api/admin/*`, then put its team domain and AUD tag in `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.jsonc`. Once those are set, link sign-in is turned off and the Access email must match a row in the Admins list. Add `Disallow: /admin/` to the live `robots.txt` at go-live. Schema changes are in `migrations/` and are applied to the D1 database by hand.
+`/admin/` is the single admin console (Worker API in `worker/admin.mjs` plus `content.mjs`, `coach.mjs`, `events.mjs`, `carpool.mjs`; UI in `src/components/AdminConsole.astro`). One login, per-module roles (owner, carpool, events, content, coach) and an audit log. Sign-in is Cloudflare Access (application covering `/admin*` and `/api/admin*`; team domain and AUD tag are in `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.jsonc`). While those two are empty, single-use admin links work instead (lockout fallback). The Access email must match a row in the Admins list. Add `Disallow: /admin/` to the live `robots.txt` at go-live.
+
+Editable in the console: Thought of the Month, Fees, prep-program dates, Coach's Corner (blog), the Carpool Board, and the events calendar (the repo's own editor, proxied to `jpmerchant/nsea-events` using the Worker secret `EVENTS_GITHUB_TOKEN`). Starting values for fees and programs are in `src/data/site-data-defaults.mjs`. Schema changes are in `migrations/` and are applied to the D1 database by hand, before pushing code that needs them.
 
 ## Backup deploy (GitHub Actions)
 
