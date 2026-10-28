@@ -3,13 +3,14 @@
 ---
 <div id="ac" class="ac"><p class="cp-loading">Loading…</p></div>
 <noscript><p>The admin console needs JavaScript.</p></noscript>
+<script is:inline src="/assets/rich.js"></script>
 
 <script is:inline>
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', coach: 'Coach (own posts only)' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', coach: 'Coach’s Corner' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -53,7 +54,7 @@
   }
 
   // ---------- shell ----------
-  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['coach', 'Coach’s Corner', 'coach'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
   function shell(content) {
     mount(
@@ -65,7 +66,7 @@
         })),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, coach: vCoach, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -243,6 +244,110 @@
         el('p', { class: 'cp-small' }, 'This block appears at the top of each program page. The standing details (who, experience, practice times) are part of the page itself. ' + (st ? 'Last saved ' + date(st.updated_at) + ' by ' + st.updated_by + '.' : 'Showing the starting text; nothing saved yet.')),
         el('label', { class: 'cp-form' }, 'Program', sel), form));
     }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- coach's corner ----------
+  var coachTab = 'posts', coachEdit = null;
+  var STATUS_LABEL = { draft: 'Draft', review: 'In review', published: 'Published' };
+  function vCoach() {
+    var box = el('div', null, loading());
+    api('GET', '/coach').then(function (o) {
+      var tabs = [['posts', 'Posts'], ['edit', coachEdit && coachEdit.id ? 'Edit post' : 'New post']];
+      if (o.editor) tabs.push(['authors', 'Authors'], ['topics', 'Topics']);
+      if (tabs.map(function (t) { return t[0]; }).indexOf(coachTab) < 0) coachTab = 'posts';
+      shell(el('div', null, el('h2', null, 'Coach’s Corner'),
+        el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': coachTab === t[0] ? 'page' : 'false', onclick: function () { if (t[0] === 'edit' && coachTab !== 'edit') coachEdit = null; coachTab = t[0]; vCoach(); } }, t[1]); })), box));
+      ({ posts: coachPosts, edit: coachForm, authors: coachAuthors, topics: coachTopics })[coachTab](box, o);
+    }).catch(function (e) { shell(el('div', null, el('h2', null, 'Coach’s Corner'), msg('err', e.message))); });
+  }
+  function coachPosts(box, o) {
+    var review = o.posts.filter(function (p) { return p.status === 'review'; });
+    function row(p) {
+      var can = o.editor || (p.status !== 'published' && p.author_id === o.mineId);
+      return el('div', { class: 'cp-row' },
+        el('div', null, el('strong', null, p.title), ' ', el('span', { class: 'chip' + (p.status === 'review' ? ' new' : '') }, STATUS_LABEL[p.status] + (p.status === 'published' && p.publish_on > o.today ? ' (scheduled ' + p.publish_on + ')' : '')),
+          el('p', { class: 'cp-small' }, p.author + ' · ' + p.publish_on + (p.topic ? ' · ' + p.topic : '') + (p.groups.length ? ' · ' + p.groups.join('/') : ''))),
+        el('div', { class: 'cp-btns' },
+          can ? btn('Edit', function () { coachEdit = p; coachTab = 'edit'; vCoach(); }) : null,
+          o.editor && p.status !== 'published' ? btn('Publish', function () { coachStatus(p, 'published'); }) : null,
+          o.editor && p.status === 'published' ? btn('Unpublish', function () { coachStatus(p, 'draft'); }, 'ghost') : null,
+          !o.editor && p.status === 'draft' && can ? btn('Send for review', function () { coachStatus(p, 'review'); }) : null,
+          can ? btn('Delete', function () { if (confirm('Delete “' + p.title + '”?')) api('POST', '/coach/posts/' + p.id + '/delete', {}).then(function () { flash = 'Post deleted.'; vCoach(); }).catch(function (e) { alert(e.message); }); }, 'ghost') : null));
+    }
+    function coachStatus(p, st) { api('POST', '/coach/posts/' + p.id + '/status', { status: st }).then(function () { flash = st === 'published' ? 'Published. It shows on the site within about a minute.' : st === 'review' ? 'Sent for review.' : 'Moved to drafts.'; vCoach(); }).catch(function (e) { alert(e.message); }); }
+    if (!o.editor && !o.mineId) { box.replaceChildren(el('div', { class: 'cp-panel' }, el('p', null, 'You are not on the author list yet. Ask an editor to add you (they will link your sign-in email).'))); return; }
+    box.replaceChildren(
+      o.editor && review.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Waiting for review (' + review.length + ')'), review.map(row)) : null,
+      el('div', { class: 'cp-panel' }, el('h3', null, o.editor ? 'All posts (' + o.posts.length + ')' : 'Your posts (' + o.posts.length + ')'),
+        o.posts.length ? o.posts.filter(function (p) { return !(o.editor && p.status === 'review'); }).map(row) : el('p', { class: 'cp-empty' }, 'No posts yet.'),
+        el('p', null, btn('New post', function () { coachEdit = null; coachTab = 'edit'; vCoach(); }))));
+  }
+  function coachForm(box, o) {
+    var p = coachEdit || { title: '', summary: '', body: '', topic: '', groups: [], pinned: false, publish_on: o.today, related_label: '', related_url: '', status: 'draft', author_id: o.mineId };
+    if (!o.editor && !o.mineId) { box.replaceChildren(el('div', { class: 'cp-panel' }, el('p', null, 'You are not on the author list yet. Ask an editor to add you.'))); return; }
+    var out = el('div', { class: 'cp-out' }), preview = el('div', { class: 'cp-panel prose', hidden: true });
+    var title = el('input', { required: true, maxlength: 120, value: p.title }),
+      author = o.editor ? el('select', null, o.authors.filter(function (a) { return a.active !== 0 || a.id === p.author_id; }).map(function (a) { return el('option', { value: a.id, selected: a.id === p.author_id ? 'selected' : null }, a.name); })) : null,
+      topic = el('select', null, el('option', { value: '' }, 'No topic'), o.topics.map(function (t) { return el('option', { value: t, selected: t === p.topic ? 'selected' : null }, t); })),
+      date_ = el('input', { type: 'date', value: p.publish_on, required: true }),
+      summary = el('textarea', { rows: 2, maxlength: 300 }, p.summary),
+      bodyT = el('textarea', { rows: 14, maxlength: 12000, required: true }, p.body),
+      rl = el('input', { maxlength: 60, value: p.related_label }), ru = el('input', { maxlength: 300, value: p.related_url, placeholder: 'https://… or /page/' }),
+      pinned = el('input', { type: 'checkbox' });
+    if (p.pinned) pinned.checked = true;
+    var gbox = {}; var groups = el('div', { class: 'ac-roles' }, o.groups.map(function (g) { gbox[g] = el('input', { type: 'checkbox' }); if (p.groups.indexOf(g) >= 0) gbox[g].checked = true; return el('label', { class: 'inline' }, gbox[g], ' ' + g); }));
+    function send(status) {
+      var payload = { id: p.id || null, title: title.value, author_id: author ? author.value : null, topic: topic.value, publish_on: date_.value, summary: summary.value, body: bodyT.value,
+        related_label: rl.value, related_url: ru.value, pinned: pinned.checked, status: status, groups: o.groups.filter(function (g) { return gbox[g].checked; }) };
+      api('POST', '/coach/posts', payload).then(function (r) {
+        flash = r.status === 'published' ? 'Published. It shows on the site within about a minute.' : r.status === 'review' ? 'Sent for review.' : 'Draft saved.';
+        coachEdit = null; coachTab = 'posts'; vCoach();
+      }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+    }
+    var form = el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault(); } },
+      el('p', { class: 'cp-small' }, 'Safe Sport reminder: do not name swimmers or share photos of minors without a parent’s consent, and keep posts about coaching, not individual performance.'),
+      el('label', null, 'Title', title),
+      author ? el('label', null, 'Author', author) : el('p', { class: 'cp-small' }, 'Posting as ' + (o.authors[0] ? o.authors[0].name : 'you')),
+      el('label', null, 'Topic', topic),
+      el('fieldset', null, el('legend', null, 'Who is it for? (leave all unchecked for everyone)'), groups),
+      el('label', null, 'Publish date (a published post appears on this day)', date_),
+      el('label', null, 'Summary (one or two sentences, shown in the list)', summary),
+      el('label', null, 'Post', bodyT),
+      el('p', { class: 'cp-small' }, 'Formatting: a blank line starts a new paragraph. Start lines with “- ” for bullets. Use **bold**, *italic* and [link text](https://address).'),
+      el('div', { class: 'cp-btns' }, btn('Preview', function () { preview.hidden = false; preview.replaceChildren(el('h3', null, title.value || 'Untitled'), window.NSEA_rich(bodyT.value)); }, 'ghost')), preview,
+      el('label', null, 'Related link button label (optional)', rl), el('label', null, 'Related link (optional)', ru),
+      o.editor ? el('label', { class: 'inline' }, pinned, ' Pin to the top') : null, out,
+      el('div', { class: 'cp-btns' }, btn('Save draft', function () { if (form.reportValidity()) send('draft'); }, 'ghost'),
+        o.editor ? btn('Publish', function () { if (form.reportValidity()) send('published'); }) : btn('Send for review', function () { if (form.reportValidity()) send('review'); }),
+        btn('Cancel', function () { coachEdit = null; coachTab = 'posts'; vCoach(); }, 'ghost')));
+    box.replaceChildren(el('div', { class: 'cp-panel' }, form));
+  }
+  function coachAuthors(box, o) {
+    var out = el('div', { class: 'cp-out' }), cur = null;
+    var f = {};
+    ['name', 'role', 'email', 'photo_url'].forEach(function (k) { f[k] = el('input', { maxlength: k === 'photo_url' ? 300 : 120 }); });
+    f.bio = el('textarea', { rows: 3, maxlength: 500 }); f.active = el('input', { type: 'checkbox' }); f.active.checked = true;
+    function load(a) { cur = a; f.name.value = a ? a.name : ''; f.role.value = a ? a.role : ''; f.email.value = a && a.email ? a.email : ''; f.photo_url.value = a ? a.photo_url : ''; f.bio.value = a ? a.bio : ''; f.active.checked = a ? !!a.active : true; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    var form = el('form', { class: 'cp-form', onsubmit: function (e) {
+      e.preventDefault();
+      api('POST', '/coach/authors', { id: cur ? cur.id : null, name: f.name.value, role: f.role.value, email: f.email.value, photo_url: f.photo_url.value, bio: f.bio.value, active: f.active.checked })
+        .then(function () { flash = 'Author saved.'; vCoach(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+    } },
+      el('label', null, 'Name', f.name), el('label', null, 'Role (for example Head Coach)', f.role),
+      el('label', null, 'Sign-in email (links a coach’s login to this author; they also need “Coach” access on the Admins page)', f.email),
+      el('label', null, 'Photo link (optional)', f.photo_url), el('label', null, 'Short bio (optional)', f.bio),
+      el('label', { class: 'inline' }, f.active, ' Active (can be picked as an author)'), out,
+      el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save author'), btn('Clear', function () { load(null); }, 'ghost')));
+    box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Authors (' + o.authors.length + ')'),
+      o.authors.map(function (a) { return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, a.name), a.active ? '' : ' (inactive)', el('p', { class: 'cp-small' }, (a.role || '') + (a.email ? ' · ' + a.email : ' · no login linked'))), el('div', { class: 'cp-btns' }, btn('Edit', function () { load(a); }))); })),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Add or edit an author'), form));
+  }
+  function coachTopics(box, o) {
+    var out = el('div', { class: 'cp-out' }), ta = el('textarea', { rows: 8, maxlength: 400 }, o.topics.join('\n'));
+    box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Topics'), el('p', { class: 'cp-small' }, 'One per line, up to 12. Renaming a topic does not change older posts, so they simply show no topic until you edit them.'),
+      el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault();
+        api('POST', '/content/site/coach-topics', { topics: ta.value.split('\n') }).then(function () { flash = 'Topics saved.'; vCoach(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); }); } },
+        ta, out, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save topics')))));
   }
 
   // ---------- admins ----------

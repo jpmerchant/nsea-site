@@ -45,7 +45,10 @@ export const OFFERINGS = {
   },
 };
 
+export const COACH_TOPICS = ['Technique', 'Mindset', 'Meet prep', 'Training', 'Nutrition & recovery', 'Parent tips', 'Team news'];
+
 export const defaults = () => ({
   fees: FEES,
+  'coach-topics': { topics: COACH_TOPICS },
   ...Object.fromEntries(Object.entries(OFFERINGS).map(([k, v]) => [`offering:${k}`, v])),
 });

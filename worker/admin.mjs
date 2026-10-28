@@ -3,10 +3,11 @@
 import { json, fail, sha, rand, clean, EMAIL, cookieOf, setCookie, readRequest } from './util.mjs';
 import { newMemberInvite } from './carpool.mjs';
 import { handleContentAdmin } from './content.mjs';
+import { handleCoachAdmin, isEditor } from './coach.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 
 export const MODULES = ['carpool', 'events', 'content'];
-const ROLE_NAMES = ['owner', ...MODULES];
+const ROLE_NAMES = ['owner', ...MODULES, 'coach'];
 
 // ---------- Cloudflare Access JWT ----------
 let jwksCache = { at: 0, keys: null };
@@ -102,7 +103,7 @@ export async function handleAdmin(req, env, url) {
     if (!me) return fail(401, accessOn(env) ? 'Your account is not set up as an admin.' : 'Not signed in');
     await env.DB.prepare(`UPDATE admin_users SET last_seen = datetime('now') WHERE email = ?`).bind(me.email).run();
 
-    if (method === 'GET' && path === '/me') return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, modules: MODULES.filter((m) => can(me, m)) });
+    if (method === 'GET' && path === '/me') return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, modules: [...MODULES.filter((m) => can(me, m)), ...(can(me, 'coach') || isEditor(me) ? ['coach'] : [])] });
 
     if (method === 'GET' && path === '/overview') {
       const q = (sql) => env.DB.prepare(sql).first();
@@ -177,6 +178,13 @@ export async function handleAdmin(req, env, url) {
         if (method === 'PATCH') { try { b = await req.json(); } catch { b = {}; } }
         return eventsProxy(env, me, method, (g[1] || '') + url.search, b, (m, a, d) => audit(env, me, m, a, d));
       }
+    }
+
+    // ----- coach's corner -----
+    if (path.startsWith('/coach')) {
+      if (!(can(me, 'coach') || isEditor(me))) return fail(403, 'You do not have access to Coach’s Corner.');
+      const r = await handleCoachAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d));
+      if (r) return r;
     }
 
     // ----- content module -----

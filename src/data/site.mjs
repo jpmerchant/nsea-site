@@ -169,6 +169,7 @@ export const pages = [
 
   // ------------------------------------------------------------- TRAINING ----
   { path: '/training/', type: 'hub', title: 'Training', desc: 'Tools, guides and education for swimmers and the families who support them.', status: 'rebuild' },
+  { path: '/training/coaches-corner/', type: 'page', title: 'Coach’s Corner', desc: 'Notes on technique, training and swimming life from the NSEA coaching staff.', coach: true, status: 'done' },
   { path: '/training/zones/', type: 'tool', title: 'Training Zone Cheat Sheet', desc: 'Rushton zones, with TritonWear zones mapped on.', embed: '/embeds/training-zones.html', status: 'done', from: ['/training-zone-cheat-sheet'], legacy: ['NSEASwim-KB-Repo/NSEA_Training_Zones_Cheat_Sheet.pdf'] },
   { path: '/training/rpe/', type: 'tool', title: 'RPE & Session RPE', desc: 'How hard did that feel? A guide for swimmers.', embed: '/embeds/rpe.html', status: 'done', from: ['/rpe-information'], legacy: ['content/guides/rpe-session-rpe-handout.html', 'Project: claude/rpe-session-rpe-reference.md'] },
   { path: '/training/same/', type: 'hub', title: 'S.A.M.E.', desc: 'Strength, Agility, Mobility and Education.', status: 'rebuild' },

@@ -229,3 +229,16 @@ main{padding:28px 0 64px;min-height:50vh}
 .fee-grid{display:grid;grid-template-columns:minmax(90px,1fr) repeat(3,minmax(80px,1fr));gap:8px;align-items:center;max-width:560px}
 .fee-grid input{width:100%}
 .fee-grid .h{font-size:13px;font-weight:600}
+/* Coach's Corner */
+.cc-card{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 20px;margin:0 0 14px}
+.cc-card.pinned{border-color:var(--teal)}
+.cc-card h2,.cc-card h3{margin:2px 0 6px}
+.cc-main{min-width:0;flex:1}
+.cc-photo{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:0 0 56px}
+.cc-meta{margin:0;font:500 12px var(--f-head);letter-spacing:.7px;text-transform:uppercase;color:var(--teal-dark)}
+.cc-body{margin:10px 0}
+.cc-bio{font-size:14px;color:#555;border-top:1px solid var(--line);padding-top:10px}
+.cc-filters{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+.cc-filters select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.cc-tile .cc-card{display:block}
+@media(max-width:560px){.cc-card{flex-direction:column;gap:8px}}

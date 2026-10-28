@@ -1,0 +1,72 @@
+---
+// Coach's Corner: staff blog. mode="list" = full page with filters; mode="tile" = latest post for the home page.
+// Posts come from /api/content/coach (written in the admin console). Text is inserted as DOM nodes only.
+const { mode = 'list' } = Astro.props;
+---
+<div class={'cc cc-' + mode} data-mode={mode}><p class="cp-loading">Loading…</p></div>
+<noscript><p>Coach&rsquo;s Corner needs JavaScript.</p></noscript>
+<script is:inline src="/assets/rich.js"></script>
+<script is:inline>
+(function () {
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) { if (k === 'class') n.className = attrs[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]); }
+    (function add(list) { for (var i = 0; i < list.length; i++) { var c = list[i]; if (c == null || c === false) continue; if (Array.isArray(c)) add(c); else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  function when(d) { var p = d.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0]; }
+  function meta(p) {
+    return [when(p.publish_on), p.author + (p.author_role ? ', ' + p.author_role : ''), p.topic, p.groups.length ? p.groups.join(' / ') : ''].filter(Boolean).join(' · ');
+  }
+  document.querySelectorAll('.cc').forEach(function (root) {
+    var mode = root.getAttribute('data-mode');
+    fetch('/api/content/coach').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+      var all = d.posts || [];
+      if (!all.length) { root.replaceChildren(el('p', { class: 'cp-empty' }, 'Coach’s Corner is coming soon.')); return; }
+      if (mode === 'tile') {
+        var p = all[0];
+        root.replaceChildren(el('article', { class: 'cc-card' },
+          el('p', { class: 'cc-meta' }, meta(p)),
+          el('h3', null, el('a', { href: '/training/coaches-corner/#' + p.slug }, p.title)),
+          el('p', null, p.summary || window.NSEA_plain(p.body, 220)),
+          el('p', null, el('a', { class: 'btn small', href: '/training/coaches-corner/#' + p.slug }, 'Read more'), ' ', el('a', { class: 'btn small ghost', href: '/training/coaches-corner/' }, 'All posts'))));
+        return;
+      }
+      var f = { author: '', topic: '', group: '' }, list = el('div', { class: 'cc-list' });
+      function opts(label, vals, key) {
+        return el('select', { 'aria-label': label, onchange: function (e) { f[key] = e.target.value; draw(); } }, el('option', { value: '' }, label), vals.map(function (v) { return el('option', { value: v }, v); }));
+      }
+      var authors = []; all.forEach(function (p) { if (authors.indexOf(p.author) < 0) authors.push(p.author); });
+      var topics = (d.topics || []).filter(function (t) { return all.some(function (p) { return p.topic === t; }); });
+      var groups = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'];
+      function card(p) {
+        var body = el('div', { class: 'cc-body prose', hidden: true }), open = false;
+        var toggle = el('button', { class: 'btn small', type: 'button', 'aria-expanded': 'false', onclick: function () { set(!open); } }, 'Read the post');
+        function set(v) {
+          open = v;
+          if (v && !body.firstChild) { body.appendChild(window.NSEA_rich(p.body)); if (p.related_url) body.appendChild(el('p', null, el('a', { class: 'btn', href: p.related_url }, p.related_label))); if (p.author_bio) body.appendChild(el('p', { class: 'cc-bio' }, 'About ' + p.author + ': ' + p.author_bio)); }
+          body.hidden = !v; toggle.textContent = v ? 'Close' : 'Read the post'; toggle.setAttribute('aria-expanded', String(v));
+        }
+        var c = el('article', { class: 'cc-card' + (p.pinned ? ' pinned' : ''), id: p.slug },
+          p.author_photo ? el('img', { class: 'cc-photo', src: p.author_photo, alt: '', loading: 'lazy' }) : null,
+          el('div', { class: 'cc-main' }, p.pinned ? el('span', { class: 'chip new' }, 'Pinned') : null, el('p', { class: 'cc-meta' }, meta(p)), el('h2', null, p.title),
+            p.summary ? el('p', null, p.summary) : null, body, el('p', null, toggle)));
+        c._set = set; return c;
+      }
+      function draw() {
+        var shown = all.filter(function (p) { return (!f.author || p.author === f.author) && (!f.topic || p.topic === f.topic) && (!f.group || !p.groups.length || p.groups.indexOf(f.group) >= 0); });
+        list.replaceChildren.apply(list, shown.length ? shown.map(card) : [el('p', { class: 'cp-empty' }, 'No posts match.')]);
+        openHash();
+      }
+      function openHash() {
+        var id = decodeURIComponent(location.hash.slice(1)); if (!id) return;
+        var c = document.getElementById(id); if (c && c._set) { c._set(true); c.scrollIntoView(); }
+      }
+      window.addEventListener('hashchange', openHash);
+      root.replaceChildren(el('div', { class: 'cc-filters' }, opts('All coaches', authors, 'author'), opts('All topics', topics, 'topic'), opts('All groups', groups, 'group')), list);
+      draw();
+    }).catch(function () { root.replaceChildren(el('p', { class: 'cp-empty' }, 'Coach’s Corner could not load. Please try again later.')); });
+  });
+})();
+</script>

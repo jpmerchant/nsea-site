@@ -1,6 +1,6 @@
 // Editable site content stored in D1. Public reads: /api/content/*. Admin writes go through handleContentAdmin (called from admin.mjs).
 import { json, fail, clean } from './util.mjs';
-import { defaults, FEE_GROUPS, OFFERINGS } from '../src/data/site-data-defaults.mjs';
+import { defaults, FEE_GROUPS, OFFERINGS, COACH_TOPICS } from '../src/data/site-data-defaults.mjs';
 import { publicAlumni, handleAlumniAdmin } from './alumni.mjs';
 
 export const ART = ['path', 'lanes', 'steps', 'wave', 'clock', 'star'];
@@ -16,6 +16,18 @@ export async function handleContent(req, env, url) {
     return json({ thoughts: results.map(row) }, 200, { 'cache-control': 'public, max-age=60' });
   }
   if (path === '/alumni') return publicAlumni(env);
+  if (path === '/coach') {
+    const today = new Date().toISOString().slice(0, 10);
+    const { results } = await env.DB.prepare(
+      `SELECT p.slug, p.title, p.summary, p.body, p.topic, p.groups, p.pinned, p.publish_on, p.related_label, p.related_url,
+              a.name AS author, a.role AS author_role, a.bio AS author_bio, a.photo_url AS author_photo
+         FROM coach_posts p JOIN coach_authors a ON a.id = p.author_id
+        WHERE p.status = 'published' AND p.publish_on <= ?
+        ORDER BY p.pinned DESC, p.publish_on DESC, p.id DESC LIMIT 100`).bind(today).all();
+    const st = await storedSite(env);
+    const topics = (st['coach-topics'] && st['coach-topics'].data.topics) || COACH_TOPICS;
+    return json({ posts: results.map((r) => ({ ...r, pinned: !!r.pinned, groups: r.groups ? r.groups.split(',') : [] })), topics }, 200, { 'cache-control': 'public, max-age=60' });
+  }
   if (path === '/site') return json(await mergedSite(env), 200, { 'cache-control': 'public, max-age=60' });
   return fail(404, 'Not found');
 }
@@ -43,6 +55,11 @@ function parseSite(key, b) {
     const pdf = clean(b.pdf_url, 300);
     if (pdf && !URL_OK.test(pdf)) return { error: 'The fee schedule link must start with https:// or /.' };
     return { data: { rows, note: clean(b.note, 300), pdf_url: pdf } };
+  }
+  if (key === 'coach-topics') {
+    const t = [...new Set((Array.isArray(b.topics) ? b.topics : []).map((x) => clean(x, 30)).filter(Boolean))].slice(0, 12);
+    if (!t.length) return { error: 'Keep at least one topic.' };
+    return { data: { topics: t } };
   }
   const m = key.match(/^offering:(.+)$/);
   if (m && OFFERINGS[m[1]]) {
@@ -99,7 +116,7 @@ export async function handleContentAdmin(env, me, method, path, body, audit) {
     if (r.error) return fail(400, r.error);
     await env.DB.prepare(`INSERT INTO site_data (key, json, updated_by) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET json = excluded.json, updated_at = datetime('now'), updated_by = excluded.updated_by`)
       .bind(key, JSON.stringify(r.data), me.email).run();
-    await audit('content', 'edit ' + (key === 'fees' ? 'fees' : 'program dates'), key);
+    await audit('content', 'edit ' + (key === 'fees' ? 'fees' : key === 'coach-topics' ? 'coach topics' : 'program dates'), key);
     return json({ ok: true });
   }
   sm = path.match(/^\/content\/site\/([^/]+)\/reset$/);

@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import CoachCorner from '../components/CoachCorner.astro';
 import HubGrid from '../components/HubGrid.astro';
 import { SITE, pages } from '../data/site.mjs';
 import { topLevel, getPage } from '../lib/nav.mjs';
@@ -44,5 +45,5 @@ const featured = ['/times/standards/check-my-time/', '/meets/calendar/', '/times
   </script>
 
   <div class="section-title">Coach&rsquo;s Corner</div>
-  <div class="prose"><p>Coach&rsquo;s Corner is coming soon.</p></div>
+  <CoachCorner mode="tile" />
 </Base>
