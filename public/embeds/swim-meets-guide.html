@@ -104,6 +104,17 @@
     background:var(--teal);
     flex-shrink:0;
   }
+  .checklist .more{
+    margin:14px 0 0;
+    font-size:14px;
+    color:var(--gray);
+  }
+  .checklist .more a{
+    color:var(--teal-dark);
+    font-weight:600;
+    text-decoration:none;
+  }
+  .checklist .more a:hover{ text-decoration:underline; }
   .cards{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(min(310px, 100%), 1fr));
@@ -227,6 +238,7 @@
       <li>Team Caps</li>
       <li>Team Clothing</li>
     </ul>
+    <p class="more">Not sure what to wear on deck? See the <a href="/meets/uniform/" target="_top">Meet Uniform guide</a>.</p>
   </div>
   <div class="cards">
     <div class="card">
