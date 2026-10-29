@@ -1,61 +1,45 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base target="_top"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"><style></style></head><body style="margin:0"><style>:root{
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<title>Guide to Swim Meets | NSEA Swim</title>
+<style>
+  :root{
     --teal:#008675;
-    --teal-dark:#00695a;
+    --teal-dark:#006A5C;
     --coral:#ee492f;
+    --coral-light:#FCE7E3;
     --gray:#676d70;
-    --light-gray:#f4f6f6;
-    --border:#e2e6e6;
+    --gray-light:#9BA0A3;
+    --line:#E4E7E8;
+    --ink:#1B2325;
+    --panel:#FAFBFB;
+    --white:#FFFFFF;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
-    font-family:'Helvetica Neue', Arial, sans-serif;
-    background:var(--light-gray);
-    color:#222;
+    font-family:'Inter', Arial, sans-serif;
+    background:var(--panel);
+    color:var(--ink);
   }
-  header{
-    background:var(--teal);
-    color:#fff;
-    padding:22px 28px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    flex-wrap:wrap;
-    gap:10px;
-    border-bottom:5px solid var(--coral);
-  }
-  header .brand{
-    display:flex;
-    flex-direction:column;
-  }
-  header .brand .eyebrow{
-    text-transform:uppercase;
-    letter-spacing:1.5px;
-    font-size:12px;
-    font-weight:600;
-    color:#cdece7;
-    margin-bottom:4px;
-  }
-  header .brand h1{
-    margin:0;
-    font-size:24px;
-    font-weight:700;
-    letter-spacing:.3px;
-  }
-  header .subtitle{
-    font-size:14px;
-    color:#e4f4f1;
-    max-width:340px;
-    text-align:right;
+  h1, h2, h3{
+    font-family:'Oswald', Arial, sans-serif;
   }
   main{
-    max-width:1100px;
+    max-width:1200px;
     margin:0 auto;
     padding:28px 20px 60px;
   }
   .intro{
     background:#fff;
-    border:1px solid var(--border);
+    border:1px solid var(--line);
     border-left:6px solid var(--teal);
     border-radius:6px;
     padding:18px 22px;
@@ -64,7 +48,8 @@
   .intro h2{
     margin:0 0 6px;
     color:var(--teal-dark);
-    font-size:19px;
+    font-size:20px;
+    font-weight:600;
   }
   .intro p{
     margin:0;
@@ -80,7 +65,7 @@
   .intro a:hover{ text-decoration:underline; }
   .checklist{
     background:#fff;
-    border:1px solid var(--border);
+    border:1px solid var(--line);
     border-radius:10px;
     padding:18px 22px;
     margin-bottom:24px;
@@ -88,17 +73,19 @@
   }
   .checklist h2{
     margin:0 0 12px;
-    font-size:15px;
+    font-size:14px;
+    font-weight:600;
     text-transform:uppercase;
-    letter-spacing:.5px;
+    letter-spacing:.8px;
     color:var(--gray);
+    font-family:'Space Mono', monospace;
   }
   .checklist ul{
     margin:0;
     padding:0;
     list-style:none;
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(min(150px, 100%), 1fr));
     gap:10px 16px;
   }
   .checklist li{
@@ -107,7 +94,7 @@
     gap:8px;
     font-size:14px;
     font-weight:600;
-    color:#333;
+    color:var(--ink);
   }
   .checklist li::before{
     content:"";
@@ -119,12 +106,12 @@
   }
   .cards{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(310px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(min(310px, 100%), 1fr));
     gap:18px;
   }
   .card{
     background:#fff;
-    border:1px solid var(--border);
+    border:1px solid var(--line);
     border-radius:10px;
     padding:20px 22px;
     box-shadow:0 2px 8px rgba(0,0,0,0.05);
@@ -132,7 +119,7 @@
     flex-direction:column;
   }
   .card.highlight{
-    border:1px solid #f6c8bd;
+    border:1px solid var(--coral-light);
     border-top:4px solid var(--coral);
   }
   .card .icon{
@@ -141,7 +128,8 @@
   }
   .card h3{
     margin:0 0 8px;
-    font-size:16px;
+    font-size:17px;
+    font-weight:600;
     color:var(--teal-dark);
   }
   .card.highlight h3{
@@ -151,10 +139,13 @@
     margin:0;
     font-size:14px;
     line-height:1.6;
-    color:#333;
+    color:var(--ink);
   }
   .card p strong{
     color:var(--coral);
+  }
+  .card p + p{
+    margin-top:10px;
   }
   .card.full{
     grid-column:1 / -1;
@@ -173,8 +164,8 @@
     margin-bottom:8px;
   }
   .card.with-image .diagram{
-    background:var(--light-gray);
-    border:1px solid var(--border);
+    background:var(--panel);
+    border:1px solid var(--line);
     border-radius:8px;
     padding:10px;
   }
@@ -188,6 +179,7 @@
     font-size:12px;
     color:var(--gray);
     text-align:center;
+    font-family:'Space Mono', monospace;
   }
   @media (max-width: 720px){
     .card.with-image{
@@ -197,87 +189,105 @@
   .note{
     margin-top:28px;
     background:#fff;
-    border:1px solid var(--border);
+    border:1px solid var(--line);
     border-left:6px solid var(--coral);
     border-radius:6px;
     padding:16px 22px;
     font-size:14px;
-    color:#333;
+    color:var(--ink);
     line-height:1.6;
   }
   .note strong{ color:var(--coral); }
-  footer{
-    text-align:center;
-    padding:22px 18px;
-    font-size:12px;
-    color:var(--gray);
-    border-top:1px solid var(--border);
+  @media print{
+    @page{ size:letter; margin:0.5in; }
+    .card, .checklist, .intro, .note{ break-inside:avoid; }
   }
-  footer strong{ color:var(--teal-dark); }
-  footer .contact{
-    margin-top:6px;
-  }
-  @media (max-width: 700px){
-    header{ flex-direction:column; align-items:flex-start; }
-    header .subtitle{ text-align:left; }
-  }</style> <div class="intro"> <h2>New to Meets? Start Here.</h2> 
- <p>The following is a brief guide to help those who may be attending a USA Swimming club meet. If you have additional questions or concerns, please email us at <a href="mailto:team@nseaswim.com">team@nseaswim.com</a>.</p> 
-</div> 
- <div class="checklist"> <h2>Meet Bag Checklist</h2> 
- <ul> <li>Sharpie marker</li> 
- <li>Highlighter</li> 
- <li>Water bottle</li> 
- <li>Healthy snacks</li> 
- <li>Stadium chairs (Parents)</li> 
- <li>Deck Chair (Swimmer)</li> 
- <li>Multiple towels</li> 
- <li>Team Suit</li> 
- <li>Team Caps</li> 
- <li>Team Clothing</li> 
-</ul> 
-</div> 
- <div class="cards"> <div class="card"> <div class="icon">🎒</div> 
- <h3>What to Bring</h3> 
- <p>A sharpie, highlighter, water, snacks, stadium chairs, cash (to buy heat sheets), and a camera to take pictures of your swimmer. Keep in mind the pool area will be warm so kids in swimsuits are comfortable — dress yourself in layers, as it can be hot inside!</p> 
-</div> 
- <div class="card"> <div class="icon">📋</div> 
- <h3>Heat Sheets</h3> 
- <p>Once you get to the meet, buy a heat sheet — a packet listing all the races, swimmers, times, and heats during the meet. Someone is typically selling them in the lobby of each pool. Heat sheets show your child's events and their heat and lane. Bring a highlighter so you can mark your swimmer's name and follow along.</p> 
-</div> 
- <div class="card with-image full"> <div class="text"> <div class="icon">✍️</div> 
- <h3>Writing on Arms</h3> 
- <p>Once you have a heat sheet, find all of your swimmer's events, heats, and lanes and write them on their arm with your Sharpie. This way the swimmer knows when to report to the block. A good rule of thumb: right arm on day one, left arm on day two, so you're not writing over the previous day's events. Complete this before sending your swimmer on deck — only swimmers, coaches, officials, and volunteers are allowed there.</p> 
-</div> 
- <div class="diagram"><img src="/assets/arm-marking-diagram.png" alt="Diagram showing how to mark a swimmer's arm with event, heat, lane, event name, and relay position" onerror="handleImageLoadError(this)"> <div class="caption">Event · Heat · Lane, then event name and relay position (if applicable)</div> 
-</div> 
-</div> 
- <div class="card"> <div class="icon">⏱️</div> 
- <h3>When Is It My Turn?</h3> 
- <p>Most year-round meets don't have "kid pushers" or a "clerk of course" like summer league meets. Swimmers need to pay attention to what event is being called versus the next number on their arm. Coaches can help, but learning to track the meet and take responsibility is an important part of a swimmer's development.</p> 
-</div> 
- <div class="card"> <div class="icon">🪑</div> 
- <h3>Where Does My Swimmer Sit?</h3> 
- <p>Parents typically sit in bleachers; swimmers may want to bring chairs if they'll be sitting throughout the meet. The coaching staff recommends swimmers stay off their feet and rest between events, and stay on deck rather than in the stands.</p> 
-</div> 
- <div class="card"> <div class="icon">🍎</div> 
- <h3>Snacks</h3> 
- <p>Most sessions last about four hours, so your swimmer will need food to fuel their effort. Small sandwiches with fresh or dried fruit are easy to pack, store, and carry. Send a refillable water bottle, and consider a sports drink like Gatorade, Powerade, or Propel during the session.</p> 
-</div> 
- <div class="card"> <div class="icon">🩹</div> 
- <h3>Towels</h3> 
- <p>Bring more than one towel. Swimmers dry off after warming up and after each event, so a dry, fresh towel later in the meet — or for showering afterward — makes a big difference.</p> 
-</div> 
- <div class="card highlight full"> <div class="icon">🤝</div> 
- <h3>Relays</h3> 
- <p>Many of our meets include relays. Relay swimmers are chosen by the coaching staff, usually based on the fastest swimmers in each age group as shown by the computer. Not everyone will swim on a relay at every meet. <strong>It is VERY IMPORTANT that each swimmer check with the coaches before leaving each session</strong> 
-to find out if they're needed for a relay. Swimmers sometimes leave without knowing they're on one, which forces the whole relay to be reworked to cover the missing swimmer. Please remember: check out with a coach before you leave each session!</p> 
-</div> 
- <div class="card full"> <div class="icon">🚩</div> 
- <h3>Disqualifications (DQs)</h3> 
- <p>DQ doesn't stand for Dairy Queen — and, most importantly, it isn't fatal. It stands for disqualification, and beginning swimmers and world-class athletes alike receive them. There are a number of reasons a swimmer could be disqualified in each stroke. Officials give a "DQ" sheet to the coaches explaining why, so the coach can talk with the swimmer about what happened and how to correct it for the next swim in that event or stroke.</p> 
-</div> 
-</div> 
- <div class="note"> <strong>Questions?</strong> 
-Reach out any time at <a href="mailto:team@nseaswim.com" style="color:inherit;">team@nseaswim.com</a> 
-or 910-338-9455.</div> 
-</body></html>
+</style>
+</head>
+<body>
+<main>
+  <div class="intro">
+    <h2>New to Meets? Start Here.</h2>
+    <p>
+      The following is a brief guide to help those who may be attending a USA Swimming club meet. If you have additional questions or concerns, please email us at
+      <a href="mailto:team@nseaswim.com">team@nseaswim.com</a>.
+    </p>
+  </div>
+  <div class="checklist">
+    <h2>Meet Bag Checklist</h2>
+    <ul>
+      <li>Sharpie marker</li>
+      <li>Highlighter</li>
+      <li>Water bottle</li>
+      <li>Healthy snacks</li>
+      <li>Stadium chairs (Parents)</li>
+      <li>Deck Chair (Swimmer)</li>
+      <li>Multiple towels</li>
+      <li>Team Suit</li>
+      <li>Team Caps</li>
+      <li>Team Clothing</li>
+    </ul>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <div class="icon">🎒</div>
+      <h3>What to Bring</h3>
+      <p>A sharpie, highlighter, water, snacks, stadium chairs, cash (to buy heat sheets), and a camera to take pictures of your swimmer. Keep in mind the pool area will be warm so kids in swimsuits are comfortable — dress yourself in layers, as it can be hot inside!</p>
+    </div>
+    <div class="card">
+      <div class="icon">📋</div>
+      <h3>Heat Sheets</h3>
+      <p>Once you get to the meet, buy a heat sheet — a packet listing all the races, swimmers, times, and heats during the meet. Someone is typically selling them in the lobby of each pool. Heat sheets show your child's events and their heat and lane. Bring a highlighter so you can mark your swimmer's name and follow along.</p>
+    </div>
+    <div class="card with-image full">
+      <div class="text">
+        <div class="icon">✍️</div>
+        <h3>Writing on Arms</h3>
+        <p>Once you have a heat sheet, find all of your swimmer's events, heats, and lanes and write them on their arm with your Sharpie. This way the swimmer knows when to report to the block. A good rule of thumb: right arm on day one, left arm on day two, so you're not writing over the previous day's events. Complete this before sending your swimmer on deck — only swimmers, coaches, officials, and volunteers are allowed there.</p>
+      </div>
+      <div class="diagram">
+        <img src="/assets/arm-marking-diagram.png" alt="Diagram showing how to mark a swimmer's arm with event, heat, lane, event name, and relay position">
+        <div class="caption">Event · Heat · Lane, then event name and relay position (if applicable)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="icon">⏱️</div>
+      <h3>When Is It My Turn?</h3>
+      <p>Most year-round meets don't have "kid pushers" or a "clerk of course" like summer league meets. Swimmers need to pay attention to what event is being called versus the next number on their arm. Coaches can help, but learning to track the meet and take responsibility is an important part of a swimmer's development.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🪑</div>
+      <h3>Where Does My Swimmer Sit?</h3>
+      <p>Parents typically sit in bleachers; swimmers may want to bring chairs if they'll be sitting throughout the meet. The coaching staff recommends swimmers stay off their feet and rest between events, and stay on deck rather than in the stands.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🍎</div>
+      <h3>Snacks</h3>
+      <p>Most sessions last about four hours, so your swimmer will need food to fuel their effort. Small sandwiches with fresh or dried fruit are easy to pack, store, and carry. Send a refillable water bottle, and consider a sports drink like Gatorade, Powerade, or Propel during the session.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🩹</div>
+      <h3>Towels</h3>
+      <p>Bring more than one towel. Swimmers dry off after warming up and after each event, so a dry, fresh towel later in the meet — or for showering afterward — makes a big difference.</p>
+    </div>
+    <div class="card highlight full">
+      <div class="icon">📵</div>
+      <h3>Phones on Deck: Heads Up, Eyes on the Pool</h3>
+      <p>Swimmers do not need to have their phones out on the pool deck. This is an expectation our coaching staff will continue to enforce.</p>
+      <p>We recognize that some swimmers use music to get focused and "lock in" before their races. That's one thing. Playing Clash Royale or Minecraft, watching videos, or scrolling through social media is another. <strong>The latter will not be tolerated.</strong> If a swimmer is using their phone inappropriately during the meet, coaches will collect it and return it directly to a parent or guardian.</p>
+      <p>Our goal is simple: swimmers should be engaged in the meet, supporting their teammates, and focused on their performances. Your teammates notice who is at the end of the lane cheering for them, and your own race is coming up fast. Unlike your game, it has no pause button.</p>
+    </div>
+    <div class="card highlight full">
+      <div class="icon">🤝</div>
+      <h3>Relays</h3>
+      <p>Many of our meets include relays. Relay swimmers are chosen by the coaching staff, usually based on the fastest swimmers in each age group as shown by the computer. Not everyone will swim on a relay at every meet. <strong>It is VERY IMPORTANT that each swimmer check with the coaches before leaving each session</strong> to find out if they're needed for a relay. Swimmers sometimes leave without knowing they're on one, which forces the whole relay to be reworked to cover the missing swimmer. Please remember: check out with a coach before you leave each session!</p>
+    </div>
+    <div class="card full">
+      <div class="icon">🚩</div>
+      <h3>Disqualifications (DQs)</h3>
+      <p>DQ doesn't stand for Dairy Queen — and, most importantly, it isn't fatal. It stands for disqualification, and beginning swimmers and world-class athletes alike receive them. There are a number of reasons a swimmer could be disqualified in each stroke. Officials give a "DQ" sheet to the coaches explaining why, so the coach can talk with the swimmer about what happened and how to correct it for the next swim in that event or stroke.</p>
+    </div>
+  </div>
+</main>
+</body>
+</html>
