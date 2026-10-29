@@ -1,0 +1,42 @@
+---
+// Athlete Spotlights archive. Spotlights come from /api/content/spotlights (written in the admin console).
+// Text is inserted as DOM nodes only. Athletes are minors: first names only, and only entries the family has OK'd are ever returned.
+---
+<div class="sp" id="sp"><p class="cp-loading">Loading…</p></div>
+<noscript><p>The spotlights need JavaScript.</p></noscript>
+<script is:inline src="/assets/rich.js"></script>
+<script is:inline>
+(function () {
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) { if (k === 'class') n.className = attrs[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]); }
+    (function add(list) { for (var i = 0; i < list.length; i++) { var c = list[i]; if (c == null || c === false) continue; if (Array.isArray(c)) add(c); else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  function when(d) { var p = d.split('-'); return MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0]; }
+  var root = document.getElementById('sp');
+  fetch('/api/content/spotlights').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+    var all = d.spotlights || [];
+    if (!all.length) { root.replaceChildren(el('p', { class: 'cp-empty' }, 'Our first athlete spotlight is coming soon.')); return; }
+    function card(s) {
+      var body = el('div', { class: 'cc-body prose', hidden: true }), open = false;
+      var toggle = el('button', { class: 'btn small', type: 'button', 'aria-expanded': 'false', onclick: function () { set(!open); } }, 'Read the spotlight');
+      function set(v) {
+        open = v;
+        if (v && !body.firstChild) body.appendChild(window.NSEA_rich(s.body));
+        body.hidden = !v; toggle.textContent = v ? 'Close' : 'Read the spotlight'; toggle.setAttribute('aria-expanded', String(v));
+      }
+      var c = el('article', { class: 'cc-card sp-card', id: s.slug },
+        s.photo_url ? el('img', { class: 'sp-photo', src: s.photo_url, alt: s.photo_alt || '', loading: 'lazy' }) : null,
+        el('div', { class: 'cc-main' },
+          el('p', { class: 'cc-meta' }, [when(s.publish_on), s.athlete, s.group_name].filter(Boolean).join(' · ')),
+          el('h2', null, s.title), s.summary ? el('p', null, s.summary) : null, body, el('p', null, toggle)));
+      c._set = set; return c;
+    }
+    function openHash() { var id = decodeURIComponent(location.hash.slice(1)); if (!id) return; var c = document.getElementById(id); if (c && c._set) { c._set(true); c.scrollIntoView(); } }
+    root.replaceChildren.apply(root, all.map(card));
+    window.addEventListener('hashchange', openHash); openHash();
+  }).catch(function () { root.replaceChildren(el('p', { class: 'cp-empty' }, 'The spotlights could not load. Please try again later.')); });
+})();
+</script>

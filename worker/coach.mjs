@@ -2,7 +2,7 @@
 import { json, fail, clean } from './util.mjs';
 import { COACH_TOPICS } from '../src/data/site-data-defaults.mjs';
 
-const GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'];
+export const GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'];
 const STATUS = ['draft', 'review', 'published'];
 const URL_OK = /^(https?:\/\/|\/)[^\s]*$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

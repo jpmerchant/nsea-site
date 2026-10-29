@@ -185,14 +185,145 @@
     }).catch(function (e) { fail(box, e); });
   }
 
+  function vSpotlights(box) {
+    api('GET', '/content/spotlights').then(function (o) {
+      var cur = null, out = el('div', { class: 'cp-out' }), preview = el('div', { class: 'cp-panel prose', hidden: true });
+      var f = {
+        title: el('input', { required: true, maxlength: 120 }),
+        athlete: el('input', { required: true, maxlength: 40, placeholder: 'First name, e.g. Mia (or Mia K.)' }),
+        group_name: el('select', null, el('option', { value: '' }, 'No group'), o.groups.map(function (g) { return el('option', { value: g }, g); })),
+        publish_on: el('input', { type: 'date', required: true, value: o.today }),
+        summary: el('textarea', { rows: 2, maxlength: 300 }),
+        body: el('textarea', { rows: 12, maxlength: 8000, required: true }),
+        photo_url: el('input', { maxlength: 300, placeholder: 'https://… or /assets/…' }),
+        photo_alt: el('input', { maxlength: 160, placeholder: 'Describe the photo for screen readers (no full names)' }),
+        family_ok: el('input', { type: 'checkbox' })
+      };
+      function load(s) {
+        cur = s;
+        f.title.value = s ? s.title : ''; f.athlete.value = s ? s.athlete : ''; f.group_name.value = s ? s.group_name : '';
+        f.publish_on.value = s ? s.publish_on : o.today; f.summary.value = s ? s.summary : ''; f.body.value = s ? s.body : '';
+        f.photo_url.value = s ? s.photo_url : ''; f.photo_alt.value = s ? s.photo_alt : ''; f.family_ok.checked = s ? !!s.family_ok : false;
+        out.replaceChildren(); preview.hidden = true;
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' }); f.title.focus();
+      }
+      function send(status) {
+        api('POST', '/content/spotlights', { id: cur ? cur.id : null, status: status, title: f.title.value, athlete: f.athlete.value, group_name: f.group_name.value,
+          publish_on: f.publish_on.value, summary: f.summary.value, body: f.body.value, photo_url: f.photo_url.value, photo_alt: f.photo_alt.value, family_ok: f.family_ok.checked })
+          .then(function (r) { flash = r.status === 'published' ? 'Published. It shows on the site within about a minute.' : 'Draft saved.'; vContent(); })
+          .catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+      }
+      var form = el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault(); } },
+        el('p', { class: 'cp-small' }, 'These athletes are minors. Use first names only (add a last initial if two share one), get the family’s OK first, and only use photos the family has agreed to share.'),
+        el('label', null, 'Title', f.title), el('label', null, 'Athlete', f.athlete), el('label', null, 'Group', f.group_name),
+        el('label', null, 'Publish date (a published spotlight appears on this day)', f.publish_on),
+        el('label', null, 'Summary (one or two sentences, shown in the list)', f.summary),
+        el('label', null, 'Spotlight', f.body),
+        el('p', { class: 'cp-small' }, 'Formatting: a blank line starts a new paragraph. Start lines with “- ” for bullets. Use **bold**, *italic* and [link text](https://address).'),
+        el('div', { class: 'cp-btns' }, btn('Preview', function () { preview.hidden = false; preview.replaceChildren(el('h3', null, f.title.value || 'Untitled'), window.NSEA_rich(f.body.value)); }, 'ghost')), preview,
+        el('label', null, 'Photo link (optional)', f.photo_url), el('label', null, 'Photo description (optional)', f.photo_alt),
+        el('label', { class: 'inline' }, f.family_ok, ' Family OK to feature (required to publish)'), out,
+        el('div', { class: 'cp-btns' }, btn('Save draft', function () { if (form.reportValidity()) send('draft'); }, 'ghost'),
+          btn('Publish', function () { if (form.reportValidity()) send('published'); }), btn('Clear', function () { load(null); }, 'ghost')));
+      function post(path, body, okMsg) { api('POST', path, body || {}).then(function () { flash = okMsg; vContent(); }).catch(function (e) { alert(e.message); }); }
+      box.replaceChildren(
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Athlete Spotlights'),
+          el('p', { class: 'cp-small' }, 'Write a spotlight once. When published it joins the Athlete Spotlights page on the site, and the weekly newsletter picks the newest one that has not run yet. After it runs, mark it “used in newsletter” so it is not repeated.'), form),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'All spotlights (' + o.spotlights.length + ')'),
+          o.spotlights.length ? o.spotlights.map(function (s) {
+            var pub = s.status === 'published';
+            return el('div', { class: 'cp-row' },
+              el('div', null, el('strong', null, s.title), ' · ' + s.athlete + (s.group_name ? ' · ' + s.group_name : ''),
+                el('p', { class: 'cp-small' }, (pub ? (s.publish_on > o.today ? 'Scheduled for ' : 'Published ') : 'Draft · ') + s.publish_on + (s.family_ok ? '' : ' · family OK not ticked') + (s.newsletter_on ? ' · ran in newsletter ' + s.newsletter_on : ' · not in a newsletter yet'))),
+              el('div', { class: 'cp-btns' }, btn('Edit', function () { load(s); }),
+                pub ? btn('Unpublish', function () { post('/content/spotlights/' + s.id + '/unpublish', {}, 'Moved to drafts.'); }, 'ghost') : btn('Publish', function () { post('/content/spotlights/' + s.id + '/publish', {}, 'Published. It shows on the site within about a minute.'); }),
+                s.newsletter_on ? btn('Clear “used”', function () { post('/content/spotlights/' + s.id + '/unused', {}, 'Marked as not used.'); }, 'ghost') : btn('Used in newsletter', function () { post('/content/spotlights/' + s.id + '/used', {}, 'Marked as used in the newsletter.'); }, 'ghost'),
+                btn('Delete', function () { if (confirm('Delete “' + s.title + '”?')) post('/content/spotlights/' + s.id + '/delete', {}, 'Spotlight deleted.'); }, 'ghost')));
+          }) : el('p', { class: 'cp-empty' }, 'No spotlights yet. Add the first one above.')));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  var recAward = '', recPeriod = '';
+  function vRecognition(box) {
+    api('GET', '/content/recognition').then(function (o) {
+      function post(path, body, okMsg) { api('POST', path, body || {}).then(function () { flash = okMsg; vContent(); }).catch(function (e) { alert(e.message); }); }
+      var awardName = {}; o.awards.forEach(function (a) { awardName[a.id] = a.name; });
+      // --- awards ---
+      var aCur = null, aOut = el('div', { class: 'cp-out' });
+      var af = { name: el('input', { required: true, maxlength: 60 }), description: el('input', { maxlength: 240 }), sort: el('input', { type: 'number', min: 0, max: 999, value: '0' }), active: el('input', { type: 'checkbox' }) };
+      af.active.checked = true;
+      function loadAward(a) { aCur = a; af.name.value = a ? a.name : ''; af.description.value = a ? a.description : ''; af.sort.value = a ? a.sort : 0; af.active.checked = a ? !!a.active : true; aForm.scrollIntoView({ behavior: 'smooth', block: 'center' }); af.name.focus(); }
+      var aForm = el('form', { class: 'cp-form', onsubmit: function (e) {
+        e.preventDefault();
+        api('POST', '/content/recognition/awards', { id: aCur ? aCur.id : null, name: af.name.value, description: af.description.value, sort: af.sort.value, active: af.active.checked })
+          .then(function () { flash = 'Award saved.'; vContent(); }).catch(function (err) { aOut.replaceChildren(msg('err', err.message)); });
+      } }, el('label', null, 'Award name', af.name), el('label', null, 'Short description (optional)', af.description),
+        el('label', null, 'Order on the site (lowest first)', af.sort), el('label', { class: 'inline' }, af.active, ' Show on the site'), aOut,
+        el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save award'), btn('Clear', function () { loadAward(null); }, 'ghost')));
+      // --- add a month's list ---
+      var rOut = el('div', { class: 'cp-out' }), rPrev = el('div', { class: 'cp-out' });
+      var rf = {
+        award: el('select', { required: true }, el('option', { value: '' }, 'Choose an award'), o.awards.map(function (a) { return el('option', { value: a.id, selected: String(a.id) === String(recAward) ? 'selected' : null }, a.name + (a.active ? '' : ' (inactive)')); })),
+        period: el('input', { required: true, pattern: '\\d{4}-(0[1-9]|1[0-2])', maxlength: 7, value: recPeriod || o.now, placeholder: o.now }),
+        group: el('select', null, el('option', { value: '' }, 'No group'), o.groups.map(function (g) { return el('option', { value: g }, g); })),
+        text: el('textarea', { rows: 8, required: true, placeholder: 'One athlete per line, first names only.\nMia\nJo x3\nAva, 4' })
+      };
+      function payload(preview) { return { award_id: rf.award.value, period: rf.period.value, group_name: rf.group.value, text: rf.text.value, preview: !!preview }; }
+      var rForm = el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault(); } },
+        el('label', null, 'Award', rf.award), el('label', null, 'Month (YYYY-MM)', rf.period), el('label', null, 'Group for these athletes (optional)', rf.group),
+        el('label', null, 'Names', rf.text),
+        el('p', { class: 'cp-small' }, 'Add a count after a name with “x3”, “, 3” or “(3)” when it matters (for example sessions attended); it feeds the running totals. Pasting a name that is already there for that month updates it instead of adding it twice.'),
+        rPrev, rOut,
+        el('div', { class: 'cp-btns' }, btn('Check the list', function () {
+          if (!rForm.reportValidity()) return;
+          api('POST', '/content/recognition/entries', payload(true)).then(function (r) {
+            rPrev.replaceChildren(el('p', { class: 'cp-small' }, r.entries.length + ' athlete(s): ' + r.entries.map(function (x) { return x.athlete + (x.count != null ? ' ×' + x.count : ''); }).join(', ')),
+              r.bad.length ? msg('err', 'Skipped (not a first name): ' + r.bad.join(' | ')) : null);
+          }).catch(function (err) { rPrev.replaceChildren(msg('err', err.message)); });
+        }, 'ghost'), btn('Save list', function () {
+          if (!rForm.reportValidity()) return;
+          recAward = rf.award.value; recPeriod = rf.period.value;
+          api('POST', '/content/recognition/entries', payload(false)).then(function (r) {
+            flash = r.added + ' added, ' + r.updated + ' updated.' + (r.bad.length ? ' Skipped: ' + r.bad.join(' | ') : ''); vContent();
+          }).catch(function (err) { rOut.replaceChildren(msg('err', err.message)); });
+        })));
+      // --- browse + running totals ---
+      var viewAward = el('select', { 'aria-label': 'Award', onchange: function (e) { recAward = e.target.value; vContent(); } }, el('option', { value: '' }, 'All awards'), o.awards.map(function (a) { return el('option', { value: a.id, selected: String(a.id) === String(recAward) ? 'selected' : null }, a.name); }));
+      var shown = o.entries.filter(function (e) { return !recAward || String(e.award_id) === String(recAward); });
+      var tot = {};
+      shown.forEach(function (e) { if (e.hidden) return; var k = e.award_id + '|' + e.athlete.toLowerCase(); var t = tot[k] || (tot[k] = { award: e.award_id, athlete: e.athlete, months: 0, sum: 0 }); t.months++; t.sum += e.count || 0; });
+      var totList = Object.keys(tot).map(function (k) { return tot[k]; }).sort(function (a, b) { return b.months - a.months || b.sum - a.sum || (a.athlete < b.athlete ? -1 : 1); });
+      var periods = []; shown.forEach(function (e) { if (periods.indexOf(e.period) < 0) periods.push(e.period); });
+      box.replaceChildren(
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Recognition'),
+          el('p', { class: 'cp-small' }, 'Create an award once, then paste each month’s names under it. The site shows the latest month for every award, with running totals by season. Athletes are minors: first names only. To remove one athlete without losing the record, hide them.')),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Awards (' + o.awards.length + ')'),
+          o.awards.length ? o.awards.map(function (a) {
+            return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, a.name), a.active ? '' : ' (hidden from the site)', el('p', { class: 'cp-small' }, (a.description ? a.description + ' · ' : '') + a.entries + ' entries')),
+              el('div', { class: 'cp-btns' }, btn('Edit', function () { loadAward(a); }), a.entries ? null : btn('Delete', function () { if (confirm('Delete the award “' + a.name + '”?')) post('/content/recognition/awards/' + a.id + '/delete', {}, 'Award deleted.'); }, 'ghost')));
+          }) : el('p', { class: 'cp-empty' }, 'No awards yet. Add the first one below.'), aForm),
+        o.awards.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Add a month’s list'), rForm) : null,
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Browse'), el('div', { class: 'cp-filters' }, viewAward),
+          el('h4', null, 'Running totals' + (recAward && awardName[recAward] ? ' · ' + awardName[recAward] : '')),
+          totList.length ? totList.slice(0, 40).map(function (t) { return el('p', { class: 'cp-small' }, el('strong', null, t.athlete), (recAward ? '' : ' · ' + awardName[t.award]) + ' · ' + t.months + ' month' + (t.months === 1 ? '' : 's') + (t.sum ? ' · ' + t.sum + ' total' : '')); }) : el('p', { class: 'cp-empty' }, 'Nothing recorded yet.'),
+          periods.slice(0, 12).map(function (p) {
+            return el('div', null, el('h4', null, p), shown.filter(function (e) { return e.period === p; }).map(function (e) {
+              return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, e.athlete), (e.count != null ? ' ×' + e.count : '') + (recAward ? '' : ' · ' + awardName[e.award_id]) + (e.group_name ? ' · ' + e.group_name : '') + (e.hidden ? ' (hidden)' : '')),
+                el('div', { class: 'cp-btns' }, btn(e.hidden ? 'Show' : 'Hide', function () { post('/content/recognition/entries/' + e.id + '/' + (e.hidden ? 'show' : 'hide'), {}, e.hidden ? 'Showing again.' : 'Hidden from the site.'); }, 'ghost'),
+                  btn('Delete', function () { if (confirm('Delete ' + e.athlete + ' from ' + p + '?')) post('/content/recognition/entries/' + e.id + '/delete', {}, 'Deleted.'); }, 'ghost')));
+            }));
+          }), periods.length > 12 ? el('p', { class: 'cp-small' }, 'Showing the 12 most recent months.') : null));
+    }).catch(function (e) { fail(box, e); });
+  }
+
   var ctab = 'thoughts';
   function vContent() {
     var box = el('div', null, loading());
-    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics'], ['alumni', 'Alumni results']];
+    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics'], ['spotlights', 'Athlete Spotlights'], ['recognition', 'Recognition'], ['alumni', 'Alumni results']];
     shell(el('div', null, el('h2', null, 'Content'),
       el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': ctab === t[0] ? 'page' : 'false', onclick: function () { ctab = t[0]; vContent(); } }, t[1]); })),
       box));
-    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms, alumni: vAlumni })[ctab](box);
+    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms, spotlights: vSpotlights, recognition: vRecognition, alumni: vAlumni })[ctab](box);
   }
   function siteSave(key, payload, out, okMsg) {
     api('POST', '/content/site/' + encodeURIComponent(key), payload).then(function () { flash = okMsg; vContent(); })
