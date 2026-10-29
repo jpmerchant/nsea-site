@@ -1,0 +1,48 @@
+---
+// Athlete Recognition: the latest month for every award, with running totals by season.
+// Data comes from /api/content/recognition (written in the admin console). Text is inserted as DOM nodes only.
+// Athletes are minors: first names only; hidden entries are never returned.
+---
+<div class="rc" id="rc"><p class="cp-loading">Loading…</p></div>
+<noscript><p>Recognition needs JavaScript.</p></noscript>
+<script is:inline>
+(function () {
+  var MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) { if (k === 'class') n.className = attrs[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]); else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]); }
+    (function add(list) { for (var i = 0; i < list.length; i++) { var c = list[i]; if (c == null || c === false) continue; if (Array.isArray(c)) add(c); else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  function monthName(p) { return MON[+p.slice(5, 7) - 1] + ' ' + p.slice(0, 4); }
+  var root = document.getElementById('rc');
+  fetch('/api/content/recognition').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+    var awards = d.awards || [], entries = d.entries || [];
+    if (!entries.length) { root.replaceChildren(el('p', { class: 'cp-empty' }, 'Recognition will be posted here soon.')); return; }
+    var seasons = (d.seasons || []).slice().sort().reverse(), season = seasons[0] || '';
+    var bar = el('div', { class: 'cc-filters' }), out = el('div');
+    var sel = el('select', { 'aria-label': 'Season', onchange: function (e) { season = e.target.value; draw(); } }, el('option', { value: '' }, 'All seasons'), seasons.map(function (s) { return el('option', { value: s, selected: s === season ? 'selected' : null }, s + ' season'); }));
+    bar.appendChild(sel);
+    function pill(e) { return el('span', { class: 'rc-pill' }, e.athlete + (e.count != null ? ' ×' + e.count : '')); }
+    function draw() {
+      out.replaceChildren();
+      awards.forEach(function (a) {
+        var mine = entries.filter(function (e) { return e.award_id === a.id; });
+        if (!mine.length) return;
+        var latest = mine[0].period, recent = mine.filter(function (e) { return e.period === latest; });
+        var scoped = mine.filter(function (e) { return !season || e.season === season; });
+        var tot = {};
+        scoped.forEach(function (e) { var k = e.athlete.toLowerCase(); var t = tot[k] || (tot[k] = { athlete: e.athlete, months: 0, sum: 0 }); t.months++; t.sum += e.count || 0; });
+        var list = Object.keys(tot).map(function (k) { return tot[k]; }).sort(function (x, y) { return y.months - x.months || y.sum - x.sum || (x.athlete < y.athlete ? -1 : 1); });
+        out.appendChild(el('section', { class: 'cc-card rc-card' }, el('div', { class: 'cc-main' },
+          el('h2', null, a.name), a.description ? el('p', { class: 'cc-meta' }, a.description) : null,
+          el('h3', null, monthName(latest)), el('p', { class: 'rc-pills' }, recent.map(pill)),
+          list.length ? el('details', null, el('summary', null, 'Running totals' + (season ? ' · ' + season + ' season' : ' · all seasons')),
+            el('table', { class: 'rc-table' }, el('thead', null, el('tr', null, el('th', null, 'Athlete'), el('th', null, 'Months'), el('th', null, 'Total'))),
+              el('tbody', null, list.map(function (t) { return el('tr', null, el('td', null, t.athlete), el('td', null, String(t.months)), el('td', null, t.sum ? String(t.sum) : '')); })))) : null)));
+      });
+    }
+    root.replaceChildren(bar, out); draw();
+  }).catch(function () { root.replaceChildren(el('p', { class: 'cp-empty' }, 'Recognition could not load. Please try again later.')); });
+})();
+</script>

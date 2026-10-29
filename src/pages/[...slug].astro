@@ -9,6 +9,8 @@ import CoachCorner from '../components/CoachCorner.astro';
 import FeesTable from '../components/FeesTable.astro';
 import OfferingStatus from '../components/OfferingStatus.astro';
 import AlumniUpdates from '../components/AlumniUpdates.astro';
+import Spotlights from '../components/Spotlights.astro';
+import Recognition from '../components/Recognition.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 
 export function getStaticPaths() {
@@ -47,9 +49,13 @@ const hasEmbed = p.embed || p.variants;
 
   {p.coach && <CoachCorner mode="list" />}
 
+  {p.spotlights && <Spotlights />}
+
+  {p.recognition && <Recognition />}
+
   {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
 
-  {!Content && !hasEmbed && !p.glossary && !p.carpool && !p.coach && p.type !== 'hub' && !live && (
+  {!Content && !hasEmbed && !p.glossary && !p.carpool && !p.coach && !p.spotlights && !p.recognition && p.type !== 'hub' && !live && (
     <div class="todo">
       <h3>Content not migrated yet</h3>
       <dl>
