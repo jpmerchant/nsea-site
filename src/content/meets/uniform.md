@@ -100,13 +100,40 @@ Our team suit is a **solid black** suit. FINIS is our preferred brand. The style
 
 ## Team Apparel and Bags
 
-On deck, wear team gear only. Order the **NSEA_2026 Team Shirt**, plus other team apparel and bags, from the team store.
+On deck, wear team gear only. The **NSEA_2026 Team Shirt**, plus other team apparel and bags, are available from the team store.
 
+<div class="uni-feature">
+<figure><img src="/assets/team-shirt-2026.jpg" alt="NSEA_2026 Team Shirt from the team store" loading="lazy"><figcaption>NSEA_2026 Team Shirt</figcaption></figure>
+<div>
+<p>Browse the full line (hoodies, tees, caps, backpacks and more) in the NSEA Swim store.</p>
 <p class="btn-row"><a class="btn" href="https://shop.creativeadscreenprinting.com/index.php/product-category/nsea_swim/" target="_blank" rel="noopener">Team Apparel Store</a></p>
+</div>
+</div>
 
 ## Tech Suits
 
 Tech suits are for **swimmers 13 & older**, and only at meets the coaches have approved. FINIS is our preferred brand. Please check with your coach before you buy one.
+
+<div class="uni-techs">
+<section class="uni-tech">
+<h3>HydroX</h3>
+<div class="pair"><img src="/assets/finis-tech-hydrox-f.jpg" alt="FINIS HydroX tech suit, women's" loading="lazy"><img src="/assets/finis-tech-hydrox-m.jpg" alt="FINIS HydroX tech suit, men's" loading="lazy"></div>
+<p>Worn at the 2024 Paris Olympics. Flexible, compressive MemoryFlex fabric. World Aquatics approved.</p>
+<p class="colors">Black · Navy · White</p>
+</section>
+<section class="uni-tech">
+<h3>R3 Ascent</h3>
+<div class="pair"><img src="/assets/finis-tech-r3-f.jpg" alt="FINIS R3 Ascent tech suit, women's" loading="lazy"><img src="/assets/finis-tech-r3-m.jpg" alt="FINIS R3 Ascent tech suit, men's" loading="lazy"></div>
+<p>New. A high-compression race suit built to feel secure, supportive and race-ready. World Aquatics approved.</p>
+<p class="colors">Black</p>
+</section>
+<section class="uni-tech">
+<h3>FUSE</h3>
+<div class="pair"><img src="/assets/finis-tech-fuse-f.jpg" alt="FINIS FUSE tech suit, women's" loading="lazy"><img src="/assets/finis-tech-fuse-m.jpg" alt="FINIS FUSE tech suit, men's" loading="lazy"></div>
+<p>A balance of flexibility and compression. Also comes in a logo-free blank style. World Aquatics approved.</p>
+<p class="colors">Black · Navy · Black blank</p>
+</section>
+</div>
 
 <div class="uni-two">
 <div>
