@@ -90,6 +90,11 @@ Our team suit is a **solid black** suit. FINIS is our preferred brand. The style
 <li>Aqua Short</li>
 </ul>
 <p><a class="btn" href="https://www.finisswim.com/shop/swimwear/training-swimwear?custitem_gender=Men" target="_blank" rel="noopener">Shop FINIS: Men</a></p>
+<div class="uni-suits">
+<figure><img src="/assets/finis-male-jammer.jpg" alt="FINIS solid black jammer" loading="lazy"><figcaption><b>Jammer</b>Above-the-knee cut</figcaption></figure>
+<figure><img src="/assets/finis-male-brief.jpg" alt="FINIS solid black brief" loading="lazy"><figcaption><b>Brief</b>Fitted, full range of motion</figcaption></figure>
+<figure><img src="/assets/finis-male-aquashort.jpg" alt="FINIS solid black aqua short" loading="lazy"><figcaption><b>Aqua Short</b>Square cut, moderate coverage</figcaption></figure>
+</div>
 </div>
 </div>
 
