@@ -4,9 +4,10 @@ import { json, fail, sha, rand, clean, EMAIL, cookieOf, setCookie, readRequest }
 import { newMemberInvite } from './carpool.mjs';
 import { handleContentAdmin } from './content.mjs';
 import { handleCoachAdmin, isEditor } from './coach.mjs';
+import { handleAssessmentAdmin } from './assessment.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 
-export const MODULES = ['carpool', 'events', 'content'];
+export const MODULES = ['carpool', 'events', 'content', 'assessment'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach'];
 
 // ---------- Cloudflare Access JWT ----------
@@ -191,6 +192,13 @@ export async function handleAdmin(req, env, url) {
     if (path.startsWith('/content')) {
       if (!can(me, 'content')) return fail(403, 'You do not have access to the Content module.');
       const r = await handleContentAdmin(env, me, method, path, body, (module, action, detail) => audit(env, me, module, action, detail));
+      if (r) return r;
+    }
+
+    // ----- assessments module -----
+    if (path.startsWith('/assessment')) {
+      if (!can(me, 'assessment')) return fail(403, 'You do not have access to the Assessments module.');
+      const r = await handleAssessmentAdmin(env, me, method, path, body, (module, action, detail) => audit(env, me, module, action, detail));
       if (r) return r;
     }
 
