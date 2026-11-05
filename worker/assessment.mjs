@@ -7,6 +7,7 @@
 //   L = logged measurement, not scored (distance swum)
 // Distance swum is one skill per stroke; each group has a minimum yardage per stroke. A swimmer below it is flagged, never held out.
 import { json, fail, clean } from './util.mjs';
+import { handleScheduleAdmin } from './assessment-schedule.mjs';
 
 export const ASSESSED_GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers'];
 export const STROKES = ['Freestyle', 'Backstroke', 'Breaststroke', 'Butterfly'];
@@ -67,6 +68,9 @@ export async function checklistFor(env, group) {
 
 // Returns a Response, or null if the path is not an assessment path. Called from admin.mjs (needs the "assessment" role).
 export async function handleAssessmentAdmin(env, me, method, path, body, audit) {
+  const sched = await handleScheduleAdmin(env, me, method, path, body, audit);
+  if (sched) return sched;
+
   if (method === 'GET' && path === '/assessment/skills') {
     const [skills, mins] = await Promise.all([allSkills(env), env.DB.prepare(`SELECT stroke, group_name, yards FROM assess_min_distance`).all()]);
     return json({ skills, minimums: mins.results, groups: ASSESSED_GROUPS, strokes: STROKES, kinds: KINDS, categories: [...new Set([...CATEGORY_ORDER, ...skills.map((s) => s.category)])], poolYards: POOL_YARDS });

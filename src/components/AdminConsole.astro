@@ -482,20 +482,119 @@
   }
 
   // ---------- assessments: skill library and group checklists ----------
-  var atab = 'groups', agroup = 'Splash', ashowArchived = false, aedit = null, keepY = null;
+  var atab = 'schedule', agroup = 'Splash', ashowArchived = false, aedit = null, keepY = null;
   var MARK_LABEL = { G: 'Gating', A: 'Assessed', L: 'Logged' };
   var KIND_NOTE = { score: '', yesno: ' (yes/no)', distance: ' (yards)' };
   function vAssessment() {
     var box = el('div', null, loading());
-    var tabs = [['groups', 'Group checklists'], ['library', 'Skill library'], ['minimums', 'Minimum distances']];
+    var tabs = [['schedule', 'Scheduling'], ['groups', 'Group checklists'], ['library', 'Skill library'], ['minimums', 'Minimum distances']];
     shell(el('div', null, el('h2', null, 'Assessments'),
       el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': atab === t[0] ? 'page' : 'false', onclick: function () { atab = t[0]; vAssessment(); } }, t[1]); })), box));
-    api('GET', '/assessment/skills').then(function (o) {
-      ({ groups: aGroups, library: aLibrary, minimums: aMinimums })[atab](box, o);
+    api('GET', atab === 'schedule' ? '/assessment/schedule' : '/assessment/skills').then(function (o) {
+      ({ schedule: aSchedule, groups: aGroups, library: aLibrary, minimums: aMinimums })[atab](box, o);
       if (keepY != null) { window.scrollTo(0, keepY); keepY = null; }
     }).catch(function (e) { keepY = null; fail(box, e); });
   }
   function aAfter(msgText) { flash = msgText || ''; keepY = window.scrollY; vAssessment(); }
+
+
+  // Scheduling: publish 15-minute slots, take requests, schedule them. Dates and times are Eastern.
+  var DAYS = [['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6], ['Sun', 0]];
+  var openReq = null;
+  function fmtDate(d) { var p = d.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function fmtTime(t) { var p = t.split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function when(d, t) { return fmtDate(d) + (t ? ', ' + fmtTime(t) : ''); }
+  function aSchedule(box, o) {
+    var openSlots = o.slots.filter(function (s) { return s.status === 'open'; });
+    var reqs = { 'new': [], scheduled: [], closed: [] };
+    o.requests.forEach(function (r) { (reqs[r.status] || reqs.closed).push(r); });
+
+    function reqRow(r) {
+      var wants = r.preferred.map(function (p) { return when(p.date, p.time); });
+      var lines = [el('p', { class: 'cp-small' }, r.contact_name + ' · ', el('a', { href: 'mailto:' + r.contact_email }, r.contact_email), r.contact_phone ? ' · ' + r.contact_phone : '')];
+      if (r.status === 'scheduled') lines.push(el('p', { class: 'cp-small' }, el('strong', null, 'Scheduled: ' + when(r.appt_date, r.appt_time)), ' (confirmed by ' + r.confirmed_by + ')'));
+      if (wants.length) lines.push(el('p', { class: 'cp-small' }, 'Asked for: ' + wants.join(' · ')));
+      if (r.notes) lines.push(el('p', { class: 'cp-small' }, 'Family note: ' + r.notes));
+      if (r.staff_note) lines.push(el('p', { class: 'cp-small' }, 'Staff note: ' + r.staff_note));
+      var buttons = [];
+      if (r.status === 'new' || r.status === 'scheduled') buttons.push(btn(r.status === 'new' ? 'Schedule' : 'Reschedule', function () { openReq = openReq === r.id ? null : r.id; vAssessment(); }));
+      if (r.status === 'new') buttons.push(btn('Decline', function () { var n = prompt('Reason (kept for staff, not sent to the family):', ''); if (n !== null) post('/assessment/requests/' + r.id + '/decline', { note: n }, 'Request declined.'); }, 'ghost'));
+      if (r.status === 'scheduled') buttons.push(btn('Cancel', function () { var n = prompt('Why is it being cancelled? (kept for staff)', ''); if (n !== null) post('/assessment/requests/' + r.id + '/cancel', { note: n }, 'Assessment cancelled and the slot reopened.'); }, 'ghost'));
+      var row = el('div', { class: 'cp-row' }, el('div', null, el('strong', null, r.swimmer_name), (r.swimmer_age ? ' (age ' + r.swimmer_age + ')' : '') + (r.status === 'new' || r.status === 'scheduled' ? '' : ' · ' + r.status), lines), el('div', { class: 'cp-btns' }, buttons));
+      return openReq === r.id ? [row, schedulePanel(r)] : [row];
+    }
+    function schedulePanel(r) {
+      var out = el('div', { class: 'cp-out' });
+      var pref = {}; r.preferred.forEach(function (p) { if (p.time) pref[p.date + ' ' + p.time] = true; });
+      var sel = el('select', { 'aria-label': 'Open slot' }, el('option', { value: '' }, openSlots.length ? 'Choose an open slot…' : 'No open slots published'),
+        openSlots.map(function (s) { return el('option', { value: String(s.id) }, when(s.slot_date, s.start_time) + (pref[s.slot_date + ' ' + s.start_time] ? '  ★ asked for' : '')); }));
+      var d = el('input', { type: 'date', min: o.today, 'aria-label': 'Custom date' }), tm = el('input', { type: 'time', step: '300', 'aria-label': 'Custom start time' });
+      return el('form', { class: 'cp-form cp-panel', onsubmit: function (e) {
+        e.preventDefault();
+        var payload = sel.value ? { slot_id: Number(sel.value) } : { date: d.value, time: tm.value };
+        api('POST', '/assessment/requests/' + r.id + '/schedule', payload).then(function (res) { openReq = null; aAfter('Scheduled for ' + when(res.date, res.time) + '.'); })
+          .catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+      } }, el('h4', null, (r.status === 'new' ? 'Schedule ' : 'Reschedule ') + r.swimmer_name),
+        el('label', null, 'Open slot', sel), el('p', { class: 'cp-small' }, 'Or a time that is not on the list:'),
+        el('div', { class: 'cp-btns' }, el('label', null, 'Date', d), el('label', null, 'Start time', tm)), out,
+        el('div', { class: 'cp-btns' }, el('button', { class: 'btn small', type: 'submit' }, 'Confirm'), btn('Close', function () { openReq = null; vAssessment(); }, 'ghost')));
+    }
+    function post(path, payload, okMsg) { api('POST', path, payload).then(function () { aAfter(okMsg); }).catch(function (e) { alert(e.message); }); }
+    function list(title, items, empty) {
+      return el('div', null, el('h4', null, title + ' (' + items.length + ')'), items.length ? items.map(reqRow) : el('p', { class: 'cp-empty' }, empty));
+    }
+
+    // Add a request by hand (a family who emailed or phoned, or a JotForm response).
+    var f = { swimmer_name: el('input', { required: true, maxlength: 80 }), swimmer_age: el('input', { type: 'number', min: 2, max: 25 }),
+      contact_name: el('input', { required: true, maxlength: 80 }), contact_email: el('input', { type: 'email', required: true, maxlength: 120 }),
+      contact_phone: el('input', { maxlength: 30 }), notes: el('textarea', { rows: 2, maxlength: 1000 }) };
+    var prefs = [0, 1, 2].map(function () { return { d: el('input', { type: 'date', min: o.today }), t: el('input', { type: 'time', step: '300' }) }; });
+    var addOut = el('div', { class: 'cp-out' });
+    var addForm = el('form', { class: 'cp-form', onsubmit: function (e) {
+      e.preventDefault();
+      var preferred = prefs.filter(function (p) { return p.d.value; }).map(function (p) { return { date: p.d.value, time: p.t.value }; });
+      api('POST', '/assessment/requests', { swimmer_name: f.swimmer_name.value, swimmer_age: f.swimmer_age.value, contact_name: f.contact_name.value, contact_email: f.contact_email.value, contact_phone: f.contact_phone.value, notes: f.notes.value, preferred: preferred })
+        .then(function () { aAfter('Request added. Schedule it from the list above.'); }).catch(function (err) { addOut.replaceChildren(msg('err', err.message)); });
+    } }, el('label', null, 'Swimmer’s name', f.swimmer_name), el('label', null, 'Age (optional)', f.swimmer_age),
+      el('label', null, 'Parent or guardian', f.contact_name), el('label', null, 'Email', f.contact_email), el('label', null, 'Phone (optional)', f.contact_phone),
+      el('p', { class: 'cp-small' }, 'Times the family asked for (up to three, optional):'),
+      prefs.map(function (p) { return el('div', { class: 'cp-btns' }, el('label', null, 'Date', p.d), el('label', null, 'Time', p.t)); }),
+      el('label', null, 'Notes from the family (optional)', f.notes), addOut, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Add request')));
+
+    // Publish availability.
+    var from = el('input', { type: 'date', required: true, min: o.today }), to = el('input', { type: 'date', min: o.today }), times = el('input', { required: true, placeholder: '16:00, 16:15', 'aria-label': 'Start times' });
+    var days = DAYS.map(function (x) { return { v: x[1], box: el('input', { type: 'checkbox' }), label: x[0] }; });
+    var slotOut = el('div', { class: 'cp-out' });
+    var slotForm = el('form', { class: 'cp-form', onsubmit: function (e) {
+      e.preventDefault();
+      api('POST', '/assessment/slots', { from: from.value, to: to.value || from.value, weekdays: days.filter(function (x) { return x.box.checked; }).map(function (x) { return x.v; }), times: times.value })
+        .then(function (r) { aAfter(r.added + ' slot' + (r.added === 1 ? '' : 's') + ' added' + (r.skipped ? ' (' + r.skipped + ' already existed)' : '') + '.'); })
+        .catch(function (err) { slotOut.replaceChildren(msg('err', err.message)); });
+    } }, el('div', { class: 'cp-btns' }, el('label', null, 'From', from), el('label', null, 'Through', to)),
+      el('fieldset', null, el('legend', null, 'Days of the week'), days.map(function (x) { return el('label', { class: 'inline' }, x.box, ' ' + x.label); })),
+      el('label', null, 'Start times, 24-hour, separated by commas (each slot is ' + o.minutes + ' minutes)', times), slotOut,
+      el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Add slots')));
+    var byDate = {}, order = [];
+    o.slots.forEach(function (s) { if (!byDate[s.slot_date]) { byDate[s.slot_date] = []; order.push(s.slot_date); } byDate[s.slot_date].push(s); });
+    var slotList = order.map(function (d) {
+      return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, fmtDate(d))),
+        el('div', { class: 'cp-btns' }, byDate[d].map(function (s) {
+          return s.status === 'open'
+            ? btn(fmtTime(s.start_time) + ' ✕', function () { if (confirm('Remove the ' + fmtTime(s.start_time) + ' slot on ' + fmtDate(d) + '?')) post('/assessment/slots/' + s.id + '/remove', {}, 'Slot removed.'); }, 'ghost')
+            : el('span', { class: 'cp-small' }, fmtTime(s.start_time) + ' booked' + (s.swimmer_name ? ' (' + s.swimmer_name + ')' : '') + ' ');
+        })));
+    });
+
+    box.replaceChildren(
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Requests'),
+        el('p', { class: 'cp-small' }, 'Anyone with the Assessments role can schedule a request. Each assessment is ' + o.minutes + ' minutes with one swimmer, at Earl Jackson Pool.'),
+        list('Needs a date', reqs['new'], 'No new requests.'), list('Scheduled', reqs.scheduled, 'Nothing scheduled.'),
+        reqs.closed.length ? el('details', null, el('summary', null, 'Declined and cancelled (' + reqs.closed.length + ')'), reqs.closed.map(reqRow)) : null),
+      el('div', { class: 'cp-panel' }, el('details', null, el('summary', null, el('strong', null, 'Add a request by hand')), el('p', { class: 'cp-small' }, 'For a family who emailed or phoned, or a JotForm response.'), addForm)),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Availability'),
+        el('p', { class: 'cp-small' }, 'Open slots are what families will be able to book. They will only see slots at least ' + o.noticeDays + ' days away; you can still schedule closer in from the list above. Upcoming slots (' + o.slots.length + '):'),
+        slotList.length ? slotList : el('p', { class: 'cp-empty' }, 'No upcoming slots yet. Add some below.'), el('details', { open: !slotList.length }, el('summary', null, el('strong', null, 'Add slots')), slotForm)));
+  }
 
   // Attach skills to groups: one row per skill, one column per assessed group.
   function aGroups(box, o) {

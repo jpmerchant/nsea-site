@@ -308,3 +308,4 @@ main{padding:28px 0 64px;min-height:50vh}
 .uni-tech .pair img{width:100%;aspect-ratio:3/4;object-fit:cover;object-position:top;border-radius:8px;border:1px solid var(--line)}
 .uni-tech p{margin:10px 0 0;font-size:14px;line-height:1.5}
 .uni-tech .colors{font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.5px;color:var(--gray)}
+.cp-form .cp-btns label{margin-right:12px}
