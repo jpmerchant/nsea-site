@@ -590,7 +590,7 @@
         el('p', { class: 'cp-small' }, 'Anyone with the Assessments role can schedule a request. Each assessment is ' + o.minutes + ' minutes with one swimmer, at Earl Jackson Pool.'),
         list('Needs a date', reqs['new'], 'No new requests.'), list('Scheduled', reqs.scheduled, 'Nothing scheduled.'),
         reqs.closed.length ? el('details', null, el('summary', null, 'Declined and cancelled (' + reqs.closed.length + ')'), reqs.closed.map(reqRow)) : null),
-      el('div', { class: 'cp-panel' }, el('details', null, el('summary', null, el('strong', null, 'Add a request by hand')), el('p', { class: 'cp-small' }, 'For a family who emailed or phoned, or a JotForm response.'), addForm)),
+      el('div', { class: 'cp-panel' }, el('details', null, el('summary', null, el('strong', null, 'Add a request by hand')), el('p', { class: 'cp-small' }, 'For a family who emailed or phoned.'), addForm)),
       el('div', { class: 'cp-panel' }, el('h3', null, 'Availability'),
         el('p', { class: 'cp-small' }, 'Open slots are what families will be able to book. They will only see slots at least ' + o.noticeDays + ' days away; you can still schedule closer in from the list above. Upcoming slots (' + o.slots.length + '):'),
         slotList.length ? slotList : el('p', { class: 'cp-empty' }, 'No upcoming slots yet. Add some below.'), el('details', { open: !slotList.length }, el('summary', null, el('strong', null, 'Add slots')), slotForm)));
