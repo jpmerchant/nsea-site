@@ -544,7 +544,7 @@
       return el('div', null, el('h4', null, title + ' (' + items.length + ')'), items.length ? items.map(reqRow) : el('p', { class: 'cp-empty' }, empty));
     }
 
-    // Add a request by hand (a family who emailed or phoned, or a JotForm response).
+    // Add a request by hand (a family who emailed or phoned).
     var f = { swimmer_name: el('input', { required: true, maxlength: 80 }), swimmer_age: el('input', { type: 'number', min: 2, max: 25 }),
       contact_name: el('input', { required: true, maxlength: 80 }), contact_email: el('input', { type: 'email', required: true, maxlength: 120 }),
       contact_phone: el('input', { maxlength: 30 }), notes: el('textarea', { rows: 2, maxlength: 1000 }) };
