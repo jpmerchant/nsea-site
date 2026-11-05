@@ -9,8 +9,8 @@
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', coach: 'Coach (own posts only)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', coach: 'Coach’s Corner' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', coach: 'Coach (own posts only)' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', coach: 'Coach’s Corner' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -54,7 +54,7 @@
   }
 
   // ---------- shell ----------
-  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['coach', 'Coach’s Corner', 'coach'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
   function shell(content) {
     mount(
@@ -66,7 +66,7 @@
         })),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, coach: vCoach, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, assessment: vAssessment, coach: vCoach, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -479,6 +479,138 @@
       el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault();
         api('POST', '/content/site/coach-topics', { topics: ta.value.split('\n') }).then(function () { flash = 'Topics saved.'; vCoach(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); }); } },
         ta, out, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save topics')))));
+  }
+
+  // ---------- assessments: skill library and group checklists ----------
+  var atab = 'groups', agroup = 'Splash', ashowArchived = false, aedit = null, keepY = null;
+  var MARK_LABEL = { G: 'Gating', A: 'Assessed', L: 'Logged' };
+  var KIND_NOTE = { score: '', yesno: ' (yes/no)', distance: ' (yards)' };
+  function vAssessment() {
+    var box = el('div', null, loading());
+    var tabs = [['groups', 'Group checklists'], ['library', 'Skill library'], ['minimums', 'Minimum distances']];
+    shell(el('div', null, el('h2', null, 'Assessments'),
+      el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': atab === t[0] ? 'page' : 'false', onclick: function () { atab = t[0]; vAssessment(); } }, t[1]); })), box));
+    api('GET', '/assessment/skills').then(function (o) {
+      ({ groups: aGroups, library: aLibrary, minimums: aMinimums })[atab](box, o);
+      if (keepY != null) { window.scrollTo(0, keepY); keepY = null; }
+    }).catch(function (e) { keepY = null; fail(box, e); });
+  }
+  function aAfter(msgText) { flash = msgText || ''; keepY = window.scrollY; vAssessment(); }
+
+  // Attach skills to groups: one row per skill, one column per assessed group.
+  function aGroups(box, o) {
+    var skills = o.skills.filter(function (s) { return ashowArchived || s.active; });
+    var counts = {};
+    function recount() { o.groups.forEach(function (g) { counts[g].textContent = o.skills.filter(function (s) { return s.active && s.marks[g]; }).length + ' skills'; }); }
+    var showArch = el('input', { type: 'checkbox', onchange: function (e) { ashowArchived = e.target.checked; vAssessment(); } });
+    if (ashowArchived) showArch.checked = true;
+    var body = [], last = '';
+    skills.forEach(function (s) {
+      if (s.category !== last) { last = s.category; body.push(el('tr', { class: 'cat' }, el('th', { colspan: String(o.groups.length + 1), scope: 'colgroup' }, s.category))); }
+      body.push(el('tr', { class: s.active ? '' : 'archived' },
+        el('th', { scope: 'row', title: s.cue || null }, s.name + (KIND_NOTE[s.kind] || '') + (s.active ? '' : ' (archived)')),
+        o.groups.map(function (g) {
+          var opts = s.kind === 'distance' ? ['', 'L'] : ['', 'G', 'A'];
+          var sel = el('select', { 'aria-label': s.name + ' for ' + g, onchange: function (e) {
+            var v = e.target.value, payload = { marks: {} }; payload.marks[g] = v;
+            api('POST', '/assessment/skills/' + s.id + '/marks', payload).then(function () {
+              if (v) s.marks[g] = v; else delete s.marks[g];
+              recount(); showPreview();
+            }).catch(function (err) { e.target.value = s.marks[g] || ''; alert(err.message); });
+          } }, opts.map(function (m) { return el('option', { value: m, selected: (s.marks[g] || '') === m ? 'selected' : null }, m ? MARK_LABEL[m] : '—'); }));
+          return el('td', null, sel);
+        })));
+    });
+    var foot = el('tr', null, el('th', { scope: 'row' }, 'On the checklist'), o.groups.map(function (g) { counts[g] = el('td', null, ''); return counts[g]; }));
+    // Preview of one group's finished checklist, exactly as a coach will see it.
+    var prev = el('div', null, loading());
+    var gsel = el('select', { 'aria-label': 'Group to preview', onchange: function (e) { agroup = e.target.value; showPreview(); } }, o.groups.map(function (g) { return el('option', { value: g, selected: g === agroup ? 'selected' : null }, g); }));
+    function showPreview() {
+      api('GET', '/assessment/groups/' + encodeURIComponent(agroup) + '/checklist').then(function (r) {
+        var cat = '', items = [];
+        r.checklist.forEach(function (s) {
+          if (s.category !== cat) { cat = s.category; items.push(el('h4', null, cat)); }
+          items.push(el('p', { class: 'cp-small' }, el('strong', null, s.name), ' · ' + MARK_LABEL[s.mark] + (s.kind === 'yesno' ? ' · yes or no' : '') + (s.kind === 'distance' ? ' · yards swum' + (s.min_yards ? ', minimum ' + s.min_yards : ', no minimum') : '') + (s.cue ? ' · ' + s.cue : '')));
+        });
+        prev.replaceChildren.apply(prev, [el('p', { class: 'cp-small' }, r.checklist.length + ' skills for ' + r.group + '.')].concat(items.length ? items : [el('p', { class: 'cp-empty' }, 'No skills attached to this group yet.')]));
+      }).catch(function (err) { prev.replaceChildren(msg('err', err.message)); });
+    }
+    box.replaceChildren(
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Attach skills to groups'),
+        el('p', { class: 'cp-small' }, 'Each assessed group has its own checklist, built from this table. Choose “Gating” for a skill the swimmer must score 3 or higher on to be suggested for the group, “Assessed” for a skill that is checked but does not decide placement, and “Logged” for distance swum (recorded in yards, not scored). Leave a cell as — to keep the skill off that group’s checklist. Changes save as soon as you pick.'),
+        el('label', { class: 'inline' }, showArch, ' Show archived skills'),
+        el('div', { class: 'ac-matrix' }, el('table', null, el('thead', null, el('tr', null, el('th', { scope: 'col' }, 'Skill'), o.groups.map(function (g) { return el('th', { scope: 'col' }, g); }))), el('tbody', null, body), el('tfoot', null, foot)))),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Preview a group’s checklist'), el('label', { class: 'cp-form' }, 'Group', gsel), prev));
+    recount(); showPreview();
+  }
+
+  // Add or edit skills, reorder them, archive them.
+  function aLibrary(box, o) {
+    var out = el('div', { class: 'cp-out' });
+    var f = {
+      category: el('input', { required: true, maxlength: 40, list: 'ac-cats', placeholder: 'General, a diving type, or a stroke' }),
+      name: el('input', { required: true, maxlength: 80 }),
+      cue: el('textarea', { rows: 2, maxlength: 240, placeholder: 'What the coach looks for' }),
+      kind: el('select', null, Object.keys(o.kinds).map(function (k) { return el('option', { value: k }, o.kinds[k]); }))
+    };
+    function load(s) {
+      aedit = s; f.category.value = s ? s.category : ''; f.name.value = s ? s.name : ''; f.cue.value = s ? s.cue : ''; f.kind.value = s ? s.kind : 'score';
+      out.replaceChildren(); heading.textContent = s ? 'Edit skill' : 'Add a skill'; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); f.name.focus();
+    }
+    var heading = el('h3', null, aedit ? 'Edit skill' : 'Add a skill');
+    var form = el('form', { class: 'cp-form', onsubmit: function (e) {
+      e.preventDefault();
+      api('POST', '/assessment/skills', { id: aedit ? aedit.id : null, category: f.category.value, name: f.name.value, cue: f.cue.value, kind: f.kind.value })
+        .then(function (r) { var wasEdit = !!aedit; aedit = null; aAfter(wasEdit ? 'Skill updated.' : 'Skill added. Attach it to groups on the Group checklists tab.'); })
+        .catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+    } },
+      el('datalist', { id: 'ac-cats' }, o.categories.map(function (c) { return el('option', { value: c }); })),
+      el('label', null, 'Category', f.category), el('label', null, 'Skill', f.name), el('label', null, 'What the coach looks for (optional)', f.cue),
+      el('label', null, 'How it is recorded', f.kind),
+      el('p', { class: 'cp-small' }, 'Distance skills belong to a stroke category and each stroke has one. A new skill starts on no group’s checklist.'), out,
+      el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save skill'), btn('Clear', function () { load(null); }, 'ghost')));
+    if (aedit) { f.category.value = aedit.category; f.name.value = aedit.name; f.cue.value = aedit.cue; f.kind.value = aedit.kind; }
+    function post(path, payload, okMsg) { api('POST', path, payload).then(function () { aAfter(okMsg); }).catch(function (e) { alert(e.message); }); }
+    var cat = '', rows = [];
+    o.skills.forEach(function (s) {
+      if (s.category !== cat) { cat = s.category; rows.push(el('h4', null, cat)); }
+      var on = o.groups.filter(function (g) { return s.marks[g]; }).map(function (g) { return g + ' ' + MARK_LABEL[s.marks[g]].toLowerCase(); });
+      rows.push(el('div', { class: 'cp-row' },
+        el('div', null, el('strong', null, s.name), (KIND_NOTE[s.kind] || '') + (s.active ? '' : ' (archived)'),
+          el('p', { class: 'cp-small' }, (s.cue ? s.cue + ' · ' : '') + (on.length ? on.join(', ') : 'not on any checklist'))),
+        el('div', { class: 'cp-btns' }, btn('Edit', function () { load(s); }),
+          btn('Up', function () { post('/assessment/skills/' + s.id + '/move', { dir: 'up' }, ''); }, 'ghost'),
+          btn('Down', function () { post('/assessment/skills/' + s.id + '/move', { dir: 'down' }, ''); }, 'ghost'),
+          s.active ? btn('Archive', function () { if (confirm('Archive “' + s.name + '”? It leaves every checklist but nothing is lost, and you can restore it.')) post('/assessment/skills/' + s.id + '/active', { active: false }, 'Archived.'); }, 'ghost')
+            : btn('Restore', function () { post('/assessment/skills/' + s.id + '/active', { active: true }, 'Restored.'); }, 'ghost'))));
+    });
+    box.replaceChildren(el('div', { class: 'cp-panel' }, heading, form),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'All skills (' + o.skills.length + ')'), el('p', { class: 'cp-small' }, 'Up and Down change the order inside a category, which is the order coaches see on the checklist.'), rows));
+  }
+
+  // Minimum distance swum per stroke and group, in yards.
+  function aMinimums(box, o) {
+    var cur = {}; o.minimums.forEach(function (m) { cur[m.stroke + '|' + m.group_name] = m.yards; });
+    var inputs = {}, out = el('div', { class: 'cp-out' });
+    var grid = el('div', { class: 'min-grid' }, el('span', { class: 'h' }, 'Stroke'), o.groups.map(function (g) { return el('span', { class: 'h' }, g); }),
+      o.strokes.map(function (st) {
+        return [el('strong', null, st)].concat(o.groups.map(function (g) {
+          var k = st + '|' + g, v = cur[k];
+          inputs[k] = el('input', { type: 'number', min: o.poolYards, max: 1000, step: o.poolYards, value: v ? String(v) : '', 'aria-label': st + ' minimum for ' + g });
+          return inputs[k];
+        }));
+      }));
+    var form = el('form', { class: 'cp-form', onsubmit: function (e) {
+      e.preventDefault();
+      var chain = Promise.resolve();
+      o.strokes.forEach(function (st) { o.groups.forEach(function (g) {
+        var k = st + '|' + g, now = inputs[k].value.trim(), was = cur[k] ? String(cur[k]) : '';
+        if (now !== was) chain = chain.then(function () { return api('POST', '/assessment/minimums', { stroke: st, group_name: g, yards: now }); });
+      }); });
+      chain.then(function () { aAfter('Minimums saved.'); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+    } }, grid, out, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save minimums')));
+    box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Minimum distance swum'),
+      el('p', { class: 'cp-small' }, 'In yards; the pool is ' + o.poolYards + ' yards, so use ' + o.poolYards + ', ' + o.poolYards * 2 + ', ' + o.poolYards * 3 + ' and so on. A swimmer who swims less than a group’s minimum is flagged for your review in the placement suggestion; they are never held out automatically. Leave a cell blank for no minimum. Setting one also puts that stroke’s Distance swum on the group’s checklist as Logged.'), form));
   }
 
   // ---------- admins ----------
