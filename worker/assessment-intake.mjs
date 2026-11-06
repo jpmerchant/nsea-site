@@ -23,7 +23,6 @@ export const GROUP_RULES = [
   { name: 'Surge', min: 14, max: 18, route: 'background', note: 'Surge is not assessed in the water.' },
   { name: 'Senior', min: 15, max: 18, route: 'background', note: 'Senior is not assessed in the water.' },
 ];
-export const COMFORT = { comfortable: 'Comfortable in the water', uncomfortable: 'Uncomfortable in the water', cannot_swim: 'Cannot swim yet' };
 export const EXPERIENCE = { none: 'No swimming experience', lessons: 'Lessons or recreational swimming only', competitive: 'Competitive swimming experience' };
 
 // Competitive experience: the family ticks any that apply, and each opens a few short follow-up questions.
@@ -57,7 +56,7 @@ export function ageOn(dob, asOf) {
   return ay - by - (am < bm || (am === bm && ad < bd) ? 1 : 0);
 }
 
-// answers: { formerNsea, formerNseaWhen, otherTeam, otherTeamName, heard, dob, comfort, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
+// answers: { formerNsea, formerNseaWhen, otherTeam, otherTeamName, heard, dob, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
 export function evaluateIntake(answers, { asOf } = {}) {
   const a = answers || {};
   const date = parseBirthDate(asOf) || todayET();
@@ -66,17 +65,16 @@ export function evaluateIntake(answers, { asOf } = {}) {
   if (!dob) errors.push({ field: 'dob', message: 'Please enter the swimmer’s date of birth.' });
   else if (dob > date) errors.push({ field: 'dob', message: 'That date of birth is after the assessment date.' });
   else if (ageOn(dob, date) > 40) errors.push({ field: 'dob', message: 'Please check the date of birth.' });
-  if (!COMFORT[a.comfort]) errors.push({ field: 'comfort', message: 'Please tell us how comfortable the swimmer is in the water.' });
   if (!EXPERIENCE[a.experience]) errors.push({ field: 'experience', message: 'Please tell us about the swimmer’s experience.' });
   if (errors.length) return { ok: false, errors };
 
   const age = ageOn(dob, date);
   const out = { ok: true, age, asOf: date, flags: [], familyMessages: [], followups: [], errors: [] };
 
-  // 1. Not ready for a group: point to lessons and stop. The family can still reach a person.
-  if (a.comfort !== 'comfortable' || a.experience === 'none') {
+  // 1. No swimming experience: point to lessons and stop. Water comfort is judged in person at the assessment, not by a parent's opinion. The family can still reach a person.
+  if (a.experience === 'none') {
     out.path = 'learn_to_swim';
-    out.reason = a.comfort !== 'comfortable' ? 'not_comfortable' : 'no_experience';
+    out.reason = 'no_experience';
     out.familyMessages.push({
       code: 'learn_to_swim', link: LEARN_TO_SWIM_URL,
       message: 'Thank you for your interest in NSEA Swim! From what you have told us, the best place to start is our swim lessons. Lessons build water comfort and the basic skills a swimmer needs before joining a practice group, and swimmers move on to an assessment when they are ready. We would love to see them back then.',
@@ -159,13 +157,13 @@ export async function findDuplicateRequests(env, { swimmerName, email }) {
 export async function handleIntakeAdmin(env, me, method, path, body) {
   if (method === 'POST' && path === '/assessment/intake/preview') {
     const r = evaluateIntake(body.answers, { asOf: body.asOf });
-    return json({ result: r, heard: HEARD, groups: GROUP_RULES, comfort: COMFORT, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL });
+    return json({ result: r, heard: HEARD, groups: GROUP_RULES, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL });
   }
   if (method === 'POST' && path === '/assessment/intake/duplicates') {
     return json({ matches: await findDuplicateRequests(env, { swimmerName: body.swimmerName, email: body.email }) });
   }
   if (method === 'GET' && path === '/assessment/intake/config') {
-    return json({ heard: HEARD, groups: GROUP_RULES, comfort: COMFORT, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL, today: todayET() });
+    return json({ heard: HEARD, groups: GROUP_RULES, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL, today: todayET() });
   }
   return null;
 }

@@ -501,7 +501,7 @@
   // Intake preview: try any family's answers against the sign-up rules. Nothing is saved.
   var intakeState = null;
   function aIntake(box, cfg) {
-    var st = intakeState || (intakeState = { dob: '', asOf: cfg.today, comfort: 'comfortable', experience: 'lessons', competitive: {}, details: {}, groups: {}, unsure: false });
+    var st = intakeState || (intakeState = { dob: '', asOf: cfg.today, experience: 'lessons', competitive: {}, details: {}, groups: {}, unsure: false, formerNsea: false, formerNseaWhen: '', otherTeam: false, otherTeamName: '', heard: '' });
     var out = el('div', { 'aria-live': 'polite' });
     function field(label, input) { return el('label', null, el('span', null, label), input); }
     function select(map, key) {
@@ -540,11 +540,11 @@
     var form = el('div', { class: 'cp-form' },
       el('p', { class: 'cp-note' }, 'Try a family’s answers to see where the sign-up would send them. Nothing here is saved.'),
       field('Swimmer date of birth', dob), field('Assessment date (age is figured on this day)', asOf),
-      field('Comfort in the water', select(cfg.comfort, 'comfort')), field('Experience', select(cfg.experience, 'experience')), comp, history,
+      field('Experience', select(cfg.experience, 'experience')), comp, history,
       el('fieldset', null, el('legend', null, 'Group(s) of interest'), groups));
     function run(redraw) {
       if (redraw) drawComp();
-      var answers = { formerNsea: st.formerNsea, formerNseaWhen: st.formerNseaWhen, otherTeam: st.otherTeam, otherTeamName: st.otherTeamName, heard: st.heard, dob: st.dob, comfort: st.comfort, experience: st.experience, details: st.details,
+      var answers = { formerNsea: st.formerNsea, formerNseaWhen: st.formerNseaWhen, otherTeam: st.otherTeam, otherTeamName: st.otherTeamName, heard: st.heard, dob: st.dob, experience: st.experience, details: st.details,
         competitive: Object.keys(st.competitive).filter(function (k) { return st.competitive[k]; }),
         groups: Object.keys(st.groups).filter(function (k) { return st.groups[k]; }), unsure: st.unsure };
       api('POST', '/assessment/intake/preview', { answers: answers, asOf: st.asOf }).then(function (o) {
