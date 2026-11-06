@@ -487,16 +487,76 @@
   var KIND_NOTE = { score: '', yesno: ' (yes/no)', distance: ' (yards)', set: ' (set)' };
   function vAssessment() {
     var box = el('div', null, loading());
-    var tabs = [['schedule', 'Scheduling'], ['groups', 'Group checklists'], ['library', 'Skill library'], ['minimums', 'Minimum distances']];
+    var tabs = [['schedule', 'Scheduling'], ['groups', 'Group checklists'], ['library', 'Skill library'], ['minimums', 'Minimum distances'], ['intake', 'Intake preview']];
     shell(el('div', null, el('h2', null, 'Assessments'),
       el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': atab === t[0] ? 'page' : 'false', onclick: function () { atab = t[0]; vAssessment(); } }, t[1]); })), box));
-    api('GET', atab === 'schedule' ? '/assessment/schedule' : '/assessment/skills').then(function (o) {
-      ({ schedule: aSchedule, groups: aGroups, library: aLibrary, minimums: aMinimums })[atab](box, o);
+    api('GET', atab === 'schedule' ? '/assessment/schedule' : atab === 'intake' ? '/assessment/intake/config' : '/assessment/skills').then(function (o) {
+      ({ schedule: aSchedule, groups: aGroups, library: aLibrary, minimums: aMinimums, intake: aIntake })[atab](box, o);
       if (keepY != null) { window.scrollTo(0, keepY); keepY = null; }
     }).catch(function (e) { keepY = null; fail(box, e); });
   }
   function aAfter(msgText) { flash = msgText || ''; keepY = window.scrollY; vAssessment(); }
 
+
+  // Intake preview: try any family's answers against the sign-up rules. Nothing is saved.
+  var intakeState = null;
+  function aIntake(box, cfg) {
+    var st = intakeState || (intakeState = { dob: '', asOf: cfg.today, comfort: 'comfortable', experience: 'lessons', competitive: {}, details: {}, groups: {}, unsure: false });
+    var out = el('div', { 'aria-live': 'polite' });
+    function field(label, input) { return el('label', null, el('span', null, label), input); }
+    function select(map, key) {
+      var s = el('select', { onchange: function () { st[key] = s.value; run(true); } }, Object.keys(map).map(function (k) { return el('option', { value: k, selected: st[key] === k }, map[k]); }));
+      return s;
+    }
+    function check(label, on, fn) { return el('label', { class: 'cp-check' }, el('input', { type: 'checkbox', checked: on, onchange: function (e) { fn(e.target.checked); run(false); } }), ' ' + label); }
+    var dob = el('input', { type: 'date', value: st.dob, onchange: function () { st.dob = dob.value; run(false); } });
+    var asOf = el('input', { type: 'date', value: st.asOf, onchange: function () { st.asOf = asOf.value; run(false); } });
+    var comp = el('div');
+    function drawComp() {
+      comp.replaceChildren();
+      if (st.experience !== 'competitive') return;
+      Object.keys(cfg.competitive).forEach(function (k) {
+        var c = cfg.competitive[k];
+        comp.appendChild(check(c.label, !!st.competitive[k], function (v) { st.competitive[k] = v; drawComp(); }));
+        if (!st.competitive[k]) return;
+        var d = st.details[k] || (st.details[k] = {});
+        comp.appendChild(el('div', { class: 'cp-sub' }, c.fields.map(function (f) {
+          var i = el(f.long ? 'textarea' : 'input', { value: d[f.key] || '', oninput: function () { d[f.key] = i.value; } , onchange: function () { run(false); } });
+          if (f.long) i.textContent = d[f.key] || '';
+          return field(f.label + (f.required ? '' : ' (optional)'), i);
+        })));
+      });
+    }
+    var groups = el('div', null, cfg.groups.map(function (g) { return check(g.name + ' (ages ' + g.min + ' to ' + g.max + ')', !!st.groups[g.name], function (v) { st.groups[g.name] = v; }); }),
+      check('Not sure which group', st.unsure, function (v) { st.unsure = v; }));
+    var form = el('div', { class: 'cp-form' },
+      el('p', { class: 'cp-note' }, 'Try a family’s answers to see where the sign-up would send them. Nothing here is saved.'),
+      field('Swimmer date of birth', dob), field('Assessment date (age is figured on this day)', asOf),
+      field('Comfort in the water', select(cfg.comfort, 'comfort')), field('Experience', select(cfg.experience, 'experience')), comp,
+      el('fieldset', null, el('legend', null, 'Group(s) of interest'), groups));
+    function run(redraw) {
+      if (redraw) drawComp();
+      var answers = { dob: st.dob, comfort: st.comfort, experience: st.experience, details: st.details,
+        competitive: Object.keys(st.competitive).filter(function (k) { return st.competitive[k]; }),
+        groups: Object.keys(st.groups).filter(function (k) { return st.groups[k]; }), unsure: st.unsure };
+      api('POST', '/assessment/intake/preview', { answers: answers, asOf: st.asOf }).then(function (o) {
+        var r = o.result, kids = [];
+        if (!r.ok) {
+          kids.push(el('h3', null, 'Needs more answers'), el('ul', null, r.errors.map(function (e) { return el('li', null, e.message); })));
+        } else {
+          var PATH = { schedule: 'Continue to pick or request a date', learn_to_swim: 'Learn to Swim (no assessment)', background_review: 'Background form for JP (no date picker)' };
+          kids.push(el('h3', null, PATH[r.path]), el('p', null, 'Age on the assessment date: ' + r.age + (r.assessFor ? '. Assess for: ' + r.assessFor + '.' : '')));
+          if (r.reason) kids.push(el('p', { class: 'cp-note' }, r.reason));
+          if (r.flags.length) kids.push(el('h4', null, 'Flags for staff'), el('ul', null, r.flags.map(function (f) { return el('li', null, f.message); })));
+          if (r.familyMessages.length) kids.push(el('h4', null, 'What the family sees'), r.familyMessages.map(function (m) {
+            return el('p', null, m.message + ' ', m.link ? el('a', { href: m.link, target: '_blank', rel: 'noopener' }, m.link) : null); }));
+        }
+        out.replaceChildren.apply(out, [].concat.apply([], kids));
+      }).catch(function (e) { out.replaceChildren(msg('err', e.message)); });
+    }
+    drawComp(); run(false);
+    box.replaceChildren(form, el('div', { class: 'cp-card' }, out));
+  }
 
   // Scheduling: publish 15-minute slots, take requests, schedule them. Dates and times are Eastern.
   var DAYS = [['Mon', 1], ['Tue', 2], ['Wed', 3], ['Thu', 4], ['Fri', 5], ['Sat', 6], ['Sun', 0]];
