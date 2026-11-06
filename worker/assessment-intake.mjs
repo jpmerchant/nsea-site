@@ -56,7 +56,7 @@ export function ageOn(dob, asOf) {
   return ay - by - (am < bm || (am === bm && ad < bd) ? 1 : 0);
 }
 
-// answers: { formerNsea, formerNseaWhen, otherTeam, otherTeamName, heard, dob, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
+// answers: { formerNsea, formerNseaWhen, otherTeam (club swimmers only), otherTeamName, recentTeam, heard, dob, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
 export function evaluateIntake(answers, { asOf } = {}) {
   const a = answers || {};
   const date = parseBirthDate(asOf) || todayET();
@@ -95,15 +95,19 @@ export function evaluateIntake(answers, { asOf } = {}) {
         else if (f.type === 'number' && v && !(Number(v) >= 0 && Number(v) <= 40)) errors.push({ field: `details.${k}.${f.key}`, message: `${COMPETITIVE[k].label}: “${f.label}” should be a number of years.` });
       }
     }
-    out.flags.push({ code: 'competitive_experience', level: 'review', message: 'Has competitive experience: ' + (ticked.filter((k) => COMPETITIVE[k]).map((k) => COMPETITIVE[k].label).join(', ') || 'details missing') + '. Do the background search.' });
+    const recent = String(a.recentTeam ?? '').trim();
+    if (!recent) errors.push({ field: 'recentTeam', message: 'Please tell us the name of the swimmer’s most recent team.' });
+    out.flags.push({ code: 'competitive_experience', level: 'review', message: 'Has competitive experience: ' + (ticked.filter((k) => COMPETITIVE[k]).map((k) => COMPETITIVE[k].label).join(', ') || 'details missing') + (recent ? `. Most recent team: ${recent.slice(0, 120)}` : '') + '. Do the background search.' });
+    out.clubTeam = ticked.includes('usa_club') || ticked.includes('ymca_club');
   }
 
   // 2b. History with NSEA and other teams. Both only flag; they never change the path.
   if (a.formerNsea) out.flags.push({ code: 'former_nsea', level: 'review', message: 'Has swum with NSEA before' + (String(a.formerNseaWhen ?? '').trim() ? ` (${String(a.formerNseaWhen).trim().slice(0, 80)})` : '') + '. Look up the old profile and records.' });
-  if (a.otherTeam) {
+  // "Another club team" is only asked of USA Swimming and YMCA club swimmers, so it is ignored for everyone else.
+  if (a.otherTeam && out.clubTeam) {
     const t = String(a.otherTeamName ?? '').trim();
-    if (!t) errors.push({ field: 'otherTeamName', message: 'Please tell us which team the swimmer is on now.' });
-    out.flags.push({ code: 'other_team', level: 'review', message: `Currently swims for ${t || 'another team'}. Confirm they plan to leave that team before placing.` });
+    if (!t) errors.push({ field: 'otherTeamName', message: 'Please tell us which club team the swimmer is on now.' });
+    out.flags.push({ code: 'other_team', level: 'review', message: `Currently swims for another club team: ${t || 'name missing'}. Confirm they plan to leave that team before placing.` });
   }
   if (a.heard && !HEARD[a.heard]) errors.push({ field: 'heard', message: 'Please choose one of the listed ways you heard about us, or leave it blank.' });
   else if (a.heard) out.heard = a.heard;

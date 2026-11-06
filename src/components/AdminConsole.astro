@@ -501,7 +501,7 @@
   // Intake preview: try any family's answers against the sign-up rules. Nothing is saved.
   var intakeState = null;
   function aIntake(box, cfg) {
-    var st = intakeState || (intakeState = { dob: '', asOf: cfg.today, experience: 'lessons', competitive: {}, details: {}, groups: {}, unsure: false, formerNsea: false, formerNseaWhen: '', otherTeam: false, otherTeamName: '', heard: '' });
+    var st = intakeState || (intakeState = { dob: '', asOf: cfg.today, experience: 'lessons', competitive: {}, details: {}, groups: {}, unsure: false, formerNsea: false, formerNseaWhen: '', otherTeam: false, otherTeamName: '', recentTeam: '', heard: '' });
     var out = el('div', { 'aria-live': 'polite' });
     function field(label, input) { return el('label', null, el('span', null, label), input); }
     function select(map, key) {
@@ -526,6 +526,8 @@
           return field(f.label + (f.required ? '' : ' (optional)'), i);
         })));
       });
+      var rt = el('input', { value: st.recentTeam || '', oninput: function () { st.recentTeam = rt.value; }, onchange: function () { run(false); } });
+      comp.appendChild(field('Name of the swimmer’s most recent team', rt));
     }
     var team = el('input', { value: st.otherTeamName, onchange: function () { st.otherTeamName = team.value; run(false); } });
     var when = el('input', { value: st.formerNseaWhen, onchange: function () { st.formerNseaWhen = when.value; run(false); } });
@@ -533,7 +535,7 @@
       Object.keys(cfg.heard).map(function (k) { return el('option', { value: k, selected: st.heard === k }, cfg.heard[k]); }));
     var history = el('div', null,
       check('Has swum with NSEA before', st.formerNsea, function (v) { st.formerNsea = v; }), field('When (optional)', when),
-      check('Currently swims for another team', st.otherTeam, function (v) { st.otherTeam = v; }), field('Which team', team),
+      check('Currently swims for another club team (counts only if USA Swimming or YMCA club is ticked)', st.otherTeam, function (v) { st.otherTeam = v; }), field('Which club team', team),
       field('How did you hear about us (optional)', heard));
     var groups = el('div', null, cfg.groups.map(function (g) { return check(g.name + ' (ages ' + g.min + ' to ' + g.max + ')', !!st.groups[g.name], function (v) { st.groups[g.name] = v; }); }),
       check('Not sure which group', st.unsure, function (v) { st.unsure = v; }));
@@ -544,7 +546,7 @@
       el('fieldset', null, el('legend', null, 'Group(s) of interest'), groups));
     function run(redraw) {
       if (redraw) drawComp();
-      var answers = { formerNsea: st.formerNsea, formerNseaWhen: st.formerNseaWhen, otherTeam: st.otherTeam, otherTeamName: st.otherTeamName, heard: st.heard, dob: st.dob, experience: st.experience, details: st.details,
+      var answers = { formerNsea: st.formerNsea, formerNseaWhen: st.formerNseaWhen, otherTeam: st.otherTeam, otherTeamName: st.otherTeamName, recentTeam: st.recentTeam, heard: st.heard, dob: st.dob, experience: st.experience, details: st.details,
         competitive: Object.keys(st.competitive).filter(function (k) { return st.competitive[k]; }),
         groups: Object.keys(st.groups).filter(function (k) { return st.groups[k]; }), unsure: st.unsure };
       api('POST', '/assessment/intake/preview', { answers: answers, asOf: st.asOf }).then(function (o) {
@@ -589,6 +591,7 @@
       if (r.intake && r.intake.competitive && r.intake.competitive.length) lines.push(el('p', { class: 'cp-small' }, 'Competitive: ' + r.intake.competitive.map(function (c) {
         var bits = [c.team, c.lsc, c.region, c.school, c.describe].filter(Boolean); if (c.years) bits.push(c.years + ' yrs');
         return c.label + (bits.length ? ' (' + bits.join(', ') + ')' : ''); }).join('; ')));
+      if (r.intake && r.intake.recentTeam) lines.push(el('p', { class: 'cp-small' }, 'Most recent team: ' + r.intake.recentTeam));
       if (r.intake && r.intake.heard) lines.push(el('p', { class: 'cp-small' }, 'Heard about us: ' + r.intake.heard));
       if (r.notes) lines.push(el('p', { class: 'cp-small' }, (r.path === 'background_review' ? 'Background: ' : 'Family note: ') + r.notes));
       if (r.staff_note) lines.push(el('p', { class: 'cp-small' }, 'Staff note: ' + r.staff_note));
