@@ -37,6 +37,18 @@ test('date and time parsing', () => {
   assert.equal(S.addDays('2026-11-30', 1), '2026-12-01');
 });
 
+test('parseClock: 12-hour entries, 24-hour when unambiguous, no guessing', () => {
+  for (const [i, o] of [['4:00 PM', '16:00'], ['4pm', '16:00'], ['4:15 pm', '16:15'], ['12:00 PM', '12:00'], ['12:30 AM', '00:30'], ['9:05 a.m.', '09:05'], ['16:00', '16:00'], ['17:45', '17:45']])
+    assert.equal(S.parseClock(i), o, i);
+  for (const bad of ['4:00', '12:00', '13:00 PM', '0:30 AM', '4:07 PM', '25', 'noon', '']) assert.equal(S.parseClock(bad), null, bad);
+  const g = (times) => S.expandSlots({ from: '2026-11-17', to: '2026-11-17', weekdays: [2], times }, '2026-11-09');
+  assert.deepEqual(g('4:00 PM, 4:15 PM').slots.map((s) => s[1]), ['16:00', '16:15']);
+  assert.deepEqual(g('4:00 PM and 5:30 PM').slots.map((s) => s[1]), ['16:00', '17:30']);
+  assert.deepEqual(g('4pm; 4:15pm').slots.map((s) => s[1]), ['16:00', '16:15']);
+  assert.deepEqual(g(['16:00', '16:15']).slots.map((s) => s[1]), ['16:00', '16:15'], 'API callers can still send 24-hour arrays');
+  for (const bad of ['4:00', '4:00 PM, soon', '']) assert.match(g(bad).error, /AM or PM/, bad);
+});
+
 test('expandSlots: weekdays, times and limits', () => {
   const ok = S.expandSlots({ from: '2026-11-16', to: '2026-11-27', weekdays: [2, 4], times: '16:00, 16:15' }, '2026-11-09');
   assert.deepEqual(ok.slots.map((s) => s.join(' ')), ['2026-11-17 16:00', '2026-11-17 16:15', '2026-11-19 16:00', '2026-11-19 16:15', '2026-11-24 16:00', '2026-11-24 16:15', '2026-11-26 16:00', '2026-11-26 16:15']);

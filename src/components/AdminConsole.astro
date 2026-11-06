@@ -562,7 +562,7 @@
       el('label', null, 'Notes from the family (optional)', f.notes), addOut, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Add request')));
 
     // Publish availability.
-    var from = el('input', { type: 'date', required: true, min: o.today }), to = el('input', { type: 'date', min: o.today }), times = el('input', { required: true, placeholder: '16:00, 16:15', 'aria-label': 'Start times' });
+    var from = el('input', { type: 'date', required: true, min: o.today }), to = el('input', { type: 'date', min: o.today }), times = el('input', { required: true, placeholder: '4:00 PM, 4:15 PM', 'aria-label': 'Start times' });
     var days = DAYS.map(function (x) { return { v: x[1], box: el('input', { type: 'checkbox' }), label: x[0] }; });
     var slotOut = el('div', { class: 'cp-out' });
     var slotForm = el('form', { class: 'cp-form', onsubmit: function (e) {
@@ -572,7 +572,7 @@
         .catch(function (err) { slotOut.replaceChildren(msg('err', err.message)); });
     } }, el('div', { class: 'cp-btns' }, el('label', null, 'From', from), el('label', null, 'Through', to)),
       el('fieldset', null, el('legend', null, 'Days of the week'), days.map(function (x) { return el('label', { class: 'inline' }, x.box, ' ' + x.label); })),
-      el('label', null, 'Start times, 24-hour, separated by commas (each slot is ' + o.minutes + ' minutes)', times), slotOut,
+      el('label', null, 'Start times, separated by commas (each slot is ' + o.minutes + ' minutes)', times), slotOut,
       el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Add slots')));
     var byDate = {}, order = [];
     o.slots.forEach(function (s) { if (!byDate[s.slot_date]) { byDate[s.slot_date] = []; order.push(s.slot_date); } byDate[s.slot_date].push(s); });
