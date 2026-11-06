@@ -94,7 +94,8 @@ export async function openSlotsFor(env, now = new Date()) {
   return r.results;
 }
 
-const shapeRequest = (r) => ({ ...r, preferred: r.preferred ? JSON.parse(r.preferred) : [] });
+const jsonOr = (v, d) => { try { return v ? JSON.parse(v) : d; } catch { return d; } };
+const shapeRequest = (r) => ({ ...r, preferred: jsonOr(r.preferred, []), flags: jsonOr(r.flags, []), groups_asked: jsonOr(r.groups_asked, []), intake: jsonOr(r.intake, null) });
 
 export async function handleScheduleAdmin(env, me, method, path, body, audit, now = new Date()) {
   const today = todayET(now);

@@ -1,0 +1,189 @@
+---
+// Public New Swimmer Assessment request form. Talks to /api/assessment/*. All text is inserted with textContent.
+---
+<div id="ar" class="cp"><p class="cp-loading">Loading…</p></div>
+<noscript><p>The assessment request form needs JavaScript. Please email team@nseaswim.com.</p></noscript>
+
+<script is:inline>
+(function () {
+  var root = document.getElementById('ar'), cfg = null, kids = [], evalTimer = null;
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
+    }
+    (function add(list) {
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        if (c == null || c === false) continue;
+        if (Array.isArray(c)) add(c);
+        else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      }
+    })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  function api(method, path, body) {
+    return fetch('/api/assessment' + path, { method: method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) { var e = new Error(j.error || 'Something went wrong.'); e.data = j; throw e; } return j; }); });
+  }
+  function msg(kind, t) { return t ? el('p', { class: 'cp-msg ' + kind, role: kind === 'err' ? 'alert' : 'status' }, t) : null; }
+  function field(label, input) { return el('label', null, label, input); }
+  function check(label, fn, extra) { var i = el('input', { type: 'checkbox', onchange: function () { fn(i.checked); } }); return el('label', { class: 'inline' }, i, ' ' + label); }
+  function fmtDate(d) { var p = d.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
+  function fmtTime(t) { var p = t.split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + ' ' + (h < 12 ? 'AM' : 'PM'); }
+
+  function newKid() {
+    var k = { name: '', dob: '', experience: '', comp: {}, details: {}, groups: {}, unsure: false, formerNsea: false, formerNseaWhen: '', otherTeam: false, otherTeamName: '', background: '', slots: {}, others: [{ date: '', time: '' }, { date: '', time: '' }], result: null, card: null };
+    kids.push(k); return k;
+  }
+  function answers(k) {
+    return { dob: k.dob, experience: k.experience, competitive: Object.keys(k.comp).filter(function (x) { return k.comp[x]; }), details: k.details,
+      groups: Object.keys(k.groups).filter(function (x) { return k.groups[x]; }), unsure: k.unsure, formerNsea: k.formerNsea, formerNseaWhen: k.formerNseaWhen, otherTeam: k.otherTeam, otherTeamName: k.otherTeamName };
+  }
+  function recheck(k) {
+    clearTimeout(evalTimer);
+    evalTimer = setTimeout(function () {
+      api('POST', '/evaluate', { answers: answers(k) }).then(function (o) { k.result = o.result.ok ? o.result : null; paintResult(k); }).catch(function () {});
+    }, 300);
+  }
+
+  function paintResult(k) {
+    var box = k.card.querySelector('.ar-result'), when = k.card.querySelector('.ar-times'), bg = k.card.querySelector('.ar-bg');
+    box.replaceChildren(); var r = k.result, path = r && r.path;
+    if (r) r.familyMessages.forEach(function (m) {
+      box.appendChild(el('div', { class: 'cp-msg ok' }, m.message + ' ', m.link ? el('a', { href: m.link }, m.link.indexOf('http') === 0 ? 'Swim lesson information' : 'Practice group descriptions') : null));
+    });
+    when.style.display = path === 'schedule' ? '' : 'none';
+    bg.style.display = path === 'background_review' ? '' : 'none';
+    k.card.querySelector('.ar-rest').style.display = path === 'learn_to_swim' ? 'none' : '';
+  }
+
+  function timesBlock(k) {
+    var wrap = el('div', { class: 'ar-times', style: 'display:none' }, el('h4', null, 'When could the assessment happen?'),
+      el('p', { class: 'cp-small' }, 'Assessments take about 15 minutes and are free. Pick up to three times that could work. We need at least a week of notice, and a coach will email you to confirm one.'));
+    var byDay = {}; cfg.slots.forEach(function (s) { (byDay[s.slot_date] = byDay[s.slot_date] || []).push(s); });
+    var days = Object.keys(byDay);
+    if (days.length) days.forEach(function (d) {
+      wrap.appendChild(el('fieldset', null, el('legend', null, fmtDate(d)), byDay[d].map(function (s) {
+        return el('label', { class: 'inline' }, el('input', { type: 'checkbox', onchange: function (e) { k.slots[s.id] = e.target.checked; } }), ' ' + fmtTime(s.start_time));
+      })));
+    });
+    else wrap.appendChild(el('p', { class: 'cp-small' }, 'No set times are posted right now. Tell us dates that work and we will get back to you.'));
+    wrap.appendChild(el('p', { class: 'cp-small' }, days.length ? 'Don’t see a time that works? Suggest another date:' : 'Dates that could work:'));
+    k.others.forEach(function (o) {
+      wrap.appendChild(el('div', { class: 'cp-btns' },
+        el('input', { type: 'date', 'aria-label': 'Date', min: cfg.earliest, onchange: function (e) { o.date = e.target.value; } }),
+        el('input', { type: 'time', 'aria-label': 'Time (optional)', onchange: function (e) { o.time = e.target.value; } })));
+    });
+    return wrap;
+  }
+
+  function card(k, idx) {
+    var comp = el('div', { class: 'ar-comp', style: 'display:none' });
+    function drawComp() {
+      comp.replaceChildren(); comp.style.display = k.experience === 'competitive' ? '' : 'none';
+      if (k.experience !== 'competitive') return;
+      comp.appendChild(el('p', { class: 'cp-small' }, 'Which kinds of competitive swimming has the swimmer done? Tick all that apply.'));
+      Object.keys(cfg.competitive).forEach(function (key) {
+        var c = cfg.competitive[key];
+        comp.appendChild(check(c.label, function (v) { k.comp[key] = v; drawComp(); recheck(k); }));
+        comp.querySelector('label:last-child input').checked = !!k.comp[key];
+        if (!k.comp[key]) return;
+        var d = k.details[key] = k.details[key] || {};
+        comp.appendChild(el('div', { style: 'margin:4px 0 10px 18px;display:grid;gap:8px' }, c.fields.map(function (f) {
+          var i = el(f.long ? 'textarea' : 'input', { maxlength: 300, rows: f.long ? 3 : null, type: f.type === 'number' ? 'number' : null, min: f.type === 'number' ? 0 : null, max: f.type === 'number' ? 40 : null,
+            oninput: function () { d[f.key] = i.value; }, onchange: function () { recheck(k); } });
+          i.value = d[f.key] || '';
+          return field(f.label + (f.required ? '' : ' (optional)'), i);
+        })));
+      });
+    }
+    var expSel = el('select', { onchange: function (e) { k.experience = e.target.value; drawComp(); recheck(k); } }, el('option', { value: '' }, 'Choose…'),
+      Object.keys(cfg.experience).map(function (x) { return el('option', { value: x }, cfg.experience[x]); }));
+    var teamIn = el('input', { maxlength: 80, oninput: function (e) { k.otherTeamName = e.target.value; } });
+    var teamWrap = field('Which team?', teamIn); teamWrap.style.display = 'none';
+    var whenIn = el('input', { maxlength: 80, placeholder: 'e.g. 2023 season', oninput: function (e) { k.formerNseaWhen = e.target.value; } });
+    var whenWrap = field('When? (optional)', whenIn); whenWrap.style.display = 'none';
+    var groupBox = el('fieldset', null, el('legend', null, 'Which group(s) are you interested in?'),
+      cfg.groups.map(function (g) { return check(g.name + ' (ages ' + g.min + ' to ' + g.max + ')', function (v) { k.groups[g.name] = v; recheck(k); }); }),
+      check('Not sure', function (v) { k.unsure = v; recheck(k); }));
+    var rest = el('div', { class: 'ar-rest', style: 'display:grid;gap:12px' },
+      el('div', null, el('p', { class: 'cp-small' }, 'Not sure which group fits? See the '), el('a', { href: '/programs/practice-groups/', target: '_blank' }, 'group descriptions')),
+      groupBox,
+      check('Has swum with NSEA before', function (v) { k.formerNsea = v; whenWrap.style.display = v ? '' : 'none'; }), whenWrap,
+      check('Currently swims for another team', function (v) { k.otherTeam = v; teamWrap.style.display = v ? '' : 'none'; }), teamWrap,
+      el('div', { class: 'ar-bg', style: 'display:none' }, field('Tell us about the swimmer’s swimming background and goals',
+        el('textarea', { rows: 4, maxlength: 1500, oninput: function (e) { k.background = e.target.value; } }))),
+      timesBlock(k));
+    var c = el('div', { class: 'cp-panel' },
+      el('h3', null, 'Swimmer ' + (idx + 1)),
+      el('div', { class: 'cp-form' },
+        field('Swimmer’s name', el('input', { maxlength: 80, autocomplete: 'off', oninput: function (e) { k.name = e.target.value; } })),
+        field('Date of birth', el('input', { type: 'date', onchange: function (e) { k.dob = e.target.value; recheck(k); } })),
+        field('Swimming experience', expSel), comp,
+        el('div', { class: 'ar-result' }), rest,
+        el('div', { class: 'ar-err' }),
+        idx > 0 ? el('div', { class: 'cp-btns ar-remove' }, el('button', { class: 'btn small ghost', type: 'button', onclick: function () { removeKid(k); } }, 'Remove this swimmer')) : null));
+    k.card = c; return c;
+  }
+
+  var contact = { name: '', email: '', phone: '' }, heard = '', cardsBox = null, addBtn = null;
+  // Cards are added and removed in place so nothing the family already typed is lost.
+  function addKid() { var k = newKid(); cardsBox.appendChild(card(k, kids.length - 1)); syncCards(); }
+  function removeKid(k) { kids.splice(kids.indexOf(k), 1); k.card.remove(); syncCards(); }
+  function syncCards() {
+    kids.forEach(function (k, i) { k.card.querySelector('h3').textContent = 'Swimmer ' + (i + 1); });
+    addBtn.style.display = kids.length < 6 ? '' : 'none';
+  }
+  function render() {
+    cardsBox = el('div'); addBtn = el('button', { class: 'btn ghost', type: 'button', onclick: addKid }, 'Add another swimmer (sibling)');
+    var out = el('div', { class: 'cp-out' });
+    var hp = el('input', { name: 'website', tabindex: '-1', autocomplete: 'off' });
+    var submit = el('button', { class: 'btn', type: 'submit' }, 'Send request');
+    var form = el('form', { onsubmit: function (e) {
+      e.preventDefault(); out.replaceChildren(); kids.forEach(function (k) { k.card.querySelector('.ar-err').replaceChildren(); }); submit.disabled = true;
+      var body = { website: hp.value, heard: heard, contact: contact, swimmers: kids.map(function (k) {
+        return { name: k.name, answers: answers(k), background: k.background,
+          slotIds: Object.keys(k.slots).filter(function (id) { return k.slots[id]; }).map(Number),
+          otherDates: k.others.filter(function (o) { return o.date; }) };
+      }) };
+      api('POST', '/request', body).then(done).catch(function (err) {
+        submit.disabled = false;
+        var d = err.data || {};
+        if (typeof d.swimmer === 'number' && kids[d.swimmer]) { var box = kids[d.swimmer].card.querySelector('.ar-err'); box.appendChild(msg('err', err.message)); box.scrollIntoView({ block: 'center' }); }
+        else out.appendChild(msg('err', err.message));
+      });
+    } },
+      el('div', { class: 'cp-panel' }, el('h3', null, 'About you'), el('div', { class: 'cp-form' },
+        field('Parent or guardian name', el('input', { required: true, maxlength: 80, autocomplete: 'name', oninput: function (e) { contact.name = e.target.value; } })),
+        field('Email', el('input', { type: 'email', required: true, maxlength: 120, autocomplete: 'email', oninput: function (e) { contact.email = e.target.value; } })),
+        field('Mobile (optional)', el('input', { type: 'tel', maxlength: 30, autocomplete: 'tel', oninput: function (e) { contact.phone = e.target.value; } })),
+        field('How did you hear about us? (optional)', el('select', { onchange: function (e) { heard = e.target.value; } }, el('option', { value: '' }, 'Choose…'),
+          Object.keys(cfg.heard).map(function (x) { return el('option', { value: x }, cfg.heard[x]); }))))),
+      cardsBox,
+      el('div', { class: 'cp-btns' }, addBtn),
+      el('div', { class: 'cp-hp', 'aria-hidden': 'true' }, el('label', null, 'Website', hp)),
+      out, el('p', null, submit));
+    root.replaceChildren(form);
+    kids.forEach(function (k, i) { cardsBox.appendChild(card(k, i)); paintResult(k); });
+    syncCards();
+  }
+
+  function done(o) {
+    var panels = o.outcomes.map(function (x) {
+      var title = x.path === 'schedule' ? x.name + ': request received (#' + x.requestNumber + ')' : x.path === 'background_review' ? x.name + ': background received (#' + x.requestNumber + ')' : x.name + ': a good first step';
+      var body = x.messages.map(function (m) { return el('p', null, m.message + ' ', m.link && m.link.indexOf('http') === 0 ? el('a', { href: m.link }, 'Swim lesson information') : null); });
+      if (x.path === 'schedule') body.unshift(el('p', null, 'Thank you! A coach will email you to confirm a time. Nothing is booked until you hear from us.'));
+      return el('div', { class: 'cp-panel' }, el('h3', null, title), body);
+    });
+    root.replaceChildren.apply(root, [el('h2', null, 'Thank you')].concat(panels, [el('p', { class: 'cp-small' }, 'Questions? Email team@nseaswim.com.')]));
+    window.scrollTo(0, 0);
+  }
+
+  api('GET', '/options').then(function (o) { cfg = o; newKid(); render(); }).catch(function () {
+    root.replaceChildren(msg('err', 'The form could not load. Please email team@nseaswim.com.'));
+  });
+})();
+</script>
