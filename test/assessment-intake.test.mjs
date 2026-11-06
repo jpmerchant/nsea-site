@@ -6,7 +6,7 @@ let DatabaseSync;
 try { ({ DatabaseSync } = await import('node:sqlite')); } catch { /* older Node: skip */ }
 
 const asOf = '2027-06-15';
-const base = { dob: '2018-03-01', comfort: 'comfortable', experience: 'lessons', groups: ['Splash'] };
+const base = { dob: '2018-03-01', experience: 'lessons', groups: ['Splash'] };
 const ev = (o) => evaluateIntake({ ...base, ...o }, { asOf });
 const codes = (r) => r.flags.map((f) => f.code);
 
@@ -18,18 +18,13 @@ test('age is whole years on the assessment date', () => {
 test('missing or bad basics return errors', () => {
   const r = evaluateIntake({}, { asOf });
   assert.equal(r.ok, false);
-  assert.deepEqual(r.errors.map((e) => e.field), ['dob', 'comfort', 'experience']);
+  assert.deepEqual(r.errors.map((e) => e.field), ['dob', 'experience']);
   assert.equal(ev({ dob: '2030-01-01' }).ok, false);
 });
-test('uncomfortable or cannot swim -> learn to swim', () => {
-  for (const comfort of ['uncomfortable', 'cannot_swim']) {
-    const r = ev({ comfort });
-    assert.equal(r.path, 'learn_to_swim');
-    assert.equal(r.reason, 'not_comfortable');
-    assert.equal(r.familyMessages[0].link, LEARN_TO_SWIM_URL);
-  }
+test('water comfort is not asked, only experience decides', () => {
+  assert.equal(ev({ comfort: 'cannot_swim' }).path, 'schedule');
 });
-test('no experience -> learn to swim, separate from comfort', () => {
+test('no experience -> learn to swim', () => {
   const r = ev({ experience: 'none' });
   assert.equal(r.path, 'learn_to_swim');
   assert.equal(r.reason, 'no_experience');
