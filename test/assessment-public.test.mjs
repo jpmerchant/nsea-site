@@ -122,11 +122,11 @@ test('limits: swimmers per submission and requests per email per day', T, async 
 
 test('the staff queue sees flags, groups and intake details', T, async () => {
   const { db, DB } = d1(); const id = addSlot(db, '2026-11-17', '16:00');
-  await call({ DB }, 'POST', '/request', { contact, swimmers: [kid({ slotIds: [id], answers: { dob: '2018-03-01', experience: 'competitive', competitive: ['summer_league'], details: { summer_league: { team: 'Waves', years: 2 } }, groups: ['Splash', 'Tidepool'] } })] });
+  await call({ DB }, 'POST', '/request', { contact, swimmers: [kid({ slotIds: [id], answers: { dob: '2018-03-01', experience: 'competitive', recentTeam: 'Waves', competitive: ['summer_league'], details: { summer_league: { team: 'Waves', years: 2 } }, groups: ['Splash', 'Tidepool'] } })] });
   const r = await handleScheduleAdmin({ DB }, { email: 'c@x' }, 'GET', '/assessment/schedule', {}, async () => {}, NOW);
   const req = (await r.json()).requests[0];
   assert.deepEqual(req.flags.map((f) => f.code), ['competitive_experience', 'multiple_groups']);
-  assert.deepEqual(req.groups_asked, ['Splash', 'Tidepool']); assert.equal(req.assess_for, 'Tidepool'); assert.equal(req.intake.competitive[0].team, 'Waves');
+  assert.deepEqual(req.groups_asked, ['Splash', 'Tidepool']); assert.equal(req.assess_for, 'Tidepool'); assert.equal(req.intake.competitive[0].team, 'Waves'); assert.equal(req.intake.recentTeam, 'Waves');
 });
 
 test('an optional second contact is stored on every sibling, and validated if given', T, async () => {

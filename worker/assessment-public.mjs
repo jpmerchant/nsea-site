@@ -95,7 +95,7 @@ async function submit(env, b, now, today) {
       flags.push({ code: 'duplicate_request', level: 'review', message: `Possible duplicate of request #${d.id} (${d.status}).` });
     }
     const intake = { experience: p.answers.experience, competitive: p.r.followups.map((f) => ({ type: f.type, label: f.label, ...((p.answers.details && p.answers.details[f.type]) || {}) })),
-      formerNsea: !!p.answers.formerNsea, formerNseaWhen: clean(p.answers.formerNseaWhen, 80) || null, otherTeam: !!p.answers.otherTeam, otherTeamName: clean(p.answers.otherTeamName, 80) || null, heard: p.r.heard || null, unsure: !!p.answers.unsure };
+      formerNsea: !!p.answers.formerNsea, formerNseaWhen: clean(p.answers.formerNseaWhen, 80) || null, otherTeam: !!(p.answers.otherTeam && p.r.clubTeam), recentTeam: clean(p.answers.recentTeam, 120) || null, otherTeamName: clean(p.answers.otherTeamName, 80) || null, heard: p.r.heard || null, unsure: !!p.answers.unsure };
     for (const f of intake.competitive) for (const k of Object.keys(f)) if (typeof f[k] === 'string') f[k] = clean(f[k], 300);
     const res = await env.DB.prepare(
       `INSERT INTO assess_requests (source, contact_name, contact_email, contact_phone, swimmer_name, swimmer_age, notes, preferred, family_ref, dob, path, assess_for, groups_asked, intake, flags, contact2_name, contact2_email, contact2_phone)
