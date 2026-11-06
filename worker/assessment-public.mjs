@@ -94,9 +94,14 @@ async function submit(env, b, now, today) {
     for (const d of await findDuplicateRequests(env, { swimmerName: p.name, email: contact_email })) {
       flags.push({ code: 'duplicate_request', level: 'review', message: `Possible duplicate of request #${d.id} (${d.status}).` });
     }
-    const intake = { experience: p.answers.experience, competitive: p.r.followups.map((f) => ({ type: f.type, label: f.label, ...((p.answers.details && p.answers.details[f.type]) || {}) })),
-      formerNsea: !!p.answers.formerNsea, formerNseaWhen: clean(p.answers.formerNseaWhen, 80) || null, otherTeam: !!(p.answers.otherTeam && p.r.clubTeam), recentTeam: clean(p.answers.recentTeam, 120) || null, otherTeamName: clean(p.answers.otherTeamName, 80) || null, heard: p.r.heard || null, unsure: !!p.answers.unsure };
-    for (const f of intake.competitive) for (const k of Object.keys(f)) if (typeof f[k] === 'string') f[k] = clean(f[k], 300);
+    // Keep only the fields each kind of competitive experience actually asks for.
+    const competitive = p.r.followups.map((f) => {
+      const d = (p.answers.details && p.answers.details[f.type]) || {}, o = { type: f.type, label: f.label };
+      for (const fld of f.fields) o[fld.key] = fld.type === 'checkbox' ? d[fld.key] === true || d[fld.key] === 'true' : clean(d[fld.key], 300);
+      return o;
+    });
+    const intake = { experience: p.answers.experience, competitive,
+      formerNsea: !!p.answers.formerNsea, formerNseaWhen: clean(p.answers.formerNseaWhen, 80) || null, heard: p.r.heard || null, unsure: !!p.answers.unsure };
     const res = await env.DB.prepare(
       `INSERT INTO assess_requests (source, contact_name, contact_email, contact_phone, swimmer_name, swimmer_age, notes, preferred, family_ref, dob, path, assess_for, groups_asked, intake, flags, contact2_name, contact2_email, contact2_phone)
        VALUES ('form', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`

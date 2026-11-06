@@ -35,12 +35,12 @@
   function fmtTime(t) { var p = t.split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + ' ' + (h < 12 ? 'AM' : 'PM'); }
 
   function newKid() {
-    var k = { name: '', dob: '', experience: '', comp: {}, details: {}, groups: {}, unsure: false, formerNsea: false, formerNseaWhen: '', otherTeam: false, otherTeamName: '', recentTeam: '', background: '', slots: {}, others: [{ date: '', time: '' }, { date: '', time: '' }], result: null, card: null };
+    var k = { name: '', dob: '', experience: '', comp: {}, details: {}, groups: {}, unsure: false, formerNsea: false, formerNseaWhen: '', background: '', slots: {}, others: [{ date: '', time: '' }, { date: '', time: '' }], result: null, card: null };
     kids.push(k); return k;
   }
   function answers(k) {
     return { dob: k.dob, experience: k.experience, competitive: Object.keys(k.comp).filter(function (x) { return k.comp[x]; }), details: k.details,
-      groups: Object.keys(k.groups).filter(function (x) { return k.groups[x]; }), unsure: k.unsure, formerNsea: k.formerNsea, formerNseaWhen: k.formerNseaWhen, otherTeam: k.otherTeam, otherTeamName: k.otherTeamName, recentTeam: k.recentTeam };
+      groups: Object.keys(k.groups).filter(function (x) { return k.groups[x]; }), unsure: k.unsure, formerNsea: k.formerNsea, formerNseaWhen: k.formerNseaWhen };
   }
   function recheck(k) {
     clearTimeout(evalTimer);
@@ -82,37 +82,30 @@
 
   function card(k, idx) {
     var comp = el('div', { class: 'ar-comp', style: 'display:none' });
-    var teamIn = el('input', { maxlength: 80, oninput: function (e) { k.otherTeamName = e.target.value; } });
-    var teamWrap = field('Which club team?', teamIn); teamWrap.style.display = 'none';
-    var clubBox = el('input', { type: 'checkbox', onchange: function () { k.otherTeam = clubBox.checked; teamWrap.style.display = clubBox.checked ? '' : 'none'; } });
-    var clubWrap = el('div', { style: 'display:none' }, el('label', { class: 'inline' }, clubBox, ' Currently swims for another club team'), teamWrap);
     function drawComp() {
       comp.replaceChildren(); comp.style.display = k.experience === 'competitive' ? '' : 'none';
       if (k.experience !== 'competitive') return;
       comp.appendChild(el('p', { class: 'cp-small' }, 'Which kinds of competitive swimming has the swimmer done? Tick all that apply.'));
       Object.keys(cfg.competitive).forEach(function (key) {
         var c = cfg.competitive[key];
-        comp.appendChild(check(c.label, function (v) { k.comp[key] = v; drawComp(); syncClub(); recheck(k); }));
-        comp.querySelector('label:last-child input').checked = !!k.comp[key];
+        var kindBox = check(c.label, function (v) { k.comp[key] = v; drawComp(); recheck(k); });
+        kindBox.querySelector('input').checked = !!k.comp[key];
+        comp.appendChild(kindBox);
         if (!k.comp[key]) return;
         var d = k.details[key] = k.details[key] || {};
         comp.appendChild(el('div', { style: 'margin:4px 0 10px 18px;display:grid;gap:8px' }, c.fields.map(function (f) {
+          if (f.type === 'checkbox') {
+            var cb = el('input', { type: 'checkbox', onchange: function () { d[f.key] = cb.checked; recheck(k); } }); cb.checked = !!d[f.key];
+            return el('label', { class: 'inline' }, cb, ' ' + f.label);
+          }
           var i = el(f.long ? 'textarea' : 'input', { maxlength: 300, rows: f.long ? 3 : null, type: f.type === 'number' ? 'number' : null, min: f.type === 'number' ? 0 : null, max: f.type === 'number' ? 40 : null,
             oninput: function () { d[f.key] = i.value; }, onchange: function () { recheck(k); } });
           i.value = d[f.key] || '';
           return field(f.label + (f.required ? '' : ' (optional)'), i);
         })));
       });
-      var rt = el('input', { maxlength: 120, oninput: function (e) { k.recentTeam = e.target.value; }, onchange: function () { recheck(k); } }); rt.value = k.recentTeam || '';
-      comp.appendChild(field('Name of the swimmer’s most recent team', rt));
     }
-    // "Another club team" only makes sense for USA Swimming or YMCA club swimmers.
-    function syncClub() {
-      var show = k.experience === 'competitive' && (k.comp.usa_club || k.comp.ymca_club);
-      clubWrap.style.display = show ? '' : 'none';
-      if (!show) { k.otherTeam = false; k.otherTeamName = ''; clubBox.checked = false; teamIn.value = ''; teamWrap.style.display = 'none'; }
-    }
-    var expSel = el('select', { onchange: function (e) { k.experience = e.target.value; drawComp(); syncClub(); recheck(k); } }, el('option', { value: '' }, 'Choose…'),
+    var expSel = el('select', { onchange: function (e) { k.experience = e.target.value; drawComp(); recheck(k); } }, el('option', { value: '' }, 'Choose…'),
       Object.keys(cfg.experience).map(function (x) { return el('option', { value: x }, cfg.experience[x]); }));
     var whenIn = el('input', { maxlength: 80, placeholder: 'e.g. 2023 season', oninput: function (e) { k.formerNseaWhen = e.target.value; } });
     var whenWrap = field('When? (optional)', whenIn); whenWrap.style.display = 'none';
@@ -121,7 +114,6 @@
       check('Not sure', function (v) { k.unsure = v; recheck(k); }));
     var rest = el('div', { class: 'ar-rest', style: 'display:grid;gap:12px' },
       check('Has swum with NSEA before', function (v) { k.formerNsea = v; whenWrap.style.display = v ? '' : 'none'; }), whenWrap,
-      clubWrap,
       el('div', { class: 'ar-bg', style: 'display:none' }, field('Tell us about the swimmer’s swimming background and goals',
         el('textarea', { rows: 4, maxlength: 1500, oninput: function (e) { k.background = e.target.value; } }))),
       timesBlock(k));

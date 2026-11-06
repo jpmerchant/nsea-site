@@ -27,15 +27,18 @@ export const EXPERIENCE = { none: 'No swimming experience', lessons: 'Lessons or
 
 // Competitive experience: the family ticks any that apply, and each opens a few short follow-up questions.
 // Best events and times are deliberately not asked; coaches look those up themselves.
-const TEAM = { key: 'team', label: 'Team name', required: true }, YEARS = { key: 'years', label: 'Years swimming', type: 'number', required: true };
+const RECENT = { key: 'team', label: 'Most recent team', required: true }, YEARS = { key: 'years', label: 'Years swimming', type: 'number', required: true };
+const CURRENT = { key: 'current', label: 'Currently swimming here', type: 'checkbox', required: false };
 export const COMPETITIVE = {
-  usa_club: { label: 'USA Swimming club', fields: [TEAM, { key: 'lsc', label: 'LSC (for example NC Swimming)', required: true }, YEARS] },
-  ymca_club: { label: 'YMCA club', fields: [TEAM, { key: 'region', label: 'YMCA region or association', required: false }, YEARS] },
-  summer_league: { label: 'Summer League', fields: [{ key: 'team', label: 'Team or league name', required: true }, YEARS] },
-  rec_league: { label: 'Other recreation league', fields: [{ key: 'team', label: 'League or team name', required: true }, YEARS] },
-  high_school: { label: 'High school', fields: [{ key: 'school', label: 'School', required: true }, YEARS] },
-  other: { label: 'Other', fields: [{ key: 'describe', label: 'Please describe', required: true, long: true }] },
+  usa_club: { label: 'USA Swimming club', fields: [RECENT, { key: 'lsc', label: 'LSC (for example NC Swimming)', required: true }, YEARS, CURRENT] },
+  ymca_club: { label: 'YMCA club', fields: [RECENT, { key: 'region', label: 'YMCA region or association', required: false }, YEARS, CURRENT] },
+  summer_league: { label: 'Summer League', fields: [RECENT, YEARS, CURRENT] },
+  rec_league: { label: 'Other recreation league', fields: [RECENT, YEARS, CURRENT] },
+  high_school: { label: 'High school', fields: [{ key: 'school', label: 'School', required: true }, YEARS, CURRENT] },
+  other: { label: 'Other', fields: [{ key: 'describe', label: 'Please describe', required: true, long: true }, CURRENT] },
 };
+// Only USA Swimming and YMCA clubs compete for a swimmer's practice time, so only those raise a flag when "currently swimming here" is ticked.
+const CLUB_TYPES = ['usa_club', 'ymca_club'];
 
 // Optional "how did you hear about us" choices. Never required.
 export const HEARD = { friend: 'Friend or family', member: 'A current NSEA family', school: 'School or PE class', search: 'Web search', social: 'Social media', event: 'Meet or community event', other: 'Other' };
@@ -56,7 +59,7 @@ export function ageOn(dob, asOf) {
   return ay - by - (am < bm || (am === bm && ad < bd) ? 1 : 0);
 }
 
-// answers: { formerNsea, formerNseaWhen, otherTeam (club swimmers only), otherTeamName, recentTeam, heard, dob, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
+// answers: { formerNsea, formerNseaWhen, heard, dob, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
 export function evaluateIntake(answers, { asOf } = {}) {
   const a = answers || {};
   const date = parseBirthDate(asOf) || todayET();
@@ -90,25 +93,23 @@ export function evaluateIntake(answers, { asOf } = {}) {
       out.followups.push({ type: k, label: COMPETITIVE[k].label, fields: COMPETITIVE[k].fields });
       const got = (a.details && a.details[k]) || {};
       for (const f of COMPETITIVE[k].fields) {
+        if (f.type === 'checkbox') continue;
         const v = String(got[f.key] ?? '').trim();
         if (f.required && !v) errors.push({ field: `details.${k}.${f.key}`, message: `${COMPETITIVE[k].label}: please fill in “${f.label}”.` });
         else if (f.type === 'number' && v && !(Number(v) >= 0 && Number(v) <= 40)) errors.push({ field: `details.${k}.${f.key}`, message: `${COMPETITIVE[k].label}: “${f.label}” should be a number of years.` });
       }
     }
-    const recent = String(a.recentTeam ?? '').trim();
-    if (!recent) errors.push({ field: 'recentTeam', message: 'Please tell us the name of the swimmer’s most recent team.' });
-    out.flags.push({ code: 'competitive_experience', level: 'review', message: 'Has competitive experience: ' + (ticked.filter((k) => COMPETITIVE[k]).map((k) => COMPETITIVE[k].label).join(', ') || 'details missing') + (recent ? `. Most recent team: ${recent.slice(0, 120)}` : '') + '. Do the background search.' });
-    out.clubTeam = ticked.includes('usa_club') || ticked.includes('ymca_club');
+    const teamOf = (k) => String((a.details && a.details[k] && (a.details[k].team || a.details[k].school)) || '').trim();
+    const kinds = ticked.filter((k) => COMPETITIVE[k]).map((k) => COMPETITIVE[k].label + (teamOf(k) ? ` (${teamOf(k).slice(0, 80)})` : ''));
+    out.flags.push({ code: 'competitive_experience', level: 'review', message: 'Has competitive experience: ' + (kinds.join(', ') || 'details missing') + '. Do the background search.' });
+    for (const k of CLUB_TYPES.filter((x) => ticked.includes(x))) {
+      const d = (a.details && a.details[k]) || {};
+      if (d.current === true || d.current === 'true') out.flags.push({ code: 'other_team', level: 'review', message: `Currently swimming with a ${COMPETITIVE[k].label}${teamOf(k) ? ` (${teamOf(k).slice(0, 80)})` : ''}. Confirm they plan to leave that team before placing.` });
+    }
   }
 
-  // 2b. History with NSEA and other teams. Both only flag; they never change the path.
+  // 2b. History with NSEA. Only flags; never changes the path.
   if (a.formerNsea) out.flags.push({ code: 'former_nsea', level: 'review', message: 'Has swum with NSEA before' + (String(a.formerNseaWhen ?? '').trim() ? ` (${String(a.formerNseaWhen).trim().slice(0, 80)})` : '') + '. Look up the old profile and records.' });
-  // "Another club team" is only asked of USA Swimming and YMCA club swimmers, so it is ignored for everyone else.
-  if (a.otherTeam && out.clubTeam) {
-    const t = String(a.otherTeamName ?? '').trim();
-    if (!t) errors.push({ field: 'otherTeamName', message: 'Please tell us which club team the swimmer is on now.' });
-    out.flags.push({ code: 'other_team', level: 'review', message: `Currently swims for another club team: ${t || 'name missing'}. Confirm they plan to leave that team before placing.` });
-  }
   if (a.heard && !HEARD[a.heard]) errors.push({ field: 'heard', message: 'Please choose one of the listed ways you heard about us, or leave it blank.' });
   else if (a.heard) out.heard = a.heard;
 
