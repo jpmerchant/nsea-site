@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateIntake, ageOn, parseBirthDate, LEARN_TO_SWIM_URL } from '../worker/assessment-intake.mjs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { evaluateIntake, ageOn, parseBirthDate, LEARN_TO_SWIM_URL, findDuplicateRequests } from '../worker/assessment-intake.mjs';
+let DatabaseSync;
+try { ({ DatabaseSync } = await import('node:sqlite')); } catch { /* older Node: skip */ }
 
 const asOf = '2027-06-15';
 const base = { dob: '2018-03-01', comfort: 'comfortable', experience: 'lessons', groups: ['Splash'] };
@@ -88,4 +91,29 @@ test('Breakers, Surge, Senior -> background review', () => {
 });
 test('unknown groups are ignored', () => {
   assert.equal(ev({ groups: ['Nope'] }).ok, false);
+});
+
+test('former NSEA swimmer and other team only flag', () => {
+  const r = ev({ formerNsea: true, formerNseaWhen: 'about 2023', otherTeam: true, otherTeamName: 'Rival SC' });
+  assert.equal(r.path, 'schedule');
+  assert.deepEqual(codes(r), ['former_nsea', 'other_team']);
+  assert.match(r.flags[0].message, /about 2023/);
+  assert.match(r.flags[1].message, /Rival SC/);
+  assert.equal(ev({ otherTeam: true }).ok, false);
+});
+test('how you heard is optional but must be a listed choice', () => {
+  assert.equal(ev({}).heard, undefined);
+  assert.equal(ev({ heard: 'friend' }).heard, 'friend');
+  assert.equal(ev({ heard: 'bogus' }).ok, false);
+});
+test('duplicate open requests are found by email and swimmer name', { skip: !DatabaseSync }, async () => {
+  const db = new DatabaseSync(':memory:');
+  for (const f of readdirSync(new URL('../migrations/', import.meta.url)).sort()) db.exec(readFileSync(new URL('../migrations/' + f, import.meta.url), 'utf8'));
+  const stmt = (sql, b = []) => ({ all: async () => ({ results: db.prepare(sql).all(...b) }), bind: (...nb) => stmt(sql, nb) });
+  const env = { DB: { prepare: (sql) => stmt(sql) } };
+  const ins = db.prepare(`INSERT INTO assess_requests (status, contact_name, contact_email, swimmer_name) VALUES (?, 'Pat', ?, ?)`);
+  ins.run('new', 'Pat@Example.com ', 'Ava Lee '); ins.run('declined', 'pat@example.com', 'Ava Lee'); ins.run('new', 'other@example.com', 'Ava Lee');
+  const m = await findDuplicateRequests(env, { swimmerName: 'ava lee', email: 'pat@example.com' });
+  assert.equal(m.length, 1);
+  assert.deepEqual(await findDuplicateRequests(env, { swimmerName: '', email: 'pat@example.com' }), []);
 });

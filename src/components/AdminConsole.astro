@@ -527,16 +527,24 @@
         })));
       });
     }
+    var team = el('input', { value: st.otherTeamName, onchange: function () { st.otherTeamName = team.value; run(false); } });
+    var when = el('input', { value: st.formerNseaWhen, onchange: function () { st.formerNseaWhen = when.value; run(false); } });
+    var heard = el('select', { onchange: function () { st.heard = heard.value; run(false); } }, el('option', { value: '' }, '(not answered)'),
+      Object.keys(cfg.heard).map(function (k) { return el('option', { value: k, selected: st.heard === k }, cfg.heard[k]); }));
+    var history = el('div', null,
+      check('Has swum with NSEA before', st.formerNsea, function (v) { st.formerNsea = v; }), field('When (optional)', when),
+      check('Currently swims for another team', st.otherTeam, function (v) { st.otherTeam = v; }), field('Which team', team),
+      field('How did you hear about us (optional)', heard));
     var groups = el('div', null, cfg.groups.map(function (g) { return check(g.name + ' (ages ' + g.min + ' to ' + g.max + ')', !!st.groups[g.name], function (v) { st.groups[g.name] = v; }); }),
       check('Not sure which group', st.unsure, function (v) { st.unsure = v; }));
     var form = el('div', { class: 'cp-form' },
       el('p', { class: 'cp-note' }, 'Try a family’s answers to see where the sign-up would send them. Nothing here is saved.'),
       field('Swimmer date of birth', dob), field('Assessment date (age is figured on this day)', asOf),
-      field('Comfort in the water', select(cfg.comfort, 'comfort')), field('Experience', select(cfg.experience, 'experience')), comp,
+      field('Comfort in the water', select(cfg.comfort, 'comfort')), field('Experience', select(cfg.experience, 'experience')), comp, history,
       el('fieldset', null, el('legend', null, 'Group(s) of interest'), groups));
     function run(redraw) {
       if (redraw) drawComp();
-      var answers = { dob: st.dob, comfort: st.comfort, experience: st.experience, details: st.details,
+      var answers = { formerNsea: st.formerNsea, formerNseaWhen: st.formerNseaWhen, otherTeam: st.otherTeam, otherTeamName: st.otherTeamName, heard: st.heard, dob: st.dob, comfort: st.comfort, experience: st.experience, details: st.details,
         competitive: Object.keys(st.competitive).filter(function (k) { return st.competitive[k]; }),
         groups: Object.keys(st.groups).filter(function (k) { return st.groups[k]; }), unsure: st.unsure };
       api('POST', '/assessment/intake/preview', { answers: answers, asOf: st.asOf }).then(function (o) {

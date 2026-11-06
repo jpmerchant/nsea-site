@@ -38,6 +38,9 @@ export const COMPETITIVE = {
   other: { label: 'Other', fields: [{ key: 'describe', label: 'Please describe', required: true, long: true }] },
 };
 
+// Optional "how did you hear about us" choices. Never required.
+export const HEARD = { friend: 'Friend or family', member: 'A current NSEA family', school: 'School or PE class', search: 'Web search', social: 'Social media', event: 'Meet or community event', other: 'Other' };
+
 const rank = (name) => GROUP_RULES.findIndex((g) => g.name === name);
 const ruleOf = (name) => GROUP_RULES.find((g) => g.name === name);
 const list = (names) => names.length < 3 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
@@ -54,7 +57,7 @@ export function ageOn(dob, asOf) {
   return ay - by - (am < bm || (am === bm && ad < bd) ? 1 : 0);
 }
 
-// answers: { dob, comfort, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
+// answers: { formerNsea, formerNseaWhen, otherTeam, otherTeamName, heard, dob, comfort, experience, competitive: [keys], details: { key: { field: value } }, groups: [names] and/or 'unsure': true }
 export function evaluateIntake(answers, { asOf } = {}) {
   const a = answers || {};
   const date = parseBirthDate(asOf) || todayET();
@@ -97,6 +100,16 @@ export function evaluateIntake(answers, { asOf } = {}) {
     out.flags.push({ code: 'competitive_experience', level: 'review', message: 'Has competitive experience: ' + (ticked.filter((k) => COMPETITIVE[k]).map((k) => COMPETITIVE[k].label).join(', ') || 'details missing') + '. Do the background search.' });
   }
 
+  // 2b. History with NSEA and other teams. Both only flag; they never change the path.
+  if (a.formerNsea) out.flags.push({ code: 'former_nsea', level: 'review', message: 'Has swum with NSEA before' + (String(a.formerNseaWhen ?? '').trim() ? ` (${String(a.formerNseaWhen).trim().slice(0, 80)})` : '') + '. Look up the old profile and records.' });
+  if (a.otherTeam) {
+    const t = String(a.otherTeamName ?? '').trim();
+    if (!t) errors.push({ field: 'otherTeamName', message: 'Please tell us which team the swimmer is on now.' });
+    out.flags.push({ code: 'other_team', level: 'review', message: `Currently swims for ${t || 'another team'}. Confirm they plan to leave that team before placing.` });
+  }
+  if (a.heard && !HEARD[a.heard]) errors.push({ field: 'heard', message: 'Please choose one of the listed ways you heard about us, or leave it blank.' });
+  else if (a.heard) out.heard = a.heard;
+
   // 3. Which group(s) the family is interested in.
   const chosen = [...new Set((Array.isArray(a.groups) ? a.groups : []).filter((g) => ruleOf(g)))].sort((x, y) => rank(x) - rank(y));
   const unsure = !!a.unsure;
@@ -132,13 +145,27 @@ export function evaluateIntake(answers, { asOf } = {}) {
   return out;
 }
 
+// Open requests (new or scheduled) that look like the same swimmer: same contact email and swimmer name, ignoring case and spacing.
+// Used at submit time; a match is a flag for staff, never a block.
+export async function findDuplicateRequests(env, { swimmerName, email }) {
+  const n = String(swimmerName ?? '').trim().replace(/\s+/g, ' ').toLowerCase(), e = String(email ?? '').trim().toLowerCase();
+  if (!n || !e) return [];
+  const { results } = await env.DB.prepare(
+    `SELECT id, status, appt_date, appt_time, created_at FROM assess_requests
+     WHERE status IN ('new','scheduled') AND lower(trim(contact_email)) = ? AND lower(trim(swimmer_name)) = ? ORDER BY id`).bind(e, n).all();
+  return results;
+}
+
 export async function handleIntakeAdmin(env, me, method, path, body) {
   if (method === 'POST' && path === '/assessment/intake/preview') {
     const r = evaluateIntake(body.answers, { asOf: body.asOf });
-    return json({ result: r, groups: GROUP_RULES, comfort: COMFORT, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL });
+    return json({ result: r, heard: HEARD, groups: GROUP_RULES, comfort: COMFORT, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL });
+  }
+  if (method === 'POST' && path === '/assessment/intake/duplicates') {
+    return json({ matches: await findDuplicateRequests(env, { swimmerName: body.swimmerName, email: body.email }) });
   }
   if (method === 'GET' && path === '/assessment/intake/config') {
-    return json({ groups: GROUP_RULES, comfort: COMFORT, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL, today: todayET() });
+    return json({ heard: HEARD, groups: GROUP_RULES, comfort: COMFORT, experience: EXPERIENCE, competitive: COMPETITIVE, learnToSwimUrl: LEARN_TO_SWIM_URL, today: todayET() });
   }
   return null;
 }
