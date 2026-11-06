@@ -159,6 +159,37 @@ test('moving a skill up or down swaps it with its neighbour in the same category
   assert.equal((await admin(env, 'POST', `/assessment/skills/${find(o, 'General', 'Front float').id}/move`, { dir: 'sideways' })).status, 400);
 });
 
+test('mini-practice sets: add, attach to Riptide and Breakers, order, and stay out of other categories', { skip: !DatabaseSync }, async () => {
+  assert.ok(markOk('set', 'G') && markOk('set', 'A') && !markOk('set', 'L'));
+  assert.match(parseSkill({ kind: 'set', name: 'Warm-up' }).error, /write the set/);
+  assert.match(parseSkill({ kind: 'set', name: '', detail: '4 x 50' }).error, /short title/);
+  assert.match(parseSkill({ category: 'Mini practice', name: 'x' }).error, /sets only/);
+  const ok = parseSkill({ kind: 'set', category: 'ignored', name: 'Warm-up', detail: '  4 x 50   free ', cue: 'Holds form' });
+  assert.deepEqual([ok.category, ok.detail, ok.kind], ['Mini practice', '4 x 50 free', 'set']);
+
+  const env = d1();
+  const a = await admin(env, 'POST', '/assessment/skills', { kind: 'set', name: 'Warm-up', detail: '200 free easy, then 4 x 50 build', cue: 'Smooth, legal strokes' });
+  const b = await admin(env, 'POST', '/assessment/skills', { kind: 'set', name: 'Main set', detail: '6 x 50 on 1:15, any stroke', cue: 'Holds pace to the last one' });
+  assert.equal(a.status, 200); assert.equal(b.status, 200);
+  assert.equal((await admin(env, 'POST', '/assessment/skills', { kind: 'set', name: 'warm-up', detail: 'x' })).status, 409);
+  assert.equal((await admin(env, 'POST', '/assessment/skills', { category: 'Mini practice', name: 'Sneaky', kind: 'score' })).status, 400);
+  for (const id of [a.json.id, b.json.id]) assert.equal((await admin(env, 'POST', `/assessment/skills/${id}/marks`, { marks: { Riptide: 'A', Breakers: 'A' } })).status, 200);
+  const list = (await admin(env, 'GET', '/assessment/skills')).json;
+  assert.deepEqual(list.skills.slice(-2).map((s) => s.name), ['Warm-up', 'Main set'], 'sets come last, in the order they were added');
+  assert.equal(list.skills.at(-1).detail, '6 x 50 on 1:15, any stroke');
+  assert.ok(list.categories.includes('Mini practice'));
+  const rip = await checklistFor(env, 'Riptide');
+  assert.deepEqual(rip.slice(-2).map((s) => [s.name, s.kind, s.mark, s.detail]), [['Warm-up', 'set', 'A', '200 free easy, then 4 x 50 build'], ['Main set', 'set', 'A', '6 x 50 on 1:15, any stroke']]);
+  assert.equal((await checklistFor(env, 'Splash')).some((s) => s.kind === 'set'), false);
+  // reorder and edit
+  assert.equal((await admin(env, 'POST', `/assessment/skills/${b.json.id}/move`, { dir: 'up' })).status, 200);
+  assert.deepEqual((await checklistFor(env, 'Riptide')).slice(-2).map((s) => s.name), ['Main set', 'Warm-up']);
+  assert.equal((await admin(env, 'POST', '/assessment/skills', { id: a.json.id, kind: 'set', name: 'Warm-up', detail: '300 free easy', cue: '' })).status, 200);
+  assert.equal((await admin(env, 'GET', '/assessment/skills')).json.skills.find((s) => s.id === a.json.id).detail, '300 free easy');
+  // existing skills are unaffected
+  assert.equal((await admin(env, 'GET', '/assessment/skills')).json.skills.filter((s) => s.kind !== 'set').length, 44);
+});
+
 test('unrelated paths fall through', { skip: !DatabaseSync }, async () => {
   const env = d1();
   assert.equal(await handleAssessmentAdmin(env, me, 'GET', '/assessment/nope', {}, audit), null);
