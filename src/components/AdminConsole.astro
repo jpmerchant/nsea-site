@@ -581,6 +581,7 @@
       var wants = r.preferred.map(function (p) { return when(p.date, p.time); });
       var lines = [el('p', { class: 'cp-small' }, r.contact_name + ' · ', el('a', { href: 'mailto:' + r.contact_email }, r.contact_email), r.contact_phone ? ' · ' + r.contact_phone : '')];
       if (r.status === 'scheduled') lines.push(el('p', { class: 'cp-small' }, el('strong', null, 'Scheduled: ' + when(r.appt_date, r.appt_time)), ' (confirmed by ' + r.confirmed_by + ')'));
+      if (r.contact2_name) lines.push(el('p', { class: 'cp-small' }, 'Second contact: ' + r.contact2_name + ' · ', el('a', { href: 'mailto:' + r.contact2_email }, r.contact2_email), r.contact2_phone ? ' · ' + r.contact2_phone : ''));
       if (wants.length) lines.push(el('p', { class: 'cp-small' }, 'Asked for: ' + wants.join(' · ')));
       if (r.path === 'background_review') lines.push(el('p', { class: 'cp-small' }, el('strong', null, 'Background review: '), 'no date picked. Read the background, then decide whether an assessment is needed.'));
       if (r.assess_for || r.dob) lines.push(el('p', { class: 'cp-small' }, (r.dob ? 'Born ' + r.dob + '. ' : '') + (r.groups_asked && r.groups_asked.length ? 'Asked about: ' + r.groups_asked.join(', ') + '. ' : '') + (r.assess_for ? 'Assess for: ' + r.assess_for + '.' : '')));
