@@ -27,6 +27,25 @@ export function parseTime(s) {
   return String(m[1]).padStart(2, '0') + ':' + m[2];
 }
 
+// Free-text start times as people type them: "4:00 PM", "4pm", "4:15 pm". 24-hour times with an hour of 13 or more
+// ("16:00") are accepted too. A bare "4:00" is ambiguous (AM or PM?) so it is rejected rather than guessed.
+export function parseClock(s) {
+  const m = String(s ?? '').trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])?\.?m?\.?$/i);
+  if (!m) return null;
+  let h = Number(m[1]); const min = m[2] === undefined ? '00' : m[2], ap = m[3] && m[3].toLowerCase();
+  if (ap) { if (h < 1 || h > 12) return null; h = (h % 12) + (ap === 'p' ? 12 : 0); }
+  else if (h < 13 || h > 23) return null;
+  return parseTime(String(h).padStart(2, '0') + ':' + min);
+}
+const CLOCK_TOKEN = /\d{1,2}(?::\d{2})?\s*(?:[ap]\.?m\.?)?/gi;
+function clockList(v) {
+  if (Array.isArray(v)) return v.map(parseTime);
+  const s = String(v ?? '');
+  const tokens = s.match(CLOCK_TOKEN) || [];
+  if (s.replace(CLOCK_TOKEN, '').replace(/[\s,;]|\band\b/gi, '')) return [null]; // leftover text: not a time list
+  return tokens.map(parseClock);
+}
+
 // Turn "every Tuesday and Thursday from Nov 17 to Dec 17 at 4:00 and 4:15" into dated slots.
 export function expandSlots(b, today) {
   const from = parseDate(b.from), to = parseDate(b.to || b.from);
@@ -36,9 +55,8 @@ export function expandSlots(b, today) {
   if (utc(to) - utc(from) > MAX_SPAN_DAYS * 86400000) return { error: `Add slots for at most ${MAX_SPAN_DAYS} days at a time.` };
   const weekdays = [...new Set((Array.isArray(b.weekdays) ? b.weekdays : []).map(Number))];
   if (!weekdays.length || weekdays.some((w) => !Number.isInteger(w) || w < 0 || w > 6)) return { error: 'Choose at least one day of the week.' };
-  const rawTimes = Array.isArray(b.times) ? b.times : String(b.times ?? '').split(/[,\s]+/).filter(Boolean);
-  const times = [...new Set(rawTimes.map(parseTime))];
-  if (!rawTimes.length || times.includes(null)) return { error: 'Enter start times like 16:00 or 16:15 (24-hour, on a 5-minute mark).' };
+  const times = [...new Set(clockList(b.times))];
+  if (!times.length || times.includes(null)) return { error: 'Enter start times like 4:00 PM or 4:15 PM (on a 5-minute mark, with AM or PM).' };
   if (times.length > 12) return { error: 'Add at most 12 start times per day.' };
   const out = [];
   for (let d = from; d <= to; d = addDays(d, 1)) if (weekdays.includes(weekdayOf(d))) for (const t of times.sort()) out.push([d, t]);
