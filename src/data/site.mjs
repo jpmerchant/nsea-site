@@ -43,7 +43,7 @@ export const SITE = {
   email: 'team@nseaswim.com',
   address: '750 Bess St, Wilmington, NC 28401',
   captynLogin: 'https://nseaswim.captyn.com/',
-  assessmentUrl: 'https://form.jotform.com/jpmerchant/assessment-sign-up',
+  assessmentUrl: '/programs/join/',
   social: [
     { label: 'Facebook', url: 'https://facebook.com/nseaswim' },
     { label: 'Instagram', url: 'https://instagram.com/nsea.swim/' },
@@ -93,7 +93,7 @@ export const pages = [
   { path: '/programs/clinics/summer-league-skills/', type: 'page', offering: 'summer-league-skills', title: 'Summer League Skills Clinics', desc: 'Details for summer 2027 announced by December.', status: 'done', from: ['/offerings#SummerLeagueSkillsClinics'] },
   { path: '/programs/fees/', type: 'page', fees: true, title: 'Fees', desc: 'Monthly practice fees by group and season.', status: 'done', from: ['/fee-structure'], legacy: ['2026 - 27/2026 - 2027 Fee Summary.docx'] },
   { path: '/programs/financial-assistance/', type: 'page', title: 'Scholarships & Financial Assistance', desc: 'Help is available.', status: 'done', from: ['/scholarships-and-financial-assistance'] },
-  { path: '/programs/join/', type: 'link', title: 'Free Assessment', desc: 'Sign up for an assessment to find the right group.', status: 'ready', url: 'https://form.jotform.com/jpmerchant/assessment-sign-up', feature: true },
+  { path: '/programs/join/', type: 'page', title: 'Free Assessment', desc: 'Request a free assessment to find the right group.', status: 'ready', assessmentForm: true, feature: true },
 
   // ------------------------------------------------------------- FAMILIES ----
   { path: '/families/', type: 'hub', title: 'Family Guide', desc: 'Everything current and new families need, in one place.', status: 'rebuild' },

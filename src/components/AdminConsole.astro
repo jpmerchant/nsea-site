@@ -582,7 +582,14 @@
       var lines = [el('p', { class: 'cp-small' }, r.contact_name + ' · ', el('a', { href: 'mailto:' + r.contact_email }, r.contact_email), r.contact_phone ? ' · ' + r.contact_phone : '')];
       if (r.status === 'scheduled') lines.push(el('p', { class: 'cp-small' }, el('strong', null, 'Scheduled: ' + when(r.appt_date, r.appt_time)), ' (confirmed by ' + r.confirmed_by + ')'));
       if (wants.length) lines.push(el('p', { class: 'cp-small' }, 'Asked for: ' + wants.join(' · ')));
-      if (r.notes) lines.push(el('p', { class: 'cp-small' }, 'Family note: ' + r.notes));
+      if (r.path === 'background_review') lines.push(el('p', { class: 'cp-small' }, el('strong', null, 'Background review: '), 'no date picked. Read the background, then decide whether an assessment is needed.'));
+      if (r.assess_for || r.dob) lines.push(el('p', { class: 'cp-small' }, (r.dob ? 'Born ' + r.dob + '. ' : '') + (r.groups_asked && r.groups_asked.length ? 'Asked about: ' + r.groups_asked.join(', ') + '. ' : '') + (r.assess_for ? 'Assess for: ' + r.assess_for + '.' : '')));
+      if (r.flags && r.flags.length) lines.push(el('ul', { class: 'cp-small' }, r.flags.map(function (f) { return el('li', null, f.message); })));
+      if (r.intake && r.intake.competitive && r.intake.competitive.length) lines.push(el('p', { class: 'cp-small' }, 'Competitive: ' + r.intake.competitive.map(function (c) {
+        var bits = [c.team, c.lsc, c.region, c.school, c.describe].filter(Boolean); if (c.years) bits.push(c.years + ' yrs');
+        return c.label + (bits.length ? ' (' + bits.join(', ') + ')' : ''); }).join('; ')));
+      if (r.intake && r.intake.heard) lines.push(el('p', { class: 'cp-small' }, 'Heard about us: ' + r.intake.heard));
+      if (r.notes) lines.push(el('p', { class: 'cp-small' }, (r.path === 'background_review' ? 'Background: ' : 'Family note: ') + r.notes));
       if (r.staff_note) lines.push(el('p', { class: 'cp-small' }, 'Staff note: ' + r.staff_note));
       var buttons = [];
       if (r.status === 'new' || r.status === 'scheduled') buttons.push(btn(r.status === 'new' ? 'Schedule' : 'Reschedule', function () { openReq = openReq === r.id ? null : r.id; vAssessment(); }));
