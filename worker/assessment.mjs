@@ -11,8 +11,9 @@ import { handleScheduleAdmin } from './assessment-schedule.mjs';
 
 export const ASSESSED_GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers'];
 export const STROKES = ['Freestyle', 'Backstroke', 'Breaststroke', 'Butterfly'];
-export const KINDS = { score: 'Scored 1 to 4', yesno: 'Yes or no', distance: 'Distance swum (yards)' };
-export const CATEGORY_ORDER = ['General', 'Diving: shallow water', 'Diving: deep water', 'Diving: off the blocks', ...STROKES];
+export const MINI = 'Mini practice';
+export const KINDS = { score: 'Scored 1 to 4', yesno: 'Yes or no', distance: 'Distance swum (yards)', set: 'Mini-practice set (rated 1 to 4)' };
+export const CATEGORY_ORDER = ['General', 'Diving: shallow water', 'Diving: deep water', 'Diving: off the blocks', ...STROKES, MINI];
 export const POOL_YARDS = 25;
 const MAX_YARDS = 1000;
 
@@ -26,13 +27,19 @@ export function markOk(kind, mark) {
 }
 
 export function parseSkill(b) {
-  const category = clean(b.category, 40), name = clean(b.name, 80);
-  if (!category) return { error: 'Please choose or enter a category.' };
-  if (!name) return { error: 'Please enter the skill name.' };
   const kind = Object.keys(KINDS).includes(b.kind) ? b.kind : 'score';
+  const category = kind === 'set' ? MINI : clean(b.category, 40), name = clean(b.name, 80);
+  if (!category) return { error: 'Please choose or enter a category.' };
+  if (!name) return { error: kind === 'set' ? 'Please give the set a short title.' : 'Please enter the skill name.' };
+  if (kind === 'set') {
+    const detail = clean(b.detail, 400);
+    if (!detail) return { error: 'Please write the set as it will be swum, for example “4 x 50 freestyle, 20 seconds rest”.' };
+    return { category, name, cue: clean(b.cue, 240), kind, detail };
+  }
+  if (category.toLowerCase() === MINI.toLowerCase()) return { error: 'The Mini practice category holds sets only. Choose “Mini-practice set” as how it is recorded.' };
   if (kind === 'distance' && !STROKES.some((s) => s.toLowerCase() === category.toLowerCase())) return { error: 'A distance skill belongs to a stroke category (Freestyle, Backstroke, Breaststroke or Butterfly).' };
   const canon = kind === 'distance' ? STROKES.find((s) => s.toLowerCase() === category.toLowerCase()) : category;
-  return { category: canon, name, cue: clean(b.cue, 240), kind };
+  return { category: canon, name, cue: clean(b.cue, 240), kind, detail: '' };
 }
 
 export function parseMinimum(b) {
@@ -47,7 +54,7 @@ export function parseMinimum(b) {
 
 async function allSkills(env) {
   const [skills, marks] = await Promise.all([
-    env.DB.prepare(`SELECT id, category, name, cue, kind, sort, active, updated_at, updated_by FROM assess_skills`).all(),
+    env.DB.prepare(`SELECT id, category, name, cue, detail, kind, sort, active, updated_at, updated_by FROM assess_skills`).all(),
     env.DB.prepare(`SELECT skill_id, group_name, mark FROM assess_group_skills`).all(),
   ]);
   const by = new Map();
@@ -58,7 +65,7 @@ async function allSkills(env) {
 // The checklist a coach works from for one group: its active skills in order, with the group's minimum for each distance skill.
 export async function checklistFor(env, group) {
   const { results } = await env.DB.prepare(
-    `SELECT s.id, s.category, s.name, s.cue, s.kind, s.sort, g.mark
+    `SELECT s.id, s.category, s.name, s.cue, s.detail, s.kind, s.sort, g.mark
        FROM assess_skills s JOIN assess_group_skills g ON g.skill_id = s.id
       WHERE s.active = 1 AND g.group_name = ?`).bind(group).all();
   const mins = await env.DB.prepare(`SELECT stroke, yards FROM assess_min_distance WHERE group_name = ?`).bind(group).all();
@@ -104,14 +111,14 @@ export async function handleAssessmentAdmin(env, me, method, path, body, audit) 
         if (bad.length) await env.DB.batch(bad.map((x) => env.DB.prepare(`DELETE FROM assess_group_skills WHERE skill_id = ? AND group_name = ?`).bind(id, x.group_name)));
       }
       const sort = cur.category.toLowerCase() === s.category.toLowerCase() ? null : (await env.DB.prepare(`SELECT COALESCE(MAX(sort), 0) + 10 AS n FROM assess_skills WHERE category = ?`).bind(s.category).first()).n;
-      await env.DB.prepare(`UPDATE assess_skills SET category = ?, name = ?, cue = ?, kind = ?, sort = COALESCE(?, sort), updated_by = ?, updated_at = datetime('now') WHERE id = ?`)
-        .bind(s.category, s.name, s.cue, s.kind, sort, me.email, id).run();
+      await env.DB.prepare(`UPDATE assess_skills SET category = ?, name = ?, cue = ?, detail = ?, kind = ?, sort = COALESCE(?, sort), updated_by = ?, updated_at = datetime('now') WHERE id = ?`)
+        .bind(s.category, s.name, s.cue, s.detail, s.kind, sort, me.email, id).run();
       await audit('assessment', 'edit skill', `${s.category}: ${s.name}`);
       return json({ ok: true, id, updated: true });
     }
     const next = (await env.DB.prepare(`SELECT COALESCE(MAX(sort), 0) + 10 AS n FROM assess_skills WHERE category = ?`).bind(s.category).first()).n;
-    const r = await env.DB.prepare(`INSERT INTO assess_skills (category, name, cue, kind, sort, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-      .bind(s.category, s.name, s.cue, s.kind, next, me.email, me.email).run();
+    const r = await env.DB.prepare(`INSERT INTO assess_skills (category, name, cue, detail, kind, sort, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(s.category, s.name, s.cue, s.detail, s.kind, next, me.email, me.email).run();
     await audit('assessment', 'add skill', `${s.category}: ${s.name}`);
     return json({ ok: true, id: r.meta.last_row_id });
   }

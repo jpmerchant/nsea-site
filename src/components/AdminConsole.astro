@@ -484,7 +484,7 @@
   // ---------- assessments: skill library and group checklists ----------
   var atab = 'schedule', agroup = 'Splash', ashowArchived = false, aedit = null, keepY = null;
   var MARK_LABEL = { G: 'Gating', A: 'Assessed', L: 'Logged' };
-  var KIND_NOTE = { score: '', yesno: ' (yes/no)', distance: ' (yards)' };
+  var KIND_NOTE = { score: '', yesno: ' (yes/no)', distance: ' (yards)', set: ' (set)' };
   function vAssessment() {
     var box = el('div', null, loading());
     var tabs = [['schedule', 'Scheduling'], ['groups', 'Group checklists'], ['library', 'Skill library'], ['minimums', 'Minimum distances']];
@@ -607,7 +607,7 @@
     skills.forEach(function (s) {
       if (s.category !== last) { last = s.category; body.push(el('tr', { class: 'cat' }, el('th', { colspan: String(o.groups.length + 1), scope: 'colgroup' }, s.category))); }
       body.push(el('tr', { class: s.active ? '' : 'archived' },
-        el('th', { scope: 'row', title: s.cue || null }, s.name + (KIND_NOTE[s.kind] || '') + (s.active ? '' : ' (archived)')),
+        el('th', { scope: 'row', title: [s.detail, s.cue].filter(Boolean).join(' — ') || null }, s.name + (KIND_NOTE[s.kind] || '') + (s.active ? '' : ' (archived)')),
         o.groups.map(function (g) {
           var opts = s.kind === 'distance' ? ['', 'L'] : ['', 'G', 'A'];
           var sel = el('select', { 'aria-label': s.name + ' for ' + g, onchange: function (e) {
@@ -629,14 +629,14 @@
         var cat = '', items = [];
         r.checklist.forEach(function (s) {
           if (s.category !== cat) { cat = s.category; items.push(el('h4', null, cat)); }
-          items.push(el('p', { class: 'cp-small' }, el('strong', null, s.name), ' · ' + MARK_LABEL[s.mark] + (s.kind === 'yesno' ? ' · yes or no' : '') + (s.kind === 'distance' ? ' · yards swum' + (s.min_yards ? ', minimum ' + s.min_yards : ', no minimum') : '') + (s.cue ? ' · ' + s.cue : '')));
+          items.push(el('p', { class: 'cp-small' }, el('strong', null, s.name), ' · ' + MARK_LABEL[s.mark] + (s.kind === 'yesno' ? ' · yes or no' : '') + (s.kind === 'distance' ? ' · yards swum' + (s.min_yards ? ', minimum ' + s.min_yards : ', no minimum') : '') + (s.kind === 'set' ? ' · rated 1 to 4 · ' + s.detail : '') + (s.cue ? ' · ' + s.cue : '')));
         });
         prev.replaceChildren.apply(prev, [el('p', { class: 'cp-small' }, r.checklist.length + ' skills for ' + r.group + '.')].concat(items.length ? items : [el('p', { class: 'cp-empty' }, 'No skills attached to this group yet.')]));
       }).catch(function (err) { prev.replaceChildren(msg('err', err.message)); });
     }
     box.replaceChildren(
       el('div', { class: 'cp-panel' }, el('h3', null, 'Attach skills to groups'),
-        el('p', { class: 'cp-small' }, 'Each assessed group has its own checklist, built from this table. Choose “Gating” for a skill the swimmer must score 3 or higher on to be suggested for the group, “Assessed” for a skill that is checked but does not decide placement, and “Logged” for distance swum (recorded in yards, not scored). Leave a cell as — to keep the skill off that group’s checklist. Changes save as soon as you pick.'),
+        el('p', { class: 'cp-small' }, 'Each assessed group has its own checklist, built from this table. Choose “Gating” for a skill the swimmer must score 3 or higher on to be suggested for the group, “Assessed” for a skill that is checked but does not decide placement, and “Logged” for distance swum (recorded in yards, not scored). Mini-practice sets (for Riptide and above) work the same way and are rated 1 to 4 for how well the swimmer handled them. Leave a cell as — to keep the skill off that group’s checklist. Changes save as soon as you pick.'),
         el('label', { class: 'inline' }, showArch, ' Show archived skills'),
         el('div', { class: 'ac-matrix' }, el('table', null, el('thead', null, el('tr', null, el('th', { scope: 'col' }, 'Skill'), o.groups.map(function (g) { return el('th', { scope: 'col' }, g); }))), el('tbody', null, body), el('tfoot', null, foot)))),
       el('div', { class: 'cp-panel' }, el('h3', null, 'Preview a group’s checklist'), el('label', { class: 'cp-form' }, 'Group', gsel), prev));
@@ -650,25 +650,36 @@
       category: el('input', { required: true, maxlength: 40, list: 'ac-cats', placeholder: 'General, a diving type, or a stroke' }),
       name: el('input', { required: true, maxlength: 80 }),
       cue: el('textarea', { rows: 2, maxlength: 240, placeholder: 'What the coach looks for' }),
+      detail: el('textarea', { rows: 2, maxlength: 400, placeholder: '4 x 50 freestyle on 1:15, hold form' }),
       kind: el('select', null, Object.keys(o.kinds).map(function (k) { return el('option', { value: k }, o.kinds[k]); }))
     };
     function load(s) {
-      aedit = s; f.category.value = s ? s.category : ''; f.name.value = s ? s.name : ''; f.cue.value = s ? s.cue : ''; f.kind.value = s ? s.kind : 'score';
+      aedit = s; f.category.value = s ? s.category : ''; f.name.value = s ? s.name : ''; f.cue.value = s ? s.cue : ''; f.detail.value = s ? (s.detail || '') : ''; f.kind.value = s ? s.kind : 'score'; syncKind();
       out.replaceChildren(); heading.textContent = s ? 'Edit skill' : 'Add a skill'; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); f.name.focus();
     }
     var heading = el('h3', null, aedit ? 'Edit skill' : 'Add a skill');
+    var catLabel, detailLabel;
+    function syncKind() {
+      var isSet = f.kind.value === 'set';
+      if (isSet) f.category.value = 'Mini practice';
+      f.category.readOnly = isSet; f.category.required = !isSet;
+      if (catLabel) catLabel.style.display = isSet ? 'none' : ''; if (detailLabel) detailLabel.style.display = isSet ? '' : 'none';
+    }
+    f.kind.onchange = syncKind;
     var form = el('form', { class: 'cp-form', onsubmit: function (e) {
       e.preventDefault();
-      api('POST', '/assessment/skills', { id: aedit ? aedit.id : null, category: f.category.value, name: f.name.value, cue: f.cue.value, kind: f.kind.value })
+      api('POST', '/assessment/skills', { id: aedit ? aedit.id : null, category: f.category.value, name: f.name.value, cue: f.cue.value, detail: f.detail.value, kind: f.kind.value })
         .then(function (r) { var wasEdit = !!aedit; aedit = null; aAfter(wasEdit ? 'Skill updated.' : 'Skill added. Attach it to groups on the Group checklists tab.'); })
         .catch(function (err) { out.replaceChildren(msg('err', err.message)); });
     } },
       el('datalist', { id: 'ac-cats' }, o.categories.map(function (c) { return el('option', { value: c }); })),
-      el('label', null, 'Category', f.category), el('label', null, 'Skill', f.name), el('label', null, 'What the coach looks for (optional)', f.cue),
       el('label', null, 'How it is recorded', f.kind),
-      el('p', { class: 'cp-small' }, 'Distance skills belong to a stroke category and each stroke has one. A new skill starts on no group’s checklist.'), out,
+      (catLabel = el('label', null, 'Category', f.category)), el('label', null, 'Skill or set title', f.name),
+      (detailLabel = el('label', null, 'The set as written', f.detail)), el('label', null, 'What the coach looks for (optional)', f.cue),
+      el('p', { class: 'cp-small' }, 'Distance skills belong to a stroke category and each stroke has one. Choose “Mini-practice set” for the sets run during assessments for Riptide and above; each set is rated 1 to 4. A new skill or set starts on no group’s checklist.'), out,
       el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save skill'), btn('Clear', function () { load(null); }, 'ghost')));
-    if (aedit) { f.category.value = aedit.category; f.name.value = aedit.name; f.cue.value = aedit.cue; f.kind.value = aedit.kind; }
+    if (aedit) { f.category.value = aedit.category; f.name.value = aedit.name; f.cue.value = aedit.cue; f.detail.value = aedit.detail || ''; f.kind.value = aedit.kind; }
+    syncKind();
     function post(path, payload, okMsg) { api('POST', path, payload).then(function () { aAfter(okMsg); }).catch(function (e) { alert(e.message); }); }
     var cat = '', rows = [];
     o.skills.forEach(function (s) {
@@ -676,7 +687,7 @@
       var on = o.groups.filter(function (g) { return s.marks[g]; }).map(function (g) { return g + ' ' + MARK_LABEL[s.marks[g]].toLowerCase(); });
       rows.push(el('div', { class: 'cp-row' },
         el('div', null, el('strong', null, s.name), (KIND_NOTE[s.kind] || '') + (s.active ? '' : ' (archived)'),
-          el('p', { class: 'cp-small' }, (s.cue ? s.cue + ' · ' : '') + (on.length ? on.join(', ') : 'not on any checklist'))),
+          el('p', { class: 'cp-small' }, (s.kind === 'set' && s.detail ? s.detail + ' · ' : '') + (s.cue ? s.cue + ' · ' : '') + (on.length ? on.join(', ') : 'not on any checklist'))),
         el('div', { class: 'cp-btns' }, btn('Edit', function () { load(s); }),
           btn('Up', function () { post('/assessment/skills/' + s.id + '/move', { dir: 'up' }, ''); }, 'ghost'),
           btn('Down', function () { post('/assessment/skills/' + s.id + '/move', { dir: 'down' }, ''); }, 'ghost'),
