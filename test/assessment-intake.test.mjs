@@ -43,14 +43,14 @@ test('competitive needs a kind and its follow-ups', () => {
   assert.ok(r.errors.some((e) => e.field === 'details.usa_club.years'));
 });
 test('competitive with details flags for background search', () => {
-  const r = ev({ experience: 'competitive', recentTeam: 'Dolphins', competitive: ['usa_club', 'ymca_club', 'summer_league', 'rec_league', 'high_school', 'other'], details: {
+  const r = ev({ experience: 'competitive', competitive: ['usa_club', 'ymca_club', 'summer_league', 'rec_league', 'high_school', 'other'], details: {
     usa_club: { team: 'T', lsc: 'NC', years: '2' }, ymca_club: { team: 'Y', years: 1 }, summer_league: { team: 'S', years: 3 },
     rec_league: { team: 'R', years: 1 }, high_school: { school: 'H', years: 1 }, other: { describe: 'Masters' } } });
   assert.equal(r.ok, true);
   assert.deepEqual(codes(r), ['competitive_experience']);
   assert.equal(r.followups.length, 6);
-  assert.equal(ev({ experience: 'competitive', recentTeam: 'X', competitive: ['other'], details: {} }).ok, false);
-  assert.equal(ev({ experience: 'competitive', recentTeam: 'X', competitive: ['summer_league'], details: { summer_league: { team: 'S', years: 99 } } }).ok, false);
+  assert.equal(ev({ experience: 'competitive', competitive: ['other'], details: {} }).ok, false);
+  assert.equal(ev({ experience: 'competitive', competitive: ['summer_league'], details: { summer_league: { team: 'S', years: 99 } } }).ok, false);
 });
 test('unsure group flags and points to descriptions', () => {
   const r = ev({ groups: [], unsure: true });
@@ -88,30 +88,29 @@ test('unknown groups are ignored', () => {
   assert.equal(ev({ groups: ['Nope'] }).ok, false);
 });
 
-const club = { experience: 'competitive', recentTeam: 'Rival SC', competitive: ['usa_club'], details: { usa_club: { team: 'Rival SC', lsc: 'NC', years: 2 } } };
-test('former NSEA swimmer and other club team only flag', () => {
-  const r = ev({ ...club, formerNsea: true, formerNseaWhen: 'about 2023', otherTeam: true, otherTeamName: 'Rival SC' });
+const club = (k = 'usa_club', extra = {}) => ({ experience: 'competitive', competitive: [k], details: { [k]: { team: 'Rival SC', lsc: 'NC', years: 2, ...extra } } });
+test('former NSEA swimmer only flags', () => {
+  const r = ev({ ...club(), formerNsea: true, formerNseaWhen: 'about 2023' });
   assert.equal(r.path, 'schedule');
-  assert.deepEqual(codes(r), ['competitive_experience', 'former_nsea', 'other_team']);
+  assert.deepEqual(codes(r), ['competitive_experience', 'former_nsea']);
   assert.match(r.flags[1].message, /about 2023/);
-  assert.match(r.flags[2].message, /another club team: Rival SC/);
-  assert.equal(ev({ ...club, otherTeam: true }).ok, false); // club team needs a name
 });
-test('another club team only counts for USA Swimming or YMCA club swimmers', () => {
-  assert.ok(!codes(ev({ otherTeam: true, otherTeamName: 'Rival SC' })).includes('other_team'));
-  const sl = { experience: 'competitive', recentTeam: 'Waves', competitive: ['summer_league'], details: { summer_league: { team: 'Waves', years: 1 } } };
-  assert.ok(!codes(ev({ ...sl, otherTeam: true, otherTeamName: 'Rival SC' })).includes('other_team'));
-  assert.ok(codes(ev({ ...club, competitive: ['ymca_club'], details: { ymca_club: { team: 'Y', years: 1 } }, otherTeam: true, otherTeamName: 'Rival SC' })).includes('other_team'));
+test('"currently swimming here" flags USA Swimming and YMCA clubs, and is optional', () => {
+  assert.ok(!codes(ev(club())).includes('other_team'));
+  const r = ev(club('usa_club', { current: true }));
+  assert.equal(r.ok, true);
+  assert.match(r.flags.find((f) => f.code === 'other_team').message, /Currently swimming with a USA Swimming club \(Rival SC\)/);
+  assert.ok(codes(ev(club('ymca_club', { current: 'true', lsc: undefined }))).includes('other_team'));
 });
-test('competitive swimmers must name their most recent team', () => {
-  const r = ev({ ...club, recentTeam: '' });
-  assert.equal(r.ok, false); assert.ok(r.errors.some((e) => e.field === 'recentTeam'));
-  assert.match(ev(club).flags[0].message, /Most recent team: Rival SC/);
+test('"currently swimming here" is recorded but does not flag for other kinds', () => {
+  for (const k of ['summer_league', 'rec_league']) assert.ok(!codes(ev(club(k, { current: true }))).includes('other_team'));
+  assert.ok(!codes(ev({ experience: 'competitive', competitive: ['high_school'], details: { high_school: { school: 'NHS', years: 1, current: true } } })).includes('other_team'));
 });
-test('how you heard is optional but must be a listed choice', () => {
-  assert.equal(ev({}).heard, undefined);
-  assert.equal(ev({ heard: 'friend' }).heard, 'friend');
-  assert.equal(ev({ heard: 'bogus' }).ok, false);
+test('each competitive kind asks for the most recent team in place of team name', () => {
+  const r = ev({ experience: 'competitive', competitive: ['summer_league'], details: { summer_league: { years: 1 } } });
+  assert.equal(r.ok, false);
+  assert.match(r.errors[0].message, /Most recent team/);
+  assert.match(ev(club()).flags[0].message, /USA Swimming club \(Rival SC\)/);
 });
 test('duplicate open requests are found by email and swimmer name', { skip: !DatabaseSync }, async () => {
   const db = new DatabaseSync(':memory:');
