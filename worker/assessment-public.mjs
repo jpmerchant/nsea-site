@@ -53,6 +53,11 @@ async function submit(env, b, now, today) {
   const contact_name = clean(b.contact?.name, 80), contact_email = clean(b.contact?.email, 120).toLowerCase(), contact_phone = clean(b.contact?.phone, 30) || null;
   if (!contact_name) return fail(400, 'Please enter the parent or guardian’s name.');
   if (!EMAIL.test(contact_email)) return fail(400, 'Please enter a valid email address.');
+  // Optional second point of contact: if anything is filled in, it needs a name and a valid email.
+  const c2 = b.contact2 || {}, contact2_name = clean(c2.name, 80), contact2_email = clean(c2.email, 120).toLowerCase(), contact2_phone = clean(c2.phone, 30) || null;
+  const hasC2 = !!(contact2_name || contact2_email || contact2_phone);
+  if (hasC2 && !contact2_name) return fail(400, 'Second contact: please enter a name, or clear that section.');
+  if (hasC2 && !EMAIL.test(contact2_email)) return fail(400, 'Second contact: please enter a valid email address, or clear that section.');
   const list = Array.isArray(b.swimmers) ? b.swimmers : [];
   if (!list.length) return fail(400, 'Please add at least one swimmer.');
   if (list.length > MAX_SWIMMERS) return fail(400, `Please send at most ${MAX_SWIMMERS} swimmers at a time. You can submit again for more.`);
@@ -93,10 +98,11 @@ async function submit(env, b, now, today) {
       formerNsea: !!p.answers.formerNsea, formerNseaWhen: clean(p.answers.formerNseaWhen, 80) || null, otherTeam: !!p.answers.otherTeam, otherTeamName: clean(p.answers.otherTeamName, 80) || null, heard: p.r.heard || null, unsure: !!p.answers.unsure };
     for (const f of intake.competitive) for (const k of Object.keys(f)) if (typeof f[k] === 'string') f[k] = clean(f[k], 300);
     const res = await env.DB.prepare(
-      `INSERT INTO assess_requests (source, contact_name, contact_email, contact_phone, swimmer_name, swimmer_age, notes, preferred, family_ref, dob, path, assess_for, groups_asked, intake, flags)
-       VALUES ('form', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO assess_requests (source, contact_name, contact_email, contact_phone, swimmer_name, swimmer_age, notes, preferred, family_ref, dob, path, assess_for, groups_asked, intake, flags, contact2_name, contact2_email, contact2_phone)
+       VALUES ('form', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(contact_name, contact_email, contact_phone, p.name, p.r.age, p.background || null, p.picks.length ? JSON.stringify(p.picks) : null, family_ref, p.answers.dob,
-      p.r.path, p.r.assessFor || null, JSON.stringify(p.r.groupsChosen || []), JSON.stringify(intake), JSON.stringify(flags)).run();
+      p.r.path, p.r.assessFor || null, JSON.stringify(p.r.groupsChosen || []), JSON.stringify(intake), JSON.stringify(flags),
+      hasC2 ? contact2_name : null, hasC2 ? contact2_email : null, hasC2 ? contact2_phone : null).run();
     outcomes.push({ name: p.name, path: p.r.path, requestNumber: res.meta.last_row_id, messages: p.r.familyMessages });
   }
   return json({ ok: true, outcomes });

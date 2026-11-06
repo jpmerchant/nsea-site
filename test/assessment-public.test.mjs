@@ -128,3 +128,18 @@ test('the staff queue sees flags, groups and intake details', T, async () => {
   assert.deepEqual(req.flags.map((f) => f.code), ['competitive_experience', 'multiple_groups']);
   assert.deepEqual(req.groups_asked, ['Splash', 'Tidepool']); assert.equal(req.assess_for, 'Tidepool'); assert.equal(req.intake.competitive[0].team, 'Waves');
 });
+
+test('an optional second contact is stored on every sibling, and validated if given', T, async () => {
+  const { db, DB } = d1(); const a = addSlot(db, '2026-11-17', '16:00'), b = addSlot(db, '2026-11-17', '16:15');
+  const two = { name: 'Sam Lee', email: 'Sam@Example.com', phone: '555-0000' };
+  const send = (c2, kids = [kid({ slotIds: [a] })]) => call({ DB }, 'POST', '/request', { contact, contact2: c2, swimmers: kids });
+  assert.equal((await send({ name: 'Sam' })).status, 400);                   // name without email
+  assert.equal((await send({ name: 'Sam', email: 'nope' })).status, 400);
+  assert.equal((await send({ email: 'sam@example.com' })).status, 400);      // email without name
+  assert.equal((await send({ name: '', email: '', phone: '' })).status, 200); // blank section is fine
+  assert.equal(db.prepare('SELECT contact2_email e FROM assess_requests').get().e, null);
+  db.exec('DELETE FROM assess_requests');
+  assert.equal((await send(two, [kid({ slotIds: [a] }), kid({ name: 'Ben', slotIds: [b] })])).status, 200);
+  const rows = db.prepare('SELECT contact2_name n, contact2_email e, contact2_phone p FROM assess_requests').all();
+  assert.deepEqual(rows.map((r) => [r.n, r.e, r.p]), [['Sam Lee', 'sam@example.com', '555-0000'], ['Sam Lee', 'sam@example.com', '555-0000']]);
+});

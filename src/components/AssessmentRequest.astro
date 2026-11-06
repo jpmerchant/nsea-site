@@ -129,7 +129,7 @@
     k.card = c; return c;
   }
 
-  var contact = { name: '', email: '', phone: '' }, heard = '', cardsBox = null, addBtn = null;
+  var contact = { name: '', email: '', phone: '' }, contact2 = { name: '', email: '', phone: '' }, heard = '', cardsBox = null, addBtn = null;
   // Cards are added and removed in place so nothing the family already typed is lost.
   function addKid() { var k = newKid(); cardsBox.appendChild(card(k, kids.length - 1)); syncCards(); }
   function removeKid(k) { kids.splice(kids.indexOf(k), 1); k.card.remove(); syncCards(); }
@@ -144,7 +144,7 @@
     var submit = el('button', { class: 'btn', type: 'submit' }, 'Send request');
     var form = el('form', { onsubmit: function (e) {
       e.preventDefault(); out.replaceChildren(); kids.forEach(function (k) { k.card.querySelector('.ar-err').replaceChildren(); }); submit.disabled = true;
-      var body = { website: hp.value, heard: heard, contact: contact, swimmers: kids.map(function (k) {
+      var body = { website: hp.value, heard: heard, contact: contact, contact2: contact2, swimmers: kids.map(function (k) {
         return { name: k.name, answers: answers(k), background: k.background,
           slotIds: Object.keys(k.slots).filter(function (id) { return k.slots[id]; }).map(Number),
           otherDates: k.others.filter(function (o) { return o.date; }) };
@@ -160,6 +160,12 @@
         field('Parent or guardian name', el('input', { required: true, maxlength: 80, autocomplete: 'name', oninput: function (e) { contact.name = e.target.value; } })),
         field('Email', el('input', { type: 'email', required: true, maxlength: 120, autocomplete: 'email', oninput: function (e) { contact.email = e.target.value; } })),
         field('Mobile (optional)', el('input', { type: 'tel', maxlength: 30, autocomplete: 'tel', oninput: function (e) { contact.phone = e.target.value; } })),
+        el('details', null, el('summary', null, 'Add a second contact (optional)'),
+          el('p', { class: 'cp-small' }, 'Another parent or guardian who should also hear from us.'),
+          el('div', { class: 'cp-form' },
+            field('Name', el('input', { maxlength: 80, autocomplete: 'off', oninput: function (e) { contact2.name = e.target.value; } })),
+            field('Email', el('input', { type: 'email', maxlength: 120, autocomplete: 'off', oninput: function (e) { contact2.email = e.target.value; } })),
+            field('Mobile (optional)', el('input', { type: 'tel', maxlength: 30, autocomplete: 'off', oninput: function (e) { contact2.phone = e.target.value; } })))),
         field('How did you hear about us? (optional)', el('select', { onchange: function (e) { heard = e.target.value; } }, el('option', { value: '' }, 'Choose…'),
           Object.keys(cfg.heard).map(function (x) { return el('option', { value: x }, cfg.heard[x]); }))))),
       cardsBox,
