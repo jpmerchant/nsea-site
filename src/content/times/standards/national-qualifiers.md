@@ -1,9 +1,5 @@
 Swimmers who have reached a national-level meet, by meet and year.
 
-## Olympic Team Trials
-
-- Cole Witmer — 2024
-
 ## Toyota US Open
 
 - Cole Witmer — 2023, 2024
