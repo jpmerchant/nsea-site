@@ -9,8 +9,8 @@
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', coach: 'Coach (own posts only)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', coach: 'Coach’s Corner' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', coach: 'Coach (own posts only)' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports', coach: 'Coach’s Corner' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -54,7 +54,7 @@
   }
 
   // ---------- shell ----------
-  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
   function shell(content) {
     mount(
@@ -66,7 +66,7 @@
         })),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, assessment: vAssessment, coach: vCoach, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -837,6 +837,33 @@
     var box = el('div', null, loading()); shell(box);
     api('GET', '/audit').then(function (rows) {
       box.replaceChildren(el('h2', null, 'Activity log'), el('div', { class: 'cp-panel' }, rows.length ? rows.map(logLine) : el('p', { class: 'cp-empty' }, 'Nothing yet.')));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- reports (coach-only results reports; private storage) ----------
+  function vReports() {
+    var box = el('div', null, loading()); shell(box);
+    api('GET', '/reports').then(function (o) {
+      var rows = o.reports.length ? o.reports.map(function (r) {
+        return el('div', { class: 'cp-row' }, el('strong', null, r.name.replace(/\.html$/, '')), el('span', { class: 'cp-small' }, ' ' + Math.round(r.size / 1024) + ' KB, updated ' + date(r.uploaded) + ' '),
+          el('a', { class: 'btn small', href: '/api/admin/reports/view/' + encodeURIComponent(r.name), target: '_blank', rel: 'noopener' }, 'Open'),
+          o.owner ? btn('Delete', function () { if (confirm('Delete ' + r.name + '?')) api('POST', '/reports/delete', { name: r.name }).then(function () { flash = 'Deleted.'; vReports(); }).catch(function (e) { alert(e.message); }); }, 'ghost') : null);
+      }) : el('p', { class: 'cp-empty' }, 'No reports uploaded yet.');
+      var up = null;
+      if (o.owner) {
+        var file = el('input', { type: 'file', accept: '.html,text/html', multiple: 'multiple' });
+        var out = el('div');
+        up = el('div', { class: 'cp-panel' }, el('h3', null, 'Upload reports'), el('p', { class: 'cp-small' }, 'Choose the report pages built from the results database. A file with the same name replaces the old one.'), file,
+          btn('Upload', function () {
+            var fs = Array.prototype.slice.call(file.files); if (!fs.length) { out.replaceChildren(msg('err', 'Choose at least one file.')); return; }
+            out.replaceChildren(msg('ok', 'Uploading…'));
+            fs.reduce(function (p, f) { return p.then(function () { return f.text().then(function (t) { return api('POST', '/reports/upload', { name: f.name, html: t }); }); }); }, Promise.resolve())
+              .then(function () { flash = fs.length + ' report' + (fs.length > 1 ? 's' : '') + ' uploaded.'; vReports(); }).catch(function (e) { out.replaceChildren(msg('err', e.message)); });
+          }), out);
+      }
+      box.replaceChildren(el('h2', null, 'Reports'),
+        el('p', { class: 'cp-small' }, 'Coach-only. These pages show swimmer names and times, so they are stored privately and open only for signed-in admins with Reports access. Every view is logged.'),
+        el('div', { class: 'cp-panel' }, rows), up);
     }).catch(function (e) { fail(box, e); });
   }
 

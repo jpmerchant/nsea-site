@@ -5,9 +5,10 @@ import { newMemberInvite } from './carpool.mjs';
 import { handleContentAdmin } from './content.mjs';
 import { handleCoachAdmin, isEditor } from './coach.mjs';
 import { handleAssessmentAdmin } from './assessment.mjs';
+import { handleReportsAdmin } from './reports.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 
-export const MODULES = ['carpool', 'events', 'content', 'assessment'];
+export const MODULES = ['carpool', 'events', 'content', 'assessment', 'reports'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach'];
 
 // ---------- Cloudflare Access JWT ----------
@@ -179,6 +180,13 @@ export async function handleAdmin(req, env, url) {
         if (method === 'PATCH') { try { b = await req.json(); } catch { b = {}; } }
         return eventsProxy(env, me, method, (g[1] || '') + url.search, b, (m, a, d) => audit(env, me, m, a, d));
       }
+    }
+
+    // ----- coach reports (private; role: reports) -----
+    if (path.startsWith('/reports')) {
+      if (!can(me, 'reports')) return fail(403, 'You do not have access to Reports.');
+      const r = await handleReportsAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d), req);
+      if (r) return r;
     }
 
     // ----- coach's corner -----
