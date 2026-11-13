@@ -9,8 +9,8 @@
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', coach: 'Coach (own posts only)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports', coach: 'Coach’s Corner' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own posts only)' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -54,7 +54,7 @@
   }
 
   // ---------- shell ----------
-  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'], ['meetday', 'Meet Day', 'meetday'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
   function shell(content) {
     mount(
@@ -66,7 +66,7 @@
         })),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -838,6 +838,14 @@
     api('GET', '/audit').then(function (rows) {
       box.replaceChildren(el('h2', null, 'Activity log'), el('div', { class: 'cp-panel' }, rows.length ? rows.map(logLine) : el('p', { class: 'cp-empty' }, 'Nothing yet.')));
     }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- meet day (coaches' meet app; its own page so it can install on a phone and work offline) ----------
+  function vMeetday() {
+    shell(el('div', null, el('h2', null, 'Meet Day'),
+      el('p', null, 'The coaches’ meet-day app: warm-ups, event-by-event heats and lanes for our swimmers, record / Top 10 / cut flags, live results, heat sheet uploads and end-of-session summaries.'),
+      el('p', null, el('a', { class: 'btn', href: '/admin/meet/' }, 'Open Meet Day')),
+      el('p', { class: 'cp-small' }, 'On a phone, open it once on Wi-Fi and use “Add to Home Screen”. It keeps working with no signal and syncs with the other coaches when you are back online.')));
   }
 
   // ---------- reports (coach-only results reports; private storage) ----------

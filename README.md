@@ -186,3 +186,16 @@ Editable in the console: Thought of the Month, Fees, prep-program dates, Athlete
 ## Backup deploy (GitHub Actions)
 
 Cloudflare's own Git builds deploy every push to `main`. `.github/workflows/deploy.yml` is a backup you can run by hand from the repo's Actions tab ("Run workflow"). It needs two repository secrets, `CLOUDFLARE_API_TOKEN` (the "Edit Cloudflare Workers" token template) and `CLOUDFLARE_ACCOUNT_ID`. Database migrations are still applied by hand.
+
+
+## Meet Day (coaches' meet app)
+
+`/admin/meet/` is an installable, offline-first app for coaches on deck (role `meetday`, `coach` or owner). Code: `public/admin/meet/` (app + `lib/` parsers, flag engine, model), `worker/meetday.mjs` (API), `migrations/0015_meetday.sql`.
+
+- **Meet package.** Build one JSON per meet from the private meet folder, then load it in the app (Tools > Meet file). It holds swimmer names and seeds, so it never goes in this repo:
+  `node scripts/meetday/build-meet.mjs "<meet folder>/meetday/meetday.config.json"`
+  The config lists the HY3 entry file, the host's heat sheet PDFs, the sessions (warm-up group/pool/lanes, events and rounds) and the general meet notes. Records and Top 10 come from the live board JSON, cuts from `standards.json`.
+- **Flags.** Team record (own age group + Open), Top 10 performers (own age group + 18 & Under) and the chosen cuts (default NC AG, NC Senior, Futures, Winter Juniors, Sectionals). Tiers from the seed: already under / within 1% / within 3%; after a swim, "got it" (unofficial until the session is marked official).
+- **On deck.** Each phone keeps the meet in IndexedDB and works with no signal. Times, notes, heat sheet updates and "official" marks are small ops that queue offline and sync between coaches (`/api/admin/meetday/ops`).
+- **Getting results in.** Type a time (`5912` = 59.12), upload a heat sheet / results PDF, photograph a re-seed (OCR in the browser, Tesseract.js from jsDelivr, cached for offline from Tools), screenshot Meet Mobile (it has no public feed), or paste a live results URL (fetched through `/api/admin/meetday/fetch`, polled every minute).
+- **Database:** apply `migrations/0015_meetday.sql` by hand: `npx wrangler d1 migrations apply nsea-carpool --remote`.

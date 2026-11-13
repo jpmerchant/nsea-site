@@ -6,9 +6,10 @@ import { handleContentAdmin } from './content.mjs';
 import { handleCoachAdmin, isEditor } from './coach.mjs';
 import { handleAssessmentAdmin } from './assessment.mjs';
 import { handleReportsAdmin } from './reports.mjs';
+import { handleMeetdayAdmin, canMeetday } from './meetday.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 
-export const MODULES = ['carpool', 'events', 'content', 'assessment', 'reports'];
+export const MODULES = ['carpool', 'events', 'content', 'assessment', 'reports', 'meetday'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach'];
 
 // ---------- Cloudflare Access JWT ----------
@@ -105,7 +106,7 @@ export async function handleAdmin(req, env, url) {
     if (!me) return fail(401, accessOn(env) ? 'Your account is not set up as an admin.' : 'Not signed in');
     await env.DB.prepare(`UPDATE admin_users SET last_seen = datetime('now') WHERE email = ?`).bind(me.email).run();
 
-    if (method === 'GET' && path === '/me') return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, modules: [...MODULES.filter((m) => can(me, m)), ...(can(me, 'coach') || isEditor(me) ? ['coach'] : [])] });
+    if (method === 'GET' && path === '/me') return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, modules: [...MODULES.filter((m) => can(me, m)), ...(can(me, 'coach') && !can(me, 'meetday') ? ['meetday'] : []), ...(can(me, 'coach') || isEditor(me) ? ['coach'] : [])] });
 
     if (method === 'GET' && path === '/overview') {
       const q = (sql) => env.DB.prepare(sql).first();
@@ -186,6 +187,13 @@ export async function handleAdmin(req, env, url) {
     if (path.startsWith('/reports')) {
       if (!can(me, 'reports')) return fail(403, 'You do not have access to Reports.');
       const r = await handleReportsAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d), req);
+      if (r) return r;
+    }
+
+    // ----- meet day app (coach-only; roles: meetday, coach or owner) -----
+    if (path.startsWith('/meetday')) {
+      if (!canMeetday(me)) return fail(403, 'You do not have access to Meet Day.');
+      const r = await handleMeetdayAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d), url);
       if (r) return r;
     }
 
