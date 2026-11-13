@@ -273,6 +273,9 @@ export async function handleAdmin(req, env, url) {
     return fail(404, 'Not found');
   } catch (e) {
     console.error('admin error', e && e.message);
+    const m = String((e && e.message) || '');
+    if (/no such table/i.test(m)) return fail(500, 'The database update for this feature has not been applied yet. Run: npx wrangler d1 migrations apply nsea-carpool --remote');
+    if (path.startsWith('/meetday')) return fail(500, 'Server error: ' + m.slice(0, 200));
     return fail(500, 'Something went wrong. Please try again.');
   }
 }
