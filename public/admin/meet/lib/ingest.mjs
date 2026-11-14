@@ -1,8 +1,8 @@
 // Turning outside material (heat sheet PDFs, photos, live results pages, Meet Mobile screenshots) into
 // proposed changes the coach confirms. Pure functions; the app does the file reading / OCR / fetching.
-import { parseHeatSheet, parseHeatSheetText, teamEntries, parseResults, extractByName, parseEventTitle, parseLaneLine, sameSwimmer, toCs } from './parse.mjs';
+import { parseHeatSheet, parseHeatSheetText, teamEntries, parseResults, extractByName, parseEventTitle, parseLaneLine, sameSwimmer, toCs, lineHasSwimmer } from './parse.mjs';
 
-const teamRe = (pkg) => new RegExp(pkg.teamMatch || 'nsea', 'i');
+const teamRe = (pkg) => { const re = new RegExp(pkg.teamMatch || 'nsea', 'i'); return { test: (t) => re.test(String(t || '')) || re.test(String(t || '').replace(/[\s.\-]+/g, '')) }; };
 
 // Which session a parsed heat sheet belongs to: header name first ("Saturday finals"), then by its events/rounds.
 export function guessSession(pkg, parsed) {
@@ -64,12 +64,7 @@ export function photoHeatRows(pkg, model, text, session, defaultEvent) {
 // Common OCR slips on Hy-Tek sheets: "110f13" -> "11 of 13", "Startsat", pipes for I/l.
 export const ocrFix = (l) => l.replace(/[|_]/g, ' ').replace(/(\d+?)\s*[0oO]f\s*(\d+)/g, '$1 of $2').replace(/Startsat/gi, 'Starts at').replace(/\s+/g, ' ').trim();
 function titleOf(pkg, n) { const e = pkg.events[n]; return e ? e.title.replace(/(\d+) (Free|Back|Breast|Fly|IM)\w*$/, (m, d, s) => `${d} Yard ${({ Free: 'Freestyle', Back: 'Backstroke', Breast: 'Breaststroke', Fly: 'Butterfly', IM: 'IM' })[s]}`) : ''; }
-export function lineHasName(line, name) {
-  const [last, firstRaw = ''] = name.split(',').map((x) => x.trim().toLowerCase());
-  const first = firstRaw.split(' ')[0];
-  const l = line.toLowerCase();
-  return l.includes(last) && (!first || l.includes(first.slice(0, Math.min(4, first.length))));
-}
+export function lineHasName(line, name) { return lineHasSwimmer(line, name); }
 
 // Parsed results (live page, results PDF) -> result op data for our swimmers.
 export function resultOps(pkg, model, swims, { source, official = false, session = null } = {}) {
@@ -77,7 +72,8 @@ export function resultOps(pkg, model, swims, { source, official = false, session
   const team = teamRe(pkg);
   for (const w of swims) {
     if (!team.test(w.team)) continue;
-    const cands = model.rows.filter((r) => r.event === w.event && sameSwimmer(r.swimmer.name, w.name) && (session == null || r.session === session));
+    let cands = model.rows.filter((r) => r.event === w.event && sameSwimmer(r.swimmer.name, w.name) && (session == null || r.session === session));
+    if (!cands.length) cands = model.rows.filter((r) => r.event === w.event && lineHasSwimmer(w.name, r.swimmer.name) && (session == null || r.session === session));
     if (!cands.length) continue;
     const r = cands.find((c) => roundMatch(c.round, w.round)) || cands[0];
     const prev = r.result;
@@ -100,8 +96,8 @@ export function screenshotResults(pkg, model, text, { event, session }) {
   const evNum = (t && t.num) || detectEvent(pkg, model, text, session) || event || null;
   if (!evNum) return { event: null, results: [] };
   const rows = model.rows.filter((r) => r.event === evNum && (session == null || r.session === session));
-  const hits = extractByName(text, rows.map((r) => ({ id: r.id, name: r.swimmer.name })));
-  return { event: evNum, results: hits.map((h) => ({ entry: h.id, time: h.time, status: h.status, line: h.line, swimmer: rows.find((r) => r.id === h.id).swimmer.name, source: 'screenshot (OCR)', official: false })) };
+  const hits = extractByName(text, rows.map((r) => ({ id: r.id, name: r.swimmer.name })), { team: teamRe(pkg) });
+  return { event: evNum, results: hits.map((h) => ({ entry: h.id, time: h.time, status: h.status, line: h.line, swimmer: rows.find((r) => r.id === h.id).swimmer.name, fuzzy: h.fuzzy, source: 'screenshot (OCR)', official: false })) };
 }
 
 // Which event a results screenshot shows, from whatever title text the app prints ("#3 Girls 11 & Over 100 Free",

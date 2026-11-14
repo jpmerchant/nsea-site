@@ -511,7 +511,7 @@ async function shotUpload(files, el) {
 function reviewResults(el, list, source, official) {
   if (!list.length) return out(el, `<p class="small">No new times for our swimmers.</p>`);
   out(el, `<table class="t review"><thead><tr><th>Swimmer</th><th>Ev</th><th>Time</th></tr></thead><tbody>
-    ${list.map((r, i) => `<tr><td>${esc(r.swimmer)}</td><td>#${r.event}</td><td><input data-i="${i}" style="width:90px" value="${r.time != null ? fmt(r.time) : esc(r.status)}"></td></tr>`).join('')}</tbody></table>
+    ${list.map((r, i) => `<tr><td>${esc(r.swimmer)}${r.fuzzy ? ' <span class="pill t-3">check name</span>' : ''}</td><td>#${r.event}</td><td><input data-i="${i}" style="width:90px" value="${r.time != null ? fmt(r.time) : esc(r.status)}"></td></tr>`).join('')}</tbody></table>
     <div class="btns" style="margin-top:8px"><button class="btn solid" id="apply">Save ${list.length} time${list.length > 1 ? 's' : ''}${official ? ' (official)' : ''}</button><button class="btn ghost" id="cancel">Cancel</button></div>`);
   $('#cancel', el).onclick = () => out(el, '');
   $('#apply', el).onclick = async () => {
