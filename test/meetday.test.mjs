@@ -140,6 +140,10 @@ test('results: Hy-Tek results text, live page links, screenshots and photos', ()
   assert.deepEqual(resultLinks(html, 'https://results.example.org/live/index.htm').map((l) => [l.href, l.event]), [['https://results.example.org/live/260011P001.htm', 11]]);
   const shot = screenshotResults(P, M, 'Results\nPenny Lane\n17 NSEA 59.88\nCoral Fishman 15  1:05.01', { event: 11 });
   assert.deepEqual(shot.results.map((r) => [r.entry, r.time]), [['11-P-1', 6501], ['11-P-2', 5988]]);
+  // Meet Mobile style title, no event number we can parse, favorites-filtered list
+  const mm = screenshotResults(P, M, 'W 13 & Over 100 Back\nFavorites\n1 Penny Lane 17 NSEA 59.70\n5 Coral Fishman 15 NSEA 1:05.40', { session: 2 });
+  assert.equal(mm.event, 11); assert.deepEqual(mm.results.map((r) => r.time), [6540, 5970]);
+  assert.equal(screenshotResults(P, M, 'Results\nsomething unreadable', { session: 2 }).event, null);
   assert.equal(extractByName('Lane, Penny  DQ', [{ id: 'a', name: 'Lane, Penny' }])[0].status, 'DQ');
   const photo = photoHeatRows(P, M, 'Heat 2 of 3\n4 Fishman, Coral 15 Nsea Swim-NC 1:05.10\n5 Someone, Else 15 GCY-NC 1:05.00', 4, 11);
   assert.deepEqual(photo.rows.map((r) => [r.swimmerId, r.event, r.round, r.heat, r.lane]), [[1, 11, 'Finals', 2, 4]]);

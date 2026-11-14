@@ -97,10 +97,39 @@ export function resultsFromText(pkg, model, text, opts) {
 export function screenshotResults(pkg, model, text, { event, session }) {
   const lines = String(text).split(/\r?\n/);
   const t = lines.map(parseEventTitle).find(Boolean);
-  const evNum = (t && t.num) || event;
+  const evNum = (t && t.num) || detectEvent(pkg, model, text, session) || event || null;
+  if (!evNum) return { event: null, results: [] };
   const rows = model.rows.filter((r) => r.event === evNum && (session == null || r.session === session));
   const hits = extractByName(text, rows.map((r) => ({ id: r.id, name: r.swimmer.name })));
   return { event: evNum, results: hits.map((h) => ({ entry: h.id, time: h.time, status: h.status, line: h.line, swimmer: rows.find((r) => r.id === h.id).swimmer.name, source: 'screenshot (OCR)', official: false })) };
+}
+
+// Which event a results screenshot shows, from whatever title text the app prints ("#3 Girls 11 & Over 100 Free",
+// "E3 W 100 Freestyle", "Event 3 ...") plus which of our swimmers appear on it. Returns null unless one event wins.
+const STROKE_WORDS = [['Free', /\bfree(style)?\b|\bfr\b/], ['Back', /\bback(stroke)?\b|\bbk\b/], ['Breast', /\bbreast(stroke)?\b|\bbr\b/], ['Fly', /\bfly\b|\bbutterfly\b|\bfl\b/], ['IM', /\bim\b|\bmedley\b/]];
+export function detectEvent(pkg, model, text, session) {
+  const head = String(text).toLowerCase().split(/\r?\n/).slice(0, 8).join(' ');
+  const all = String(text).toLowerCase();
+  const sess = pkg.sessions.find((s) => s.n === session);
+  const nums = sess ? sess.events.map((e) => e.num) : Object.keys(pkg.events).map(Number);
+  const numHit = (head.match(/(?:#|\bevent\s*|\be)\s*(\d{1,3})\b/) || [])[1];
+  if (numHit && nums.includes(+numHit)) return +numHit;
+  const dists = [...head.matchAll(/\b(25|50|100|200|400|500|800|1000|1500|1650)\b/g)].map((m) => +m[1]);
+  const strokes = STROKE_WORDS.filter(([, re]) => re.test(head)).map(([k]) => k);
+  const sex = /\b(girls?|women|female|w)\b/.test(head) ? 'F' : /\b(boys?|men|male|m)\b/.test(head) ? 'M' : null;
+  let best = null, bestScore = 0, tie = false;
+  for (const n of nums) {
+    const e = pkg.events[n];
+    if (!e) continue;
+    let sc = 0;
+    if (dists.includes(e.dist)) sc += 2;
+    if (strokes.includes(e.stroke)) sc += 2;
+    if (sex && e.sex === sex) sc += 1; else if (sex && e.sex && e.sex !== sex) sc -= 3;
+    const ours = model.rows.filter((r) => r.event === n && (session == null || r.session === session));
+    sc += Math.min(3, ours.filter((r) => all.includes(r.swimmer.name.split(',')[0].trim().toLowerCase())).length) * 0.5;
+    if (sc > bestScore) { best = n; bestScore = sc; tie = false; } else if (sc === bestScore) tie = true;
+  }
+  return bestScore >= 4 && !tie ? best : null;
 }
 
 // HTML (Hy-Tek real-time results, or any page with <pre> results) -> plain lines + links to other result pages.
