@@ -383,8 +383,8 @@ function renderTools() {
     <input type="url" id="live-url" placeholder="https://…" value="${esc((src && src.url) || '')}">
     <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="live-check">Check now</button><button class="btn" data-act="live-poll">${S.poll ? 'Stop auto-check' : 'Auto-check every minute'}</button></div><div id="o-live"></div></div>
 
-  <div class="card"><h3>Meet Mobile screenshot</h3><p class="small muted">Meet Mobile has no public feed, so screenshot the event's results screen and add it here. Times are read for our swimmers in that event (unofficial).</p>
-    <label class="f" for="ev-shot">Event</label>
+  <div class="card"><h3>Meet Mobile screenshot</h3><p class="small muted">In Meet Mobile, filter each event's results to Favorites (our swimmers) and screenshot it. Add several events' screenshots at once: the event is read from the title on each screen. Times are unofficial.</p>
+    <label class="f" for="ev-shot">Event (only if the title can't be read)</label>
     <select id="ev-shot"><option value="">— read it from the screenshot —</option>${evs.map((e) => `<option value="${e.num}">#${e.num} ${esc(S.pkg.events[e.num]?.title || '')} (${esc(e.round)})</option>`).join('')}</select>
     <input type="file" id="f-shot" accept="image/*" multiple style="margin-top:8px"><div id="o-shot"></div></div>
 
@@ -481,16 +481,18 @@ function reviewEntries(el, data, head, editable) {
 }
 
 async function shotUpload(files, el) {
-  const all = [];
+  const all = [], missed = [];
+  const picked = +$('#ev-shot').value || null;
   for (const [i, f] of [...files].entries()) {
     busy(el, `Reading screenshot ${i + 1} of ${files.length}…`);
     const text = await ocr(f, el);
-    const ev = +$('#ev-shot').value || null;
-    const r = screenshotResults(S.pkg, S.model, text, { event: ev, session: selSession() });
-    if (!r.event) { out(el, '<p class="small">Pick the event, then add the screenshot again.</p>'); return; }
+    const r = screenshotResults(S.pkg, S.model, text, { event: files.length === 1 ? picked : null, session: selSession() });
+    if (!r.event && picked) Object.assign(r, screenshotResults(S.pkg, S.model, text, { event: picked, session: selSession() }));
+    if (!r.event) { missed.push(f.name || `screenshot ${i + 1}`); continue; }
     all.push(...r.results.map((x) => ({ ...x, event: r.event })));
   }
   reviewResults(el, all, 'screenshot (OCR)');
+  if (missed.length) el.insertAdjacentHTML('afterbegin', `<p class="small" style="color:var(--coral)">Couldn't tell which event ${missed.length === 1 ? 'this screenshot shows' : 'these screenshots show'}: ${missed.map(esc).join(', ')}. Pick the event above and add ${missed.length === 1 ? 'it' : 'them'} again.</p>`);
 }
 function reviewResults(el, list, source, official) {
   if (!list.length) return out(el, `<p class="small">No new times for our swimmers.</p>`);
