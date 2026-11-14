@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer } from '../public/admin/meet/lib/parse.mjs';
+import { parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime } from '../public/admin/meet/lib/parse.mjs';
 import { flagsFor } from '../public/admin/meet/lib/flags.mjs';
 import { buildRefs } from '../public/admin/meet/lib/refs.mjs';
 import { derive, sessionSummary, parseTyped, nowEvent } from '../public/admin/meet/lib/model.mjs';
@@ -153,6 +153,27 @@ test('results: Hy-Tek results text, live page links, screenshots and photos', ()
   // OCR as it really comes back: "0f", squashed team name, event only in the continuation header
   const ocr = photoHeatRows(P, M, 'Heat 10 Prelims (#11 Girls 13 & Over 100 Yard Backstroke)\n9 Other, Person 16 CA-sC 1:02.11\nHeat 110f13 Prelims Startsat 10:34 AM\n10 Lane, Penny 17 NseaSwim-NC 1:02.72', 2, null);
   assert.deepEqual(ocr.rows.map((r) => [r.swimmerId, r.event, r.round, r.heat, r.lane, r.seed]), [[2, 11, 'Prelims', 11, 10, 6272]]);
+});
+
+test('photos: two-column OCR layout, deck-seeded combined 500s, circled lanes, mangled times', () => {
+  const P = pkg();
+  P.sessions[0].events.push({ num: 19, round: 'Finals' }, { num: 20, round: 'Finals' });
+  P.events[19] = { num: 19, sex: 'F', dist: 500, stroke: 'Free', title: 'Girls 13 & Over 500 Freestyle' };
+  P.events[20] = { num: 20, sex: 'M', dist: 500, stroke: 'Free', title: 'Boys 13 & Over 500 Freestyle' };
+  P.entries.push({ id: '19-F-2', swimmerId: 2, event: 19, session: 2, round: 'Finals', heat: null, lane: null, seed: 36500 }, { id: '20-F-3', swimmerId: 3, event: 20, session: 2, round: 'Finals', heat: null, lane: null, seed: 37000 });
+  const M = derive(P, []);
+  assert.equal(ocrTime('61191'), 37191); assert.equal(ocrTime('5:3912'), 33912); assert.equal(ocrTime('6:04.41'), 36441); assert.equal(ocrTime('9999'), null);
+  // words laid out in two columns; reading across would mix them
+  const W = (text, x, y) => ({ text, x0: x, y0: y, x1: x + text.length * 9, y1: y + 18 });
+  const words = [];
+  const left = ['Event 19 / 20 Girls / Boys 13&O 500 Free', 'Heat 1 (Heat 1 Girls 500 Free)', '1 Other, Amy 15 GCY-NC 5:26.29', '2 More, Beth 16 RSA-NC 5:17.49', '3 Some, Cara 17 CA-SC 5:11.88'];
+  const right = ['Heat 7 (Heat 4 Girls 500 Free) Starts at 10:40 AM', '1 Sims, Lu 14 GAME-SC 6:17.46', '2 Doe, Al 13 RSA-NC 6:14.36', 'Keller, Bri 15 CA-SC 6:05.94', '@ Lane, Penny 17 Nsea Swim-NC 6:04.41', '5 Zim, Lia 13 TIDE-SC 6:03.13', 'Heat 11 (Heat 6 Boys 500 Free)', '4 Kle, Wy 13 ATOM-NC 6:29.29', '5/ Reef, Rocco 14 Nsea Swim-NC 61191'];
+  left.forEach((l, i) => l.split(' ').reduce((x, t) => { words.push(W(t, x, 100 + i * 30)); return x + t.length * 9 + 8; }, 10));
+  right.forEach((l, i) => l.split(' ').reduce((x, t) => { words.push(W(t, x, 100 + i * 30 + i * 0.5)); return x + t.length * 9 + 8; }, 700));
+  const text = ocrColumns(words);
+  assert.ok(text.indexOf('Some, Cara') < text.indexOf('Heat 7'));
+  const r = photoHeatRows(P, M, text, 2, null);
+  assert.deepEqual(r.rows.map((x) => [x.swimmerId, x.event, x.heat, x.lane, x.seed]), [[2, 19, 7, 4, 36441], [3, 20, 11, 5, 37191]]);
 });
 
 function d1() {

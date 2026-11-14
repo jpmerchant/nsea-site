@@ -1,6 +1,6 @@
 // NSEA Meet Day: coaches' meet app. Offline-first: everything renders from IndexedDB; the server is only
 // for syncing between coaches and for fetching live results pages.
-import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin } from './lib/parse.mjs';
+import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
 import { derive, sessionSummary, parseTyped, nowEvent } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
@@ -297,6 +297,8 @@ function openEntry(id) {
     <div class="btns" style="margin-top:8px">${['DQ', 'NS'].map((s) => `<button class="btn sm ghost" data-act="status" data-s="${s}" data-id="${esc(id)}">${s}</button>`).join('')}
       ${res ? `<button class="btn sm ghost" data-act="clear-time" data-id="${esc(id)}">Clear time</button>` : ''}
       <button class="btn sm ghost" data-act="scratch" data-id="${esc(id)}">${r.scratched ? 'Un-scratch' : 'Scratch'}</button></div>
+    <details style="margin-top:10px"><summary class="small" style="cursor:pointer;color:var(--teal-dark)">Change heat / lane${r.heat ? '' : ' (not set yet)'}</summary>
+      <div class="timein" style="margin-top:8px"><input id="hh" inputmode="numeric" placeholder="Heat" value="${r.heat ?? ''}" style="font-size:18px"><input id="ll" inputmode="numeric" placeholder="Lane" value="${r.lane ?? ''}" style="font-size:18px"><button class="btn" data-act="save-hl" data-id="${esc(id)}">Save</button></div></details>
     <h3 style="margin-top:14px">Flags ${res && res.time != null ? (r.official ? '' : '<span class="pill off">unofficial</span>') : '<span class="muted small">(from seed)</span>'}</h3>
     ${flags.length ? `<ul class="flaglist">${flags.map((f) => `<li><span class="pill t-${f.tier}">${TIER_TXT[f.tier]}</span><span><b>${esc(f.label)}</b> <span class="muted">${esc(f.sub || '')}</span>${f.target != null && isFinite(f.target) ? ` · target <span class="mono">${fmt(f.target)}</span>${r.seed != null && !(res && res.time != null) ? ` · needs <span class="mono">${r.seed > f.target ? '−' + fmt(r.seed - f.target) : 'a PB'}</span>` : ''}${res && res.time != null ? ` · <span class="mono">${f.gap <= 0 ? 'by ' + fmt(-f.gap) : ''}</span>` : ''}` : ''}</span></li>`).join('')}</ul>` : '<p class="small muted">Nothing within 3% of a record, Top 10 or the cuts we flag.</p>'}
     <h3 style="margin-top:14px">Notes</h3>
@@ -440,16 +442,20 @@ async function pdfjs() {
   return pdfjsP;
 }
 let tessP;
-async function ocr(file, el) {
+async function ocr(file, el, { columns = false } = {}) {
   if (!tessP) tessP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = CDN.tess; s.onload = res; s.onerror = () => rej(new Error('Could not load the photo reader (download it for offline while on Wi-Fi).')); document.head.appendChild(s); })
     .then(() => window.Tesseract.createWorker('eng', 1, { workerPath: CDN.tessWorker, corePath: CDN.tessCore, langPath: CDN.tessLang, logger: (m) => { const p = $('#pg'); if (p && m.progress) p.style.width = Math.round(m.progress * 100) + '%'; } }));
   const p = $('#pg'); if (p) p.parentElement.previousElementSibling.textContent = 'Loading the photo reader (first time needs signal)…';
   const w = await Promise.race([tessP, new Promise((_, rej) => setTimeout(() => rej(new Error('The photo reader did not load. With signal, try again; before the next meet use Tools › Download readers for offline.')), 60000))]).catch((e) => { tessP = null; throw e; });
   if (p) p.parentElement.previousElementSibling.textContent = 'Reading the image…';
-  await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+  await w.setParameters({ tessedit_pageseg_mode: columns ? '3' : '6', preserve_interword_spaces: '1' });
   const img = await shrink(file);
-  const { data } = await w.recognize(img);
-  return data.text;
+  if (!columns) { const { data } = await w.recognize(img); return data.text; }
+  // Heat sheet photos: two columns. Rebuild lines column by column from the word boxes (and level a tilted photo).
+  const { data } = await w.recognize(img, {}, { blocks: true, text: true });
+  const words = [];
+  for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) for (const wd of l.words || []) words.push({ text: wd.text, ...wd.bbox });
+  return words.length ? ocrColumns(words) : data.text;
 }
 // Big phone photos make OCR slow: scale to ~2000px wide, greyscale.
 async function shrink(file) {
@@ -472,15 +478,16 @@ async function heatUpload(files, el) {
 }
 async function photoUpload(files, el) {
   busy(el, 'Reading the photo (this takes a few seconds)…');
-  const text = await ocr(files[0], el);
+  const text = await ocr(files[0], el, { columns: true });
   const ev = +$('#ev-photo').value || null;
   const data = photoHeatRows(S.pkg, S.model, text, selSession(), ev);
   if (!data.rows.length) return out(el, `<p class="small">Couldn't find our swimmers in that photo. Try a straighter, closer shot, or pick the event.</p><details><summary class="small">What was read</summary><pre class="small">${esc(text)}</pre></details>`);
   reviewEntries(el, data, `Found ${data.rows.length} of our swimmers. Check heats and lanes before applying.`, true);
+  el.insertAdjacentHTML('beforeend', `<details><summary class="small muted">What the photo reader saw</summary><pre class="small" style="white-space:pre-wrap">${esc(text)}</pre></details>`);
 }
 function reviewEntries(el, data, head, editable) {
   out(el, `<p class="small"><b>${esc(head)}</b></p><table class="t review"><thead><tr><th>Swimmer</th><th>Ev</th><th>Heat</th><th>Lane</th><th style="text-align:right">Seed</th></tr></thead><tbody>
-    ${data.rows.map((r, i) => `<tr><td>${esc(r.name)}${r.isNew ? ' <span class="pill t-3">new</span>' : ''}</td><td>#${r.event}</td>
+    ${data.rows.map((r, i) => `<tr><td>${esc(r.name)}${r.isNew ? ' <span class="pill t-3">new</span>' : ''}${r.guessed ? ' <span class="pill t-3">check</span>' : ''}</td><td>#${r.event}</td>
       <td>${editable ? `<input data-i="${i}" data-k="heat" inputmode="numeric" value="${r.heat ?? ''}">` : r.heat ?? ''}</td>
       <td>${editable ? `<input data-i="${i}" data-k="lane" inputmode="numeric" value="${r.lane ?? ''}">` : r.lane ?? ''}</td><td class="num">${fmt(r.seed)}</td></tr>`).join('')}</tbody></table>
     <div class="btns" style="margin-top:8px"><button class="btn solid" id="apply">Apply</button><button class="btn ghost" id="cancel">Cancel</button></div>`);
@@ -596,6 +603,13 @@ document.addEventListener('click', async (ev) => {
       if (cs == null) { toast('Type a time like 5912 or 1:02.45'); return; }
       await addOp('result', { entry: t.dataset.id, time: cs, status: 'OK', source: 'manual', official: false });
       closeSheet(); toast('Saved'); return;
+    }
+    if (a === 'save-hl') {
+      const r = S.model.rows.find((x) => x.id === t.dataset.id);
+      const heat = parseInt($('#hh').value, 10), lane = parseInt($('#ll').value, 10);
+      if (!heat || !lane || lane > 12) { toast('Type a heat and a lane'); return; }
+      await addOp('entries', { session: r.session, mode: 'merge', source: 'typed heat/lane', rows: [{ event: r.event, round: r.round, swimmerId: r.swimmerId, name: r.swimmer.name, heat, heats: r.heats, lane, seed: r.seed, start: r.start }] });
+      closeSheet(); toast(`Heat ${heat}, lane ${lane}`); return;
     }
     if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); return; }
     if (a === 'clear-time') { const r = S.model.rows.find((x) => x.id === t.dataset.id); if (r && r.result) await addOp('undo', { op: r.result.op }); closeSheet(); return; }
