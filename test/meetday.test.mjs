@@ -250,3 +250,25 @@ test('lane lines with odd glyphs in names or extra columns after the seed', () =
   assert.equal(odd.lane, 5); assert.equal(odd.age, 15); assert.equal(odd.seed, 6510);
   assert.equal(parseLaneLine('2 Reef, Rocco J 14 Nsea Swim-NC NT').seed, null);
 });
+
+test('USC finals program: "Heat 1 D - Final Starts at", underscores, alternates, ϐ glyph', () => {
+  const p = parseHeatSheet([
+    { text: 'Meet Program - Saturday finals', header: true },
+    'Event 11 Girls 13 & Over 100 Yard Backstroke',
+    'Lane Name Age Team Prelims',
+    'Heat 1 D - Final Starts at 06:20 PM',
+    '1 Fishman, Coral A 13 Nsea Swim-NC 1:08.70 _____',
+    '2 Other, Person 14 CS-SC 1:06.99 _____',
+    'Alternates',
+    '1 Spare, Sally G 13 Nsea Swim-NC 1:10.34',
+    'Heat 2 C - Final Starts at 06:22 PM',
+    '2 Lane, Penny 17 Nsea Swim-NC 1:03.49 _____',
+    'Heat 2 C - Final (#11 Girls 13 & Over 100 Yard Backstroke)',
+    '9 Late, Lena 15 Nsea Swim-NC 1:03.80 _____',
+  ]);
+  const e = p.events[0];
+  assert.deepEqual(e.heats.map((h) => [h.heat, h.of, h.final, h.start, h.lanes.map((l) => l.name)]),
+    [[1, 2, 'D Final', '06:20 PM', ['Fishman, Coral A', 'Other, Person']], [2, 2, 'C Final', '06:22 PM', ['Lane, Penny', 'Late, Lena']]]);
+  const lines = pdfLines([{ width: 612, height: 792, items: [{ x: 250, y: 760, str: 'Meet Program - Saturday' }, { x: 380, y: 760, str: 'ϐ' }, { x: 386, y: 760, str: 'inals' }] }]);
+  assert.match(lines[0].text, /Saturday\s+finals/);
+});
