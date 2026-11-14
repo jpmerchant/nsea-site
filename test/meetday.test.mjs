@@ -243,3 +243,10 @@ test('finals heat sheet with lettered finals (A/B Final) and no Heat headings', 
   const sheet = heatSheetRows(pkg(), derive(pkg(), []), p, 4);
   assert.equal(sheet.rows.length, 3);
 });
+
+test('lane lines with odd glyphs in names or extra columns after the seed', () => {
+  assert.equal(parseLaneLine('4 Lane, Penny 17 Nsea Swim-NC 59.80 q 3').team, 'Nsea Swim-NC');
+  const odd = parseLaneLine('5 6 ishman, Coral A 15 Nsea Swim-NC 1:05.10');
+  assert.equal(odd.lane, 5); assert.equal(odd.age, 15); assert.equal(odd.seed, 6510);
+  assert.equal(parseLaneLine('2 Reef, Rocco J 14 Nsea Swim-NC NT').seed, null);
+});

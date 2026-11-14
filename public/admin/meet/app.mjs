@@ -480,7 +480,11 @@ async function heatUpload(files, el) {
       : !parsed.events.length ? `Read ${parsed.lineCount} lines but found no “Event N …” headings.`
       : !lanes.length ? `Found ${parsed.events.length} events but no swimmer lines under them.`
       : `Found ${parsed.events.length} events and ${lanes.length} swimmers; teams seen: ${teams.join(', ')}.`;
-    return out(el, `<p class="small">No ${esc(S.pkg.teamName)} swimmers found on “${esc(parsed.session || files[0].name)}”. ${esc(why)}</p>`);
+    const re = new RegExp(S.pkg.teamMatch || 'nsea', 'i');
+    const ours = (parsed.lines || []).filter((t) => re.test(t) || re.test(t.replace(/[\s.\-]+/g, ''))).slice(0, 4);
+    const sample = ours.length ? `<p class="small">Lines on the sheet that mention ${esc(S.pkg.teamName)} (screenshot this for Claude):</p><pre class="small" style="white-space:pre-wrap">${ours.map(esc).join('\n')}</pre>`
+      : `<p class="small">No line on the sheet mentions ${esc(S.pkg.teamName)} at all. First lines read:</p><pre class="small" style="white-space:pre-wrap">${(parsed.lines || []).slice(0, 12).map(esc).join('\n')}</pre>`;
+    return out(el, `<p class="small">No ${esc(S.pkg.teamName)} swimmers found on “${esc(parsed.session || files[0].name)}”. ${esc(why)}</p>${sample}`);
   }
   reviewEntries(el, data, `${parsed.session || files[0].name}: ${parsed.events.length} events, ${data.rows.length} ${S.pkg.teamName} swims → Session ${sess} (${esc(S.pkg.sessions.find((s) => s.n === sess)?.name)})`);
 }
