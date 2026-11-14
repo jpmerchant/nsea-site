@@ -1,6 +1,6 @@
 // Turning outside material (heat sheet PDFs, photos, live results pages, Meet Mobile screenshots) into
 // proposed changes the coach confirms. Pure functions; the app does the file reading / OCR / fetching.
-import { parseHeatSheet, parseHeatSheetText, teamEntries, parseResults, extractByName, parseEventTitle, parseLaneLine, sameSwimmer, toCs, lineHasSwimmer } from './parse.mjs';
+import { parseHeatSheet, parseHeatSheetText, teamEntries, parseResults, extractByName, parseEventTitle, parseLaneLine, sameSwimmer, toCs, lineHasSwimmer, ocrTime } from './parse.mjs';
 
 const teamRe = (pkg) => { const re = new RegExp(pkg.teamMatch || 'nsea', 'i'); return { test: (t) => re.test(String(t || '')) || re.test(String(t || '').replace(/[\s.\-]+/g, '')) }; };
 
@@ -42,18 +42,52 @@ export function photoHeatRows(pkg, model, text, session, defaultEvent) {
   const parsed = parseHeatSheetText(text, defaultEvent ? { num: defaultEvent, title: titleOf(pkg, defaultEvent) } : null);
   const viaParser = teamEntries(parsed, teamRe(pkg));
   const team = [...model.swimmers.values()];
+  const page = lines.join(' ').toLowerCase();
+  const hint = { dists: [...page.matchAll(/\b(50|100|200|400|500|1000|1650)\b/g)].map((m) => +m[1]), strokes: STROKE_WORDS.filter(([, re]) => re.test(page)).map(([k]) => k) };
   const rows = [];
-  let heat = null, ev = defaultEvent || null;
-  for (const l of lines) {
-    const e = parseEventTitle(l); if (e) { ev = e.num; continue; }
-    const h = l.match(/^Heat\s+(\d+)/i);
-    if (h) { heat = +h[1]; const c = l.match(/\(#\s*(\d+)/); if (c) ev = +c[1]; continue; }
-    const s = team.find((sw) => lineHasName(l, sw.name));
-    if (!s || !ev) continue;
+  let heat = null, ev = defaultEvent || null, pair = null;
+  const leadLane = (l) => { const m = l.match(/^\W{0,3}(\d{1,2})\b/); return m && +m[1] >= 1 && +m[1] <= 10 ? +m[1] : null; };
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    // Combined deck-seeded events: "Event 19 / 20 Girls / Boys 13&O 500 Free"
+    const comb = l.match(/Event\s*(\d{1,3})\s*\/\s*(\d{1,3})\s+(?:Girls|Women)\s*\/\s*(?:Boys|Men)/i);
+    if (comb) { pair = { F: +comb[1], M: +comb[2] }; ev = null; continue; }
+    const e = parseEventTitle(l); if (e) { ev = e.num; pair = null; continue; }
+    const h = l.match(/^\W{0,3}Heat\s*(\d{1,2})/i);
+    if (h) {
+      heat = +h[1];
+      const sx = /\bgirls|women\b/i.test(l) ? 'F' : /\bboys|men\b/i.test(l) ? 'M' : null;
+      if (pair && sx) ev = pair[sx];
+      const c = l.match(/\(#\s*(\d+)\s*(?:\/\s*(\d+))?/);
+      if (c && c[2]) { pair = { F: +c[1], M: +c[2] }; if (sx) ev = pair[sx]; } else if (c) ev = +c[1];
+      continue;
+    }
+    const s = team.find((sw) => lineHasSwimmer(l, sw.name));
+    if (!s) continue;
+    // Which of the swimmer's swims this is: the event on the page, else the pair by sex, else their one swim
+    // in this session that matches the page's distance/stroke, else their one swim still without a heat (deck seeding).
+    const mine = model.rows.filter((r) => r.swimmerId === s.id && (session == null || r.session === session));
+    let evNum = ev && mine.some((r) => r.event === ev) ? ev : null;
+    if (!evNum && pair) evNum = pair[s.sex] || null;
+    const fits = (r) => hint.dists.includes(r.ev.dist) && (!hint.strokes.length || hint.strokes.includes(r.ev.stroke));
+    if (!evNum) { const open = mine.filter((r) => !r.heat), m = open.filter(fits); if (m.length === 1) evNum = m[0].event; else if (!m.length && open.length === 1) evNum = open[0].event; }
+    if (!evNum) { const m = mine.filter(fits); if (m.length === 1) evNum = m[0].event; }
+    if (!evNum) evNum = ev;
+    if (!evNum) continue;
     const p = parseLaneLine(l);
-    const lane = p ? p.lane : +((l.match(/^(\d{1,2})\b/) || [])[1] || 0) || null;
-    const seed = p ? p.seed : toCs((l.match(/((?:\d{1,2}:)?\d{1,2}\.\d{2})\s*$/) || [])[1]);
-    rows.push({ event: ev, round: roundFor(pkg, session, ev), swimmerId: s.id, name: s.name, age: s.age, sex: s.sex, heat, lane, seed, start: null });
+    let lane = p ? p.lane : leadLane(l);
+    // Circled or smudged lane number: count swimmer rows to the nearest readable lane above or below
+    // (lanes run 1–10 in order; stray OCR fragments between rows are skipped).
+    if (!lane) {
+      const rowLike = (x) => /[A-Za-z]{2,},\s*[A-Za-z]/.test(x || '') || /\b1?\d\s+[A-Za-z.\-]*[A-Z]{2,}[A-Za-z.\-]*\s+\S*\d/.test(x || '');
+      const walk = (dir) => { let k = 0; for (let d = 1; d <= 8; d++) { const x = lines[i + dir * d]; if (x == null || /^\W{0,3}Heat/i.test(x)) return null; if (!rowLike(x)) continue; k++; const n = leadLane(x); if (n) return { lane: n - dir * k, k }; } return null; };
+      const up = walk(-1), dn = walk(1);
+      const c = [up, dn].filter((x) => x && x.lane >= 1 && x.lane <= 10).sort((a, b) => a.k - b.k)[0];
+      if (c) lane = c.lane;
+    }
+    const last = l.split(/\s+/).reverse().find((t) => /^(NT|\d[\d:.,]{3,7})$/i.test(t.replace(/[_\-—|]+$/, '')));
+    const seed = p ? p.seed : last && !/^NT$/i.test(last) ? ocrTime(last.replace(/,/g, '.')) : null;
+    rows.push({ event: evNum, round: roundFor(pkg, session, evNum), swimmerId: s.id, name: s.name, age: s.age, sex: s.sex, heat, lane, seed, start: null, guessed: !p });
   }
   for (const v of viaParser) if (!rows.some((r) => r.event === v.event && sameSwimmer(r.name, v.name))) {
     const s = team.find((sw) => sameSwimmer(sw.name, v.name));

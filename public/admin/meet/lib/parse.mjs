@@ -268,3 +268,64 @@ export function parseHy3(text) {
   return out;
 }
 const mdy = (s) => `${s.slice(4, 8)}-${s.slice(0, 2)}-${s.slice(2, 4)}`;
+
+// ---------- OCR layout: words with boxes -> lines, one column at a time ----------
+// Phone photos of Hy-Tek programs are two columns; reading straight across mixes the columns (and their heats).
+// words: [{ text, x0, y0, x1, y1 }] from Tesseract. Finds the gutter (an x band in the middle with almost no
+// words) and rebuilds lines in the left column, then the right.
+export function ocrColumns(words) {
+  const ws = words.filter((w) => w.text && w.text.trim() && w.x1 > w.x0);
+  if (!ws.length) return '';
+  const minX = Math.min(...ws.map((w) => w.x0)), maxX = Math.max(...ws.map((w) => w.x1));
+  const W = maxX - minX;
+  // coverage histogram over 60 bins between 30% and 70% of the width
+  const bins = 60, lo = minX + W * 0.3, hi = minX + W * 0.7, cov = new Array(bins).fill(0);
+  for (const w of ws) for (let b = 0; b < bins; b++) {
+    const a = lo + ((hi - lo) * b) / bins, z = lo + ((hi - lo) * (b + 1)) / bins;
+    if (w.x0 < z && w.x1 > a) cov[b]++;
+  }
+  let best = -1, bestV = Infinity;
+  cov.forEach((v, b) => { if (v < bestV) { bestV = v; best = b; } });
+  const split = lo + ((hi - lo) * (best + 0.5)) / bins;
+  const left = ws.filter((w) => (w.x0 + w.x1) / 2 < split), right = ws.filter((w) => (w.x0 + w.x1) / 2 >= split);
+  const twoCol = bestV <= Math.max(2, ws.length * 0.01) && left.length > 15 && right.length > 15;
+  const cols = twoCol ? [left, right] : [ws];
+  const out = [];
+  for (const c of cols) {
+    const hs = c.map((w) => w.y1 - w.y0).sort((a, b) => a - b);
+    const h = hs[Math.floor(hs.length / 2)] || 20;
+    // Photos are usually a little rotated: estimate the tilt from neighbouring words and level the lines.
+    const slopes = [];
+    for (const w of c) {
+      const cy = (w.y0 + w.y1) / 2;
+      let nb = null;
+      for (const v of c) if (v !== w && v.x0 >= w.x1 - 2 && v.x0 - w.x1 < h * 3 && Math.abs((v.y0 + v.y1) / 2 - cy) < h * 0.6 && (!nb || v.x0 < nb.x0)) nb = v;
+      if (nb) slopes.push(((nb.y0 + nb.y1) / 2 - cy) / ((nb.x0 + nb.x1) / 2 - (w.x0 + w.x1) / 2));
+    }
+    slopes.sort((a, b) => a - b);
+    const k = slopes.length ? slopes[Math.floor(slopes.length / 2)] : 0;
+    const lv = (w) => (w.y0 + w.y1) / 2 - k * (w.x0 + w.x1) / 2;
+    const sorted = [...c].sort((a, b) => lv(a) - lv(b));
+    const lines = [];
+    for (const w of sorted) {
+      const cy = lv(w);
+      const l = lines.find((x) => Math.abs(x.cy - cy) < h * 0.5);
+      if (l) { l.words.push(w); l.cy = (l.cy * (l.words.length - 1) + cy) / l.words.length; } else lines.push({ cy, words: [w] });
+    }
+    for (const l of lines.sort((a, b) => a.cy - b.cy)) out.push(l.words.sort((a, b) => a.x0 - b.x0).map((w) => w.text).join(' '));
+  }
+  return out.join('\n');
+}
+
+// Seed/result times as OCR mangles them: "61191" -> 6:11.91, "51989" -> 5:19.89, "5:3912" -> 5:39.12, "8.0835" -> 8:08.35
+export function ocrTime(tok) {
+  if (!tok) return null;
+  const t = String(tok).replace(/[Oo]/g, '0').replace(/[^\d:.]/g, '');
+  const direct = toCs(t);
+  if (direct != null) return direct;
+  const d = t.replace(/[:.]/g, '');
+  if (!/^\d{4,6}$/.test(d)) return null;
+  const cs = +d.slice(-2), sec = +d.slice(-4, -2), min = +(d.slice(0, -4) || 0);
+  if (sec >= 60) return null;
+  return (min * 60 + sec) * 100 + cs;
+}
