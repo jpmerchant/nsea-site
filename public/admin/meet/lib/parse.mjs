@@ -61,6 +61,8 @@ function rows(items) {
 const EVENT_RE = /^(?:#\s*)?Event\s+(\d+)\s+(Girls|Boys|Women|Men|Mixed|Female|Male)\s+(.+?)\s+(\d{2,4})\s+(Yard|Meter|LC Meter|SC Meter)s?\s+(Freestyle Relay|Medley Relay|Freestyle|Backstroke|Breaststroke|Butterfly|IM|Individual Medley)/i;
 const HEAT_RE = /^Heat\s+(\d+)\s+of\s+(\d+)\s*(Prelims|Finals|Timed Finals|Swim-?off)?\s*(?:Starts at\s+(\d{1,2}:\d{2}\s*[AP]M))?/i;
 const HEAT_CONT_RE = /^Heat\s+(\d+)\s+(Prelims|Finals|Timed Finals)?\s*\(#(\d+)\s/i;
+// Finals programs often label heats "A - Final" / "Championship Final" instead of "Heat 1 of 2 Finals".
+const FINAL_RE = /^(?:([A-H])\s*-\s*Finals?|(Championship|Consolation|Bonus|Semi|Semi-)\s*Finals?)\b(?:.*?Starts at\s+(\d{1,2}:\d{2}\s*[AP]M))?/i;
 const LANE_RE = new RegExp(String.raw`^(\d{1,2})\s+([A-Za-zÀ-ÿ'’.\- ]+?,\s*[A-Za-zÀ-ÿ'’.\- ]+?)\s+(\d{1,2})\s+(.+?)\s+(NT|NS|${TIME})\s*[A-Za-z]?$`);
 
 export function parseEventTitle(t) {
@@ -106,11 +108,21 @@ export function parseHeatSheet(lines) {
       if (old >= 0) ev.heats[old] = heat; else ev.heats.push(heat);
       continue;
     }
+    const f = t.match(FINAL_RE);
+    if (f && ev) {
+      const label = f[1] ? `${f[1].toUpperCase()} Final` : `${f[2].replace(/-$/, '')} Final`;
+      const cont = t.match(/\(#(\d+)\s/);
+      if (cont) { ev = events.get(+cont[1]) || ev; const same = ev.heats.find((h) => h.final === label); if (same) { heat = same; continue; } }
+      heat = { heat: ev.heats.length + 1, of: null, round: 'Finals', final: label, start: f[3] ? f[3].replace(/\s+/g, ' ').toUpperCase() : null, lanes: [] };
+      ev.heats.push(heat);
+      continue;
+    }
     const ln = parseLaneLine(t);
+    if (ln && ev && !heat) { heat = { heat: ev.heats.length + 1, of: null, round: 'Finals', start: null, lanes: [], noHeading: true }; ev.heats.push(heat); }
     if (ln && heat) heat.lanes.push(ln);
   }
   const list = [...events.values()].map((e) => ({ ...e, heats: fillHeats(e.heats.sort((a, b) => a.heat - b.heat)) })).sort((a, b) => a.num - b.num);
-  return { meet, session, events: list };
+  return { meet, session, events: list, lineCount: L.length };
 }
 // A heat that starts at the bottom of one column and continues in the next loses its "of N" and start time.
 function fillHeats(hs) {

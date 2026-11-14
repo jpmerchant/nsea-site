@@ -473,7 +473,15 @@ async function heatUpload(files, el) {
   const parsed = parseHeatSheet(pdfLines(pages));
   const sess = guessSession(S.pkg, parsed) || selSession();
   const data = heatSheetRows(S.pkg, S.model, parsed, sess);
-  if (!data.rows.length) return out(el, `<p class="small">No ${esc(S.pkg.teamName)} swimmers found on “${esc(parsed.session || files[0].name)}”.</p>`);
+  if (!data.rows.length) {
+    const lanes = parsed.events.flatMap((e) => e.heats.flatMap((h) => h.lanes));
+    const teams = [...new Set(lanes.map((l) => l.team))].slice(0, 8);
+    const why = !parsed.lineCount ? 'No text could be read from this PDF (it may be a scanned image; try a photo of each NSEA heat instead).'
+      : !parsed.events.length ? `Read ${parsed.lineCount} lines but found no “Event N …” headings.`
+      : !lanes.length ? `Found ${parsed.events.length} events but no swimmer lines under them.`
+      : `Found ${parsed.events.length} events and ${lanes.length} swimmers; teams seen: ${teams.join(', ')}.`;
+    return out(el, `<p class="small">No ${esc(S.pkg.teamName)} swimmers found on “${esc(parsed.session || files[0].name)}”. ${esc(why)}</p>`);
+  }
   reviewEntries(el, data, `${parsed.session || files[0].name}: ${parsed.events.length} events, ${data.rows.length} ${S.pkg.teamName} swims → Session ${sess} (${esc(S.pkg.sessions.find((s) => s.n === sess)?.name)})`);
 }
 async function photoUpload(files, el) {
