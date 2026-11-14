@@ -1,6 +1,6 @@
 // Meet Day model: package + ops -> what the screens show. Pure functions (tested in test/meetday.test.mjs).
 import { flagsFor, DEFAULT_CUTS } from './flags.mjs';
-import { sameSwimmer, clockMin } from './parse.mjs';
+import { sameSwimmer, clockMin, minClock } from './parse.mjs';
 
 export const entryKey = (event, round, swimmerId) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-${swimmerId}`;
 
@@ -11,6 +11,7 @@ export function derive(pkg, ops, settings = {}) {
   const sorted = [...ops].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : String(a.id).localeCompare(String(b.id))));
   const undone = new Set(sorted.filter((o) => o.type === 'undo').map((o) => o.data && o.data.op));
   const results = new Map(), notes = new Map(), scratch = new Map(), official = new Map(), sources = [];
+  const sessions = pkg.sessions.map((x) => ({ ...x, warmup: x.warmup ? { ...x.warmup } : x.warmup, events: (x.events || []).map((e) => ({ ...e })) }));
 
   for (const o of sorted) {
     if (undone.has(o.id) || o.type === 'undo') continue;
@@ -21,6 +22,7 @@ export function derive(pkg, ops, settings = {}) {
     else if (o.type === 'scratch') scratch.set(d.entry, !!d.on);
     else if (o.type === 'official') official.set(d.session, { on: !!d.on, by: o.by, at: o.at });
     else if (o.type === 'source') sources.push({ ...d, at: o.at, by: o.by });
+    else if (o.type === 'times') applyTimes(sessions, entries, d, o);
   }
 
   const rows = [];
@@ -41,7 +43,33 @@ export function derive(pkg, ops, settings = {}) {
     });
   }
   rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(pkg, a) - order(pkg, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
-  return { rows, swimmers, official, sources, results };
+  return { rows, swimmers, official, sources, results, sessions };
+}
+
+// Session time change (e.g. the host pushes the session back 30 min).
+// data: { session, start?, warmup?, sprints?, shift? (minutes) }. Heat and event start times already
+// loaded for that session move by `shift`; heat sheets uploaded afterwards keep their printed times.
+const shiftClock = (t, m) => { const n = clockMin(t || ''); return n == null ? t : minClock(n + m); };
+const shiftText = (t, m) => String(t || '').replace(/(\d{1,2}):(\d{2})(?:\s*([AP]M))?/gi, (all, h, mm, ap) => {
+  const ref = ap || (String(t).match(/[AP]M/i) || ['PM'])[0];
+  const out = minClock(clockMin(`${h}:${mm} ${ref}`) + m).replace(/^0/, '');
+  return ap ? out : out.replace(/\s*[AP]M$/, '');
+});
+export function applyTimes(sessions, entries, d, o = {}) {
+  const s = sessions.find((x) => x.n === d.session);
+  if (!s) return;
+  const m = Math.round(+d.shift || 0);
+  if (m) {
+    s.finish = shiftClock(s.finish, m);
+    for (const e of s.events || []) if (e.start) e.start = shiftClock(e.start, m);
+    if (s.warmup && !d.warmup) s.warmup.time = shiftText(s.warmup.time, m);
+    if (s.warmup && !d.sprints && s.warmup.sprints) s.warmup.sprints = shiftText(s.warmup.sprints, m);
+    for (const e of entries.values()) if (e.session === d.session && e.start) e.start = shiftClock(e.start, m);
+  }
+  if (d.start) s.start = minClock(clockMin(d.start));
+  if (d.warmup && s.warmup) s.warmup.time = d.warmup;
+  if (d.sprints && s.warmup) s.warmup.sprints = d.sprints;
+  s.changed = { by: o.by, at: o.at, shift: m };
 }
 
 function order(pkg, r) {

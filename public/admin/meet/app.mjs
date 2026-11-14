@@ -1,6 +1,6 @@
 // NSEA Meet Day: coaches' meet app. Offline-first: everything renders from IndexedDB; the server is only
 // for syncing between coaches and for fetching live results pages.
-import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin, ocrColumns } from './lib/parse.mjs';
+import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
 import { derive, sessionSummary, parseTyped, nowEvent } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
@@ -48,6 +48,7 @@ async function loadMeet(id) {
   await store.set('current', id);
   recompute();
 }
+const SS = () => (S.model && S.model.sessions) || (S.pkg ? S.pkg.sessions : []);
 function recompute() { S.model = S.pkg ? derive(S.pkg, S.ops, S.settings) : null; }
 async function addOp(type, data) {
   const op = { id: rid(), meet: S.meetId, at: new Date().toISOString(), by: (S.me && S.me.name) || 'me', type, data, local: true };
@@ -144,7 +145,7 @@ function render() {
   return renderMeet();
 }
 function tabs(r) {
-  const days = S.pkg ? [...new Set(S.pkg.sessions.filter((s) => s.nsea !== false).map((s) => s.day))] : [];
+  const days = S.pkg ? [...new Set(SS().filter((s) => s.nsea !== false).map((s) => s.day))] : [];
   const items = [['#/', 'Meet', S.pkg ? S.pkg.short || 'Summary' : '', r.v === 'meet'], ...days.map((d) => [`#/day/${d}`, dayShort(d), d === todayIso() ? 'today' : d.slice(5).replace('-', '/'), r.v === 'day' && r.a === d]), ['#/tools', 'Tools', 'upload · live', r.v === 'tools']];
   $('#tabs').innerHTML = items.map(([h, t, s, on]) => `<a href="${h}" ${on ? 'aria-current="page"' : ''}>${esc(t)}<small>${esc(s)}</small></a>`).join('');
 }
@@ -157,7 +158,7 @@ function renderNoMeet() {
 }
 
 // ---------- meet summary ----------
-function sessionsOf(day) { return S.pkg.sessions.filter((s) => s.day === day); }
+function sessionsOf(day) { return SS().filter((s) => s.day === day); }
 function flagCounts(rows) {
   const c = { hit: 0, under: 0, 1: 0, 3: 0 };
   for (const r of rows) { const f = (r.result && r.result.time != null ? r.post : r.pre).filter((x) => !x.open && !x.improve)[0]; if (f) c[f.tier]++; }
@@ -167,7 +168,7 @@ function pills(c) { return ['hit', 'under', '1', '3'].filter((k) => c[k]).map((k
 
 function renderMeet() {
   const P = S.pkg, M = S.model;
-  const days = [...new Set(P.sessions.map((s) => s.day))];
+  const days = [...new Set(SS().map((s) => s.day))];
   const swimmers = [...M.swimmers.values()].map((s) => ({ s, n: M.rows.filter((r) => r.swimmerId === s.id && !r.scratched).length })).filter((x) => x.n).sort((a, b) => a.s.name.localeCompare(b.s.name));
   const girls = swimmers.filter((x) => x.s.sex === 'F').length;
   app.innerHTML = `
@@ -315,7 +316,7 @@ $('#sheet-bg').onclick = closeSheet;
 
 // ---------- end of session summary ----------
 function renderSummary(n) {
-  const s = S.pkg.sessions.find((x) => x.n === n);
+  const s = SS().find((x) => x.n === n);
   if (!s) { app.innerHTML = '<p class="empty">Session not found.</p>'; return; }
   const X = sessionSummary(S.model, n);
   const tag = X.official ? '' : ' <span class="pill off">unofficial</span>';
@@ -344,7 +345,7 @@ function renderSummary(n) {
 }
 const ordinal = (n) => (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 function summaryText(n) {
-  const s = S.pkg.sessions.find((x) => x.n === n), X = sessionSummary(S.model, n);
+  const s = SS().find((x) => x.n === n), X = sessionSummary(S.model, n);
   const L = [`${S.pkg.short || S.pkg.name} · ${s.name}${X.official ? '' : ' (UNOFFICIAL)'}`, `${X.swum}/${X.entries} swims · ${X.best} best times (${X.pctBest}%) · ${fmt(X.drop)} dropped`];
   const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${r.swimmer.first || r.swimmer.name} ${r.swimmer.last || ''} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
   sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
@@ -357,7 +358,7 @@ function renderSwimmer(id) {
   if (!sw) { app.innerHTML = '<p class="empty">Swimmer not found.</p>'; return; }
   const rows = S.model.rows.filter((r) => r.swimmerId === id);
   app.innerHTML = `<p class="kicker">${esc(S.pkg.short || S.pkg.name)}</p><h1>${esc(sw.name)} <span class="muted small">${sw.age ?? ''}</span></h1>
-  ${S.pkg.sessions.filter((s) => rows.some((r) => r.session === s.n)).map((s) => `<h3>${esc(dayShort(s.day))} · ${esc(s.name)}</h3><div class="ev">${rows.filter((r) => r.session === s.n).map((r) => rowHtml(r).replace('<div class="who">', `<div class="who"><span class="small muted">#${r.event} ${esc(r.ev.title || '')}</span><br>`)).join('')}</div>`).join('')}
+  ${SS().filter((s) => rows.some((r) => r.session === s.n)).map((s) => `<h3>${esc(dayShort(s.day))} · ${esc(s.name)}</h3><div class="ev">${rows.filter((r) => r.session === s.n).map((r) => rowHtml(r).replace('<div class="who">', `<div class="who"><span class="small muted">#${r.event} ${esc(r.ev.title || '')}</span><br>`)).join('')}</div>`).join('')}
   ${rows.filter((r) => r.session == null).length ? `<h3>Not placed in a session</h3><div class="ev">${rows.filter((r) => r.session == null).map(rowHtml).join('')}</div>` : ''}`;
 }
 
@@ -365,13 +366,19 @@ function renderSwimmer(id) {
 function renderTools() {
   const r = route();
   const sessN = +r.a || (S.pkg ? currentSession() : null);
-  const ss = S.pkg ? S.pkg.sessions.filter((s) => s.nsea !== false) : [];
+  const ss = S.pkg ? SS().filter((s) => s.nsea !== false) : [];
   const src = S.model ? S.model.sources.filter((x) => x.kind === 'live').slice(-1)[0] : null;
-  const evs = S.pkg ? (S.pkg.sessions.find((s) => s.n === sessN)?.events || []) : [];
+  const evs = S.pkg ? (SS().find((s) => s.n === sessN)?.events || []) : [];
   app.innerHTML = `<h1>Uploads & live results</h1>
   ${S.pkg ? `
   <div class="card"><label class="f" for="sess">Session</label>
     <select id="sess">${ss.map((s) => `<option value="${s.n}" ${s.n === sessN ? 'selected' : ''}>${esc(dayShort(s.day))} · ${esc(s.name)}</option>`).join('')}</select></div>
+
+  ${(() => { const s = SS().find((x) => x.n === sessN); if (!s) return ''; return `<div class="card"><h3>Session times</h3><p class="small muted">Host moved the session? Change the times here. Every heat and event start already loaded for this session moves by the same amount, and the change syncs to all coaches.${s.changed ? ` Last changed by ${esc(s.changed.by || 'a coach')}${s.changed.shift ? ` (${s.changed.shift > 0 ? '+' : ''}${s.changed.shift} min)` : ''}.` : ''}</p>
+    <label class="f" for="tm-start">Events start</label><input id="tm-start" value="${esc(s.start || '')}" placeholder="6:50 PM">
+    ${s.warmup ? `<label class="f" for="tm-warm">Warm-up</label><input id="tm-warm" value="${esc(s.warmup.time || '')}">
+    <p class="small muted" style="margin:4px 0 0">Leave warm-up as is and it moves by the same amount as the start.</p>` : ''}
+    <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="save-times" data-s="${s.n}">Save times</button></div></div>`; })()}
 
   <div class="card"><h3>Heat sheet (PDF)</h3><p class="small muted">Finals sheets and updated programs. Our heats and lanes for that session are replaced with what's on the sheet.</p>
     <input type="file" id="f-heat" accept="application/pdf,.pdf"><div id="o-heat"></div></div>
@@ -407,7 +414,7 @@ function renderTools() {
 }
 function currentSession() {
   const t = todayIso();
-  const ss = S.pkg.sessions.filter((s) => s.nsea !== false);
+  const ss = SS().filter((s) => s.nsea !== false);
   return (ss.find((s) => s.day === t && clockMin(s.finish) >= nowMin()) || ss.find((s) => s.day >= t) || ss[0]).n;
 }
 const selSession = () => +$('#sess').value;
@@ -486,7 +493,7 @@ async function heatUpload(files, el) {
       : `<p class="small">No line on the sheet mentions ${esc(S.pkg.teamName)} at all. First lines read:</p><pre class="small" style="white-space:pre-wrap">${(parsed.lines || []).slice(0, 12).map(esc).join('\n')}</pre>`;
     return out(el, `<p class="small">No ${esc(S.pkg.teamName)} swimmers found on “${esc(parsed.session || files[0].name)}”. ${esc(why)}</p>${sample}`);
   }
-  reviewEntries(el, data, `${parsed.session || files[0].name}: ${parsed.events.length} events, ${data.rows.length} ${S.pkg.teamName} swims → Session ${sess} (${esc(S.pkg.sessions.find((s) => s.n === sess)?.name)})`);
+  reviewEntries(el, data, `${parsed.session || files[0].name}: ${parsed.events.length} events, ${data.rows.length} ${S.pkg.teamName} swims → Session ${sess} (${esc(SS().find((s) => s.n === sess)?.name)})`);
 }
 async function photoUpload(files, el) {
   busy(el, 'Reading the photo (this takes a few seconds)…');
@@ -610,6 +617,17 @@ document.addEventListener('click', async (ev) => {
     if (a === 'filter') { S.filter = t.dataset.f; render(); return; }
     if (a === 'now') { const el = document.querySelector(`[id^="ev-${t.dataset.ev}-"]`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (a === 'tag') { t.setAttribute('aria-pressed', t.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); return; }
+    if (a === 'save-times') {
+      const n = +t.dataset.s, s = SS().find((x) => x.n === n);
+      const start = $('#tm-start').value.trim(), warmEl = $('#tm-warm');
+      const a0 = clockMin(s.start || ''), a1 = clockMin(/[AP]M/i.test(start) ? start : `${start} ${(String(s.start).match(/[AP]M/i) || ['PM'])[0]}`);
+      if (a1 == null) { toast('Type a start time like 6:50 PM'); return; }
+      const data = { session: n, start: minClock(a1), shift: a0 == null ? 0 : a1 - a0 };
+      if (warmEl && warmEl.value.trim() && warmEl.value.trim() !== (s.warmup && s.warmup.time)) data.warmup = warmEl.value.trim();
+      if (!data.shift && !data.warmup) { toast('Nothing changed'); return; }
+      await addOp('times', data);
+      toast(data.shift ? `Session moved ${data.shift > 0 ? '+' : ''}${data.shift} min` : 'Warm-up updated'); render(); return;
+    }
     if (a === 'save-time') {
       const v = $('#t').value; const cs = parseTyped(v);
       if (cs == null) { toast('Type a time like 5912 or 1:02.45'); return; }
@@ -661,7 +679,7 @@ addEventListener('unhandledrejection', (e) => toast('Error: ' + ((e.reason && e.
   const cur = await store.get('current');
   const ids = await store.listPkgIds();
   if (cur && ids.includes(cur)) await loadMeet(cur); else if (ids.length) await loadMeet(ids[0]);
-  if (!location.hash && S.pkg) { const t = todayIso(); if (S.pkg.sessions.some((s) => s.day === t && s.nsea !== false)) location.hash = `#/day/${t}`; }
+  if (!location.hash && S.pkg) { const t = todayIso(); if (SS().some((s) => s.day === t && s.nsea !== false)) location.hash = `#/day/${t}`; }
   render();
   sync();
 })();
