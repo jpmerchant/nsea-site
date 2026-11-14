@@ -411,7 +411,19 @@ function currentSession() {
 const selSession = () => +$('#sess').value;
 
 function bindTools() {
-  const on = (id, fn) => { const el = $('#' + id); if (el) el.onchange = () => el.files.length && fn(el.files, $('#o-' + id.slice(2))).catch((e) => out($('#o-' + id.slice(2)), `<p class="small" style="color:var(--coral)">${esc(e.message)}</p>`)); };
+  const on = (id, fn) => {
+    const el = $('#' + id);
+    if (!el) return;
+    el.onchange = async () => {
+      const o = $('#o-' + id.slice(2));
+      if (!el.files || !el.files.length) return;
+      const files = [...el.files];
+      busy(o, `Got ${files.length > 1 ? files.length + ' files' : '“' + (files[0].name || 'file') + '”'}. Working…`);
+      try { await fn(files, o); }
+      catch (e) { out(o, `<p class="small" style="color:var(--coral)"><b>That didn't work:</b> ${esc((e && e.message) || String(e))}</p>`); console.error(e); }
+      finally { el.value = ''; } // lets the same file be picked again
+    };
+  };
   const sess = $('#sess'); if (sess) sess.onchange = () => { location.hash = '#/tools/' + sess.value; };
   on('f-heat', heatUpload);
   on('f-photo', photoUpload);
@@ -424,14 +436,16 @@ const busy = (el, t) => out(el, `<p class="small muted">${esc(t)}</p><div class=
 
 let pdfjsP;
 async function pdfjs() {
-  if (!pdfjsP) pdfjsP = import(CDN.pdf).then((m) => { m.GlobalWorkerOptions.workerSrc = CDN.pdfWorker; return m; });
+  if (!pdfjsP) pdfjsP = import(CDN.pdf).then((m) => { m.GlobalWorkerOptions.workerSrc = CDN.pdfWorker; return m; }).catch((e) => { pdfjsP = null; throw new Error('Could not load the PDF reader: ' + e.message); });
   return pdfjsP;
 }
 let tessP;
 async function ocr(file, el) {
   if (!tessP) tessP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = CDN.tess; s.onload = res; s.onerror = () => rej(new Error('Could not load the photo reader (download it for offline while on Wi-Fi).')); document.head.appendChild(s); })
     .then(() => window.Tesseract.createWorker('eng', 1, { workerPath: CDN.tessWorker, corePath: CDN.tessCore, langPath: CDN.tessLang, logger: (m) => { const p = $('#pg'); if (p && m.progress) p.style.width = Math.round(m.progress * 100) + '%'; } }));
-  const w = await tessP;
+  const p = $('#pg'); if (p) p.parentElement.previousElementSibling.textContent = 'Loading the photo reader (first time needs signal)…';
+  const w = await Promise.race([tessP, new Promise((_, rej) => setTimeout(() => rej(new Error('The photo reader did not load. With signal, try again; before the next meet use Tools › Download readers for offline.')), 60000))]).catch((e) => { tessP = null; throw e; });
+  if (p) p.parentElement.previousElementSibling.textContent = 'Reading the image…';
   await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
   const img = await shrink(file);
   const { data } = await w.recognize(img);
@@ -605,6 +619,10 @@ document.addEventListener('click', async (ev) => {
   } catch (e) { toast(e.message, 4000); }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 't') $('[data-act=save-time]').click(); if (e.key === 'Escape') closeSheet(); });
+
+// Anything that fails silently on a phone shows up as a message instead.
+addEventListener('error', (e) => toast('Error: ' + (e.message || 'unknown'), 6000));
+addEventListener('unhandledrejection', (e) => toast('Error: ' + ((e.reason && e.reason.message) || e.reason || 'unknown'), 6000));
 
 // ---------- boot ----------
 (async function boot() {
