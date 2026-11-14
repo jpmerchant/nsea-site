@@ -122,7 +122,7 @@ export function parseHeatSheet(lines) {
     if (ln && heat) heat.lanes.push(ln);
   }
   const list = [...events.values()].map((e) => ({ ...e, heats: fillHeats(e.heats.sort((a, b) => a.heat - b.heat)) })).sort((a, b) => a.num - b.num);
-  return { meet, session, events: list, lineCount: L.length };
+  return { meet, session, events: list, lineCount: L.length, lines: L.map((l) => l.text) };
 }
 // A heat that starts at the bottom of one column and continues in the next loses its "of N" and start time.
 function fillHeats(hs) {
@@ -140,10 +140,14 @@ function fillHeats(hs) {
 export function clockMin(s) { const m = String(s).match(/(\d{1,2}):(\d{2})\s*([AP]M)/i); if (!m) return null; let h = +m[1] % 12; if (/p/i.test(m[3])) h += 12; return h * 60 + +m[2]; }
 export function minClock(n) { const h = Math.floor(n / 60), m = n % 60; return `${String(((h + 11) % 12) + 1).padStart(2, '0')}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`; }
 
+// Looser fallback: any characters in the name (PDF fonts with odd glyph maps), and extra columns
+// after the seed (prelim place, qualifier letters) are ignored.
+const LANE_LOOSE_RE = new RegExp(String.raw`^(\d{1,2})\s+(.+?,\s*.+?)\s+(\d{1,2})\s+(\D.*?)\s+(NT|NS|NP|${TIME})(?:\s*[A-Za-z*#]{0,3})(?:\s+.*)?$`);
 export function parseLaneLine(t) {
-  const m = t.replace(/\s+/g, ' ').trim().match(LANE_RE);
+  const c = t.replace(/\s+/g, ' ').trim();
+  const m = c.match(LANE_RE) || c.match(LANE_LOOSE_RE);
   if (!m || +m[1] < 1 || +m[1] > 12) return null;
-  return { lane: +m[1], name: m[2].replace(/\s+/g, ' ').trim(), age: +m[3], team: m[4].trim(), seed: m[5] === 'NT' || m[5] === 'NS' ? null : toCs(m[5]) };
+  return { lane: +m[1], name: m[2].replace(/\s+/g, ' ').trim(), age: +m[3], team: m[4].trim(), seed: /^N[TSP]$/.test(m[5]) ? null : toCs(m[5]) };
 }
 
 // Keep only one team's swimmers. teamMatch: RegExp tested against the team column.
