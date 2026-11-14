@@ -54,12 +54,14 @@ function rows(items) {
     const g = groups[groups.length - 1];
     if (g && Math.abs(g.y - it.y) <= 3.2) g.items.push(it); else groups.push({ y: it.y, items: [it] });
   }
-  return groups.map((g) => g.items.sort((a, b) => a.x - b.x).map((i) => i.str.trim()).join('  '));
+  // Some Hy-Tek PDFs (Print to PDF) map "f"/"F" to "ϐ " ("Saturday ϐ inals", "Crutchϐ ield").
+  return groups.map((g) => g.items.sort((a, b) => a.x - b.x).map((i) => i.str.trim()).join('  ').replace(/ϐ\s*/g, 'f'));
 }
 
 // ---------- Layer 2: heat sheets ----------
 const EVENT_RE = /^(?:#\s*)?Event\s+(\d+)\s+(Girls|Boys|Women|Men|Mixed|Female|Male)\s+(.+?)\s+(\d{2,4})\s+(Yard|Meter|LC Meter|SC Meter)s?\s+(Freestyle Relay|Medley Relay|Freestyle|Backstroke|Breaststroke|Butterfly|IM|Individual Medley)/i;
-const HEAT_RE = /^Heat\s+(\d+)\s+of\s+(\d+)\s*(Prelims|Finals|Timed Finals|Swim-?off)?\s*(?:Starts at\s+(\d{1,2}:\d{2}\s*[AP]M))?/i;
+// "Heat 1 of 2 Finals Starts at 06:24 PM", or in finals programs "Heat 1 D - Final Starts at 06:20 PM" (no "of N").
+const HEAT_RE = /^Heat\s+(\d+)(?:\s+of\s+(\d+))?\s*(?:([A-H])\s*-\s*Finals?|(Prelims|Finals|Timed Finals|Swim-?off))?\s*(?:\(#\d+[^)]*\)?)?\s*(?:Starts at\s+(\d{1,2}:\d{2}\s*[AP]M))?/i;
 const HEAT_CONT_RE = /^Heat\s+(\d+)\s+(Prelims|Finals|Timed Finals)?\s*\(#(\d+)\s/i;
 // Finals programs often label heats "A - Final" / "Championship Final" instead of "Heat 1 of 2 Finals".
 const FINAL_RE = /^(?:([A-H])\s*-\s*Finals?|(Championship|Consolation|Bonus|Semi|Semi-)\s*Finals?)\b(?:.*?Starts at\s+(\d{1,2}:\d{2}\s*[AP]M))?/i;
@@ -81,7 +83,7 @@ export function parseEventTitle(t) {
 export function parseHeatSheet(lines) {
   const L = lines.map((l) => (typeof l === 'string' ? { text: l } : l));
   const events = new Map();
-  let ev = null, heat = null, session = null, meet = null;
+  let ev = null, heat = null, session = null, meet = null, skip = false;
   for (const { text, header } of L) {
     const t = text.replace(/\s+/g, ' ').trim();
     if (!t) continue;
@@ -92,7 +94,7 @@ export function parseHeatSheet(lines) {
     }
     if (!session) { const m = t.match(/Meet Program\s*-\s*(.+)$/i); if (m) { session = m[1].trim(); continue; } }
     const e = parseEventTitle(t);
-    if (e) { ev = events.get(e.num) || { ...e, heats: [] }; events.set(e.num, ev); heat = null; continue; }
+    if (e) { ev = events.get(e.num) || { ...e, heats: [] }; events.set(e.num, ev); heat = null; skip = false; continue; }
     const hc = t.match(HEAT_CONT_RE);
     if (hc) {
       ev = events.get(+hc[3]) || ev;
@@ -103,13 +105,21 @@ export function parseHeatSheet(lines) {
     }
     const h = t.match(HEAT_RE);
     if (h && ev) {
-      heat = { heat: +h[1], of: +h[2], round: (h[3] || 'Finals').replace(/-/, ''), start: h[4] ? h[4].replace(/\s+/g, ' ').toUpperCase() : null, lanes: [] };
+      skip = false;
+      const cont = t.match(/\(#(\d+)\s/);
+      if (cont) { ev = events.get(+cont[1]) || ev; const same = ev.heats.find((x) => x.heat === +h[1]); if (same) { heat = same; continue; } }
+      heat = { heat: +h[1], of: h[2] ? +h[2] : null, round: h[3] ? 'Finals' : (h[4] || 'Finals').replace(/-/, ''), start: h[5] ? h[5].replace(/\s+/g, ' ').toUpperCase() : null, lanes: [] };
+      if (h[3]) heat.final = `${h[3].toUpperCase()} Final`;
       const old = ev.heats.findIndex((x) => x.heat === heat.heat);
       if (old >= 0) ev.heats[old] = heat; else ev.heats.push(heat);
       continue;
     }
+    // Alternates listed under a final are not swimming: skip until the next heat or event.
+    if (/^Alternates\b/i.test(t)) { skip = true; heat = null; continue; }
+    if (skip) continue;
     const f = t.match(FINAL_RE);
     if (f && ev) {
+      skip = false;
       const label = f[1] ? `${f[1].toUpperCase()} Final` : `${f[2].replace(/-$/, '')} Final`;
       const cont = t.match(/\(#(\d+)\s/);
       if (cont) { ev = events.get(+cont[1]) || ev; const same = ev.heats.find((h) => h.final === label); if (same) { heat = same; continue; } }
@@ -144,7 +154,7 @@ export function minClock(n) { const h = Math.floor(n / 60), m = n % 60; return `
 // after the seed (prelim place, qualifier letters) are ignored.
 const LANE_LOOSE_RE = new RegExp(String.raw`^(\d{1,2})\s+(.+?,\s*.+?)\s+(\d{1,2})\s+(\D.*?)\s+(NT|NS|NP|${TIME})(?:\s*[A-Za-z*#]{0,3})(?:\s+.*)?$`);
 export function parseLaneLine(t) {
-  const c = t.replace(/\s+/g, ' ').trim();
+  const c = t.replace(/\s+/g, ' ').replace(/(\s+_{2,})+\s*$/, '').trim();
   const m = c.match(LANE_RE) || c.match(LANE_LOOSE_RE);
   if (!m || +m[1] < 1 || +m[1] > 12) return null;
   return { lane: +m[1], name: m[2].replace(/\s+/g, ' ').trim(), age: +m[3], team: m[4].trim(), seed: /^N[TSP]$/.test(m[5]) ? null : toCs(m[5]) };
