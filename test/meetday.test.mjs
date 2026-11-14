@@ -220,3 +220,26 @@ test('worker: load meet, sync ops idempotently, coach access, owner-only delete,
   for (const h of ['10.0.0.1', '192.168.1.5', '172.20.1.1', '::1', 'intranet', 'x.local']) assert.ok(blockedHost(h), h);
   assert.ok(!blockedHost('swimmeet.example.com'));
 });
+
+test('finals heat sheet with lettered finals (A/B Final) and no Heat headings', () => {
+  const p = parseHeatSheet([
+    { text: 'Meet Program - Saturday Finals', header: true },
+    'Event 11 Girls 13 & Over 100 Yard Backstroke',
+    'Lane Name Age Team Prelim Time',
+    'B - Final Starts at 06:24 PM',
+    '3 Fishman, Coral A 15 Nsea Swim-NC 1:05.10',
+    'A - Final',
+    '4 Lane, Penny 17 Nsea Swim-NC 59.80',
+    'A - Final (#11 Girls 13 & Over 100 Yard Backstroke)',
+    '5 Other, Person 16 RSA-NC 1:00.00',
+    'Event 12 Boys 13 & Over 100 Yard Backstroke',
+    'Lane Name Age Team Prelim Time',
+    '2 Reef, Rocco J 14 Nsea Swim-NC 1:01.00',
+  ]);
+  const e11 = p.events.find((e) => e.num === 11);
+  assert.deepEqual(e11.heats.map((h) => [h.heat, h.final, h.lanes.length, h.start]), [[1, 'B Final', 1, '06:24 PM'], [2, 'A Final', 2, '06:24 PM']]);
+  const e12 = p.events.find((e) => e.num === 12);
+  assert.equal(e12.heats[0].lanes[0].name, 'Reef, Rocco J');
+  const sheet = heatSheetRows(pkg(), derive(pkg(), []), p, 4);
+  assert.equal(sheet.rows.length, 3);
+});
