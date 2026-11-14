@@ -272,3 +272,21 @@ test('USC finals program: "Heat 1 D - Final Starts at", underscores, alternates,
   const lines = pdfLines([{ width: 612, height: 792, items: [{ x: 250, y: 760, str: 'Meet Program - Saturday' }, { x: 380, y: 760, str: 'ϐ' }, { x: 386, y: 760, str: 'inals' }] }]);
   assert.match(lines[0].text, /Saturday\s+finals/);
 });
+
+test('session times op shifts session, warm-up and loaded heat starts; later heat sheets keep printed times', () => {
+  const P = pkg();
+  P.sessions[1].warmup = { time: '5:15–6:15 PM', sprints: '6:15–6:20 PM pool cleared' };
+  P.sessions[1].finish = '07:34 PM';
+  let ops = [];
+  const op = (type, data, at) => ops.push({ id: 'op' + ops.length + 'xxxxxxx', at, by: 'Coach', type, data });
+  op('entries', heatSheetRows(P, derive(P, []), parseHeatSheet(SHEET), 4), '2026-11-14T20:00:00.000Z');
+  op('times', { session: 4, start: '06:50 PM', shift: 30 }, '2026-11-14T21:00:00.000Z');
+  const M = derive(P, ops);
+  const s = M.sessions.find((x) => x.n === 4);
+  assert.equal(s.start, '06:50 PM'); assert.equal(s.finish, '08:04 PM');
+  assert.equal(s.warmup.time, '5:45–6:45 PM'); assert.equal(s.warmup.sprints, '6:45–6:50 PM pool cleared');
+  assert.deepEqual(M.rows.filter((r) => r.session === 4).map((r) => r.start).sort(), ['06:54 PM', '06:54 PM', '07:00 PM']);
+  assert.equal(P.sessions[1].start, '06:20 PM'); // package untouched
+  op('entries', heatSheetRows(P, derive(P, []), parseHeatSheet(SHEET), 4), '2026-11-14T22:00:00.000Z');
+  assert.ok(derive(P, ops).rows.filter((r) => r.session === 4).some((r) => r.start === '06:24 PM'));
+});
