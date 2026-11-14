@@ -172,28 +172,55 @@ export function parseResults(lines) {
 // ---------- Layer 3: name-anchored extraction (Meet Mobile screenshots, photos of result sheets) ----------
 // Finds each known swimmer's name in OCR text and takes the nearest time on that line or the next two.
 // swimmers: [{ id, name }]. Returns [{ id, name, time, status, line }]
-export function extractByName(text, swimmers) {
-  const lines = String(text).split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-  const nl = lines.map((l) => norm(l.replace(/[|]/g, ' ')));
-  const found = [];
-  for (const s of swimmers) {
-    const k = nameKey(s.name);
-    if (!k.last) continue;
-    const forms = [`${k.last}, ${k.first}`, `${k.last} ${k.first}`, `${k.first} ${k.last}`].filter((f) => f.trim().length > 3);
-    for (let i = 0; i < lines.length; i++) {
-      if (!forms.some((f) => nl[i].replace(/,(?! )/g, ', ').includes(f))) continue;
-      const near = [lines[i], lines[i + 1] || '', lines[i + 2] || ''];
-      let hit = null;
-      for (let j = 0; j < near.length && !hit; j++) {
-        const after = j === 0 ? near[0].slice(Math.max(0, near[0].toLowerCase().lastIndexOf(k.first ? k.first.slice(0, 3) : k.last.slice(0, 3)))) : near[j];
-        const st = after.match(/\b(DQ|DFS|NS|SCR|DNF)\b/);
-        const times = [...after.matchAll(new RegExp(`(?<![\\d.:])${TIME}(?![\\d])`, 'g'))].map((x) => x[0]);
-        if (times.length) hit = { time: toCs(times[times.length - 1]), status: 'OK', times };
-        else if (st) hit = { time: null, status: st[1] };
-      }
-      if (hit) { found.push({ id: s.id, name: s.name, ...hit, line: lines[i] }); break; }
-    }
+// OCR-tolerant name check: last name within 1 edit (2 for long names), first name by its first 3 letters or within 1 edit.
+export function editDist(a, b, max = 3) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
   }
+  return prev[b.length];
+}
+const words = (l) => norm(l.replace(/[|,]/g, ' ')).split(' ').filter((w) => w.length > 1);
+const lastOk = (w, last) => w === last || (last.length >= 4 && editDist(w, last) <= (last.length >= 7 ? 2 : 1));
+const firstOk = (w, first) => !first || w === first || (first.length >= 3 && w.startsWith(first.slice(0, 3))) || (first.length >= 4 && editDist(w, first) <= 1);
+export function lineHasSwimmer(line, name, { loose = false } = {}) {
+  const k = nameKey(name);
+  if (!k.last) return false;
+  const lastParts = k.last.split(' ').filter(Boolean);
+  const ws = words(line);
+  const hasLast = lastParts.every((lp) => ws.some((w) => lastOk(w, lp)));
+  if (!hasLast) return false;
+  return loose || ws.some((w) => firstOk(w, k.first) && !lastParts.includes(w));
+}
+
+export function extractByName(text, swimmers, { team } = {}) {
+  const lines = String(text).split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const found = [];
+  const timeIn = (str) => {
+    const st = str.match(/\b(DQ|DFS|NS|SCR|DNF)\b/);
+    const times = [...str.matchAll(new RegExp(`(?<![\\d.:])${TIME}(?![\\d])`, 'g'))].map((x) => x[0]);
+    if (times.length) return { time: toCs(times[times.length - 1]), status: 'OK', times };
+    if (st) return { time: null, status: st[1] };
+    return null;
+  };
+  const used = new Set();
+  const pass = (loose) => {
+    for (const s of swimmers) {
+      if (found.some((f) => f.id === s.id)) continue;
+      for (let i = 0; i < lines.length; i++) {
+        if (used.has(i) || !lineHasSwimmer(lines[i], s.name, { loose })) continue;
+        // loose pass (first name unreadable) only on lines that also show our team
+        if (loose && !(team && (team.test(lines[i]) || team.test(lines[i + 1] || '')))) continue;
+        let hit = null;
+        for (let j = 0; j < 3 && !hit; j++) hit = timeIn(lines[i + j] || '');
+        if (hit) { found.push({ id: s.id, name: s.name, ...hit, line: lines[i], fuzzy: loose }); used.add(i); break; }
+      }
+    }
+  };
+  pass(false); pass(true);
   return found;
 }
 
