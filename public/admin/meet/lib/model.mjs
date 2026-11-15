@@ -1,6 +1,6 @@
 // Meet Day model: package + ops -> what the screens show. Pure functions (tested in test/meetday.test.mjs).
 import { flagsFor, DEFAULT_CUTS } from './flags.mjs';
-import { sameSwimmer, clockMin, minClock } from './parse.mjs';
+import { sameSwimmer, clockMin, minClock, parseMmNotify } from './parse.mjs';
 
 export const entryKey = (event, round, swimmerId) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-${swimmerId}`;
 
@@ -11,6 +11,7 @@ export function derive(pkg, ops, settings = {}) {
   const sorted = [...ops].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : String(a.id).localeCompare(String(b.id))));
   const undone = new Set(sorted.filter((o) => o.type === 'undo').map((o) => o.data && o.data.op));
   const results = new Map(), notes = new Map(), scratch = new Map(), official = new Map(), sources = [];
+  const notices = []; let notifyKey = null;
   const sessions = pkg.sessions.map((x) => ({ ...x, warmup: x.warmup ? { ...x.warmup } : x.warmup, events: (x.events || []).map((e) => ({ ...e })) }));
 
   for (const o of sorted) {
@@ -23,6 +24,8 @@ export function derive(pkg, ops, settings = {}) {
     else if (o.type === 'official') official.set(d.session, { on: !!d.on, by: o.by, at: o.at });
     else if (o.type === 'source') sources.push({ ...d, at: o.at, by: o.by });
     else if (o.type === 'times') applyTimes(sessions, entries, d, o);
+    else if (o.type === 'notifykey') notifyKey = d.key || null;
+    else if (o.type === 'mmnotify') notices.push(applyNotify(pkg, sessions, entries, swimmers, results, d, o));
   }
 
   const rows = [];
@@ -43,7 +46,7 @@ export function derive(pkg, ops, settings = {}) {
     });
   }
   rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(pkg, a) - order(pkg, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
-  return { rows, swimmers, official, sources, results, sessions };
+  return { rows, swimmers, official, sources, results, sessions, notices, notifyKey };
 }
 
 // Session time change (e.g. the host pushes the session back 30 min).
@@ -147,4 +150,35 @@ export function nowEvent(rows, nowMin) {
   if (!timed.length) return null;
   const next = timed.filter((r) => r.startMin >= nowMin - 3).sort((a, b) => a.startMin - b.startMin)[0];
   return (next || timed[timed.length - 1]).event;
+}
+
+// Meet Mobile notification forwarded from a coach's Android phone (MacroDroid -> /api/meetday/notify).
+// Matched to the swimmer's entry for that event; with prelims and finals of the same event, the session
+// running when the notification arrived wins, else the first one with no time yet. Never overrides a
+// time a coach typed or an official result.
+function localNow(at, tz) {
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(at)).map((x) => [x.type, x.value]));
+    return { day: `${p.year}-${p.month}-${p.day}`, min: +p.hour * 60 + +p.minute };
+  } catch { return null; }
+}
+export function applyNotify(pkg, sessions, entries, swimmers, results, d, o = {}) {
+  const n = parseMmNotify(d.text);
+  const base = { text: d.text, at: o.at, op: o.id };
+  if (!n) return { ...base, status: 'unread' };
+  const sw = [...swimmers.values()].filter((x) => sameSwimmer(x.name, n.name));
+  const cands = [...entries.values()].filter((e) => e.event === n.event && sw.some((x) => x.id === e.swimmerId));
+  if (!cands.length) return { ...base, ...n, status: sw.length ? 'no-entry' : 'not-ours' };
+  let pick = cands[0];
+  if (cands.length > 1) {
+    const now = o.at && localNow(o.at, pkg.tz || 'America/New_York');
+    // The session that most recently started (or starts within 45 min) on that day, if not long over.
+    const live = now && cands.map((e) => { const s = sessions.find((x) => x.n === e.session); const a = s && s.day === now.day ? clockMin(s.start || '') : null, b = s ? clockMin(s.finish || '') : null; return { e, a, ok: a != null && now.min >= a - 45 && (b == null || now.min <= b + 90) }; })
+      .filter((x) => x.ok).sort((x, y) => y.a - x.a)[0]?.e;
+    pick = live || cands.find((e) => !results.has(e.id)) || cands[cands.length - 1];
+  }
+  const prev = results.get(pick.id);
+  if (prev && prev.source !== 'mm-notify' && (prev.source === 'manual' || prev.official)) return { ...base, ...n, entry: pick.id, status: 'kept' };
+  results.set(pick.id, { entry: pick.id, time: n.time, status: n.status, source: 'mm-notify', official: n.official, by: 'Meet Mobile', at: o.at, op: o.id });
+  return { ...base, ...n, entry: pick.id, status: 'matched' };
 }

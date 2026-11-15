@@ -392,6 +392,16 @@ function renderTools() {
     <input type="url" id="live-url" placeholder="https://…" value="${esc((src && src.url) || '')}">
     <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="live-check">Check now</button><button class="btn" data-act="live-poll">${S.poll ? 'Stop auto-check' : 'Auto-check every minute'}</button></div><div id="o-live"></div></div>
 
+  ${(() => { const M = S.model, key = M.notifyKey; const url = key ? `${location.origin}/api/meetday/notify?meet=${encodeURIComponent(S.meetId)}&key=${key}` : '';
+    const ns = M.notices || [], ok = ns.filter((x) => x.status === 'matched').length, miss = ns.filter((x) => !['matched', 'not-ours', 'kept'].includes(x.status)).slice(-8).reverse();
+    const why = { unread: "couldn't read", 'no-entry': 'no entry for that event' };
+    return `<div class="card"><h3>Meet Mobile alerts (Android)</h3><p class="small muted">An Android phone with MacroDroid forwards each Meet Mobile result notification here. Times arrive as unofficial and sync to every coach; a time someone typed is never overwritten.</p>
+    ${key ? `<label class="f" for="mm-url">Address for MacroDroid (HTTP request, POST, body = notification text)</label><input id="mm-url" readonly value="${esc(url)}">
+      <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="mm-copy">Copy address</button><button class="btn" data-act="mm-key">Make a new key</button></div>
+      <p class="small muted">${ns.length} received · ${ok} matched${ns.length ? ` · last ${esc(new Date(ns[ns.length - 1].at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}` : ''}</p>
+      ${miss.length ? `<p class="small">Not placed:</p><ul class="small">${miss.map((x) => `<li>${esc(x.text)} <span class="muted">(${esc(why[x.status] || x.status)})</span></li>`).join('')}</ul>` : ''}`
+    : `<div class="btns"><button class="btn solid" data-act="mm-key">Turn on (make a key)</button></div>`}</div>`; })()}
+
   <div class="card"><h3>Meet Mobile screenshot</h3><p class="small muted">In Meet Mobile, filter each event's results to Favorites (our swimmers) and screenshot it. Add several events' screenshots at once: the event is read from the title on each screen. Times are unofficial.</p>
     <label class="f" for="ev-shot">Event (only if the title can't be read)</label>
     <select id="ev-shot"><option value="">— read it from the screenshot —</option>${evs.map((e) => `<option value="${e.num}">#${e.num} ${esc(S.pkg.events[e.num]?.title || '')} (${esc(e.round)})</option>`).join('')}</select>
@@ -617,6 +627,13 @@ document.addEventListener('click', async (ev) => {
     if (a === 'filter') { S.filter = t.dataset.f; render(); return; }
     if (a === 'now') { const el = document.querySelector(`[id^="ev-${t.dataset.ev}-"]`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (a === 'tag') { t.setAttribute('aria-pressed', t.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); return; }
+    if (a === 'mm-key') {
+      if (S.model.notifyKey && !confirm('Make a new key? The old address stops working until MacroDroid gets the new one.')) return;
+      const b = new Uint8Array(24); crypto.getRandomValues(b);
+      const key = [...b].map((x) => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[x % 57]).join('');
+      await addOp('notifykey', { key }); toast('Key made. Copy the address into MacroDroid.'); render(); return;
+    }
+    if (a === 'mm-copy') { await navigator.clipboard.writeText($('#mm-url').value); toast('Address copied'); return; }
     if (a === 'save-times') {
       const n = +t.dataset.s, s = SS().find((x) => x.n === n);
       const start = $('#tm-start').value.trim(), warmEl = $('#tm-warm');

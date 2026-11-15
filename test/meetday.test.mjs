@@ -2,12 +2,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime } from '../public/admin/meet/lib/parse.mjs';
+import { parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime, parseMmNotify } from '../public/admin/meet/lib/parse.mjs';
 import { flagsFor } from '../public/admin/meet/lib/flags.mjs';
 import { buildRefs } from '../public/admin/meet/lib/refs.mjs';
 import { derive, sessionSummary, parseTyped, nowEvent } from '../public/admin/meet/lib/model.mjs';
 import { heatSheetRows, resultsFromText, screenshotResults, photoHeatRows, guessSession, htmlToText, resultLinks } from '../public/admin/meet/lib/ingest.mjs';
-import { handleMeetdayAdmin, blockedHost } from '../worker/meetday.mjs';
+import { handleMeetdayAdmin, blockedHost, handleMeetdayNotify } from '../worker/meetday.mjs';
 let DatabaseSync;
 try { ({ DatabaseSync } = await import('node:sqlite')); } catch { /* older Node */ }
 
@@ -289,4 +289,53 @@ test('session times op shifts session, warm-up and loaded heat starts; later hea
   assert.equal(P.sessions[1].start, '06:20 PM'); // package untouched
   op('entries', heatSheetRows(P, derive(P, []), parseHeatSheet(SHEET), 4), '2026-11-14T22:00:00.000Z');
   assert.ok(derive(P, ops).rows.filter((r) => r.session === 4).some((r) => r.start === '06:24 PM'));
+});
+
+test('Meet Mobile notification text (real wording)', () => {
+  assert.deepEqual(parseMmNotify('Results: Violet Derry - 1:02.81 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)'),
+    { name: 'Violet Derry', time: 6281, status: 'OK', official: false, eventTitle: 'Girls 13&O 100 Yard Back', event: 11 });
+  assert.equal(parseMmNotify('Results: Gentry Witmer - 59.32 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)').time, 5932);
+  assert.equal(parseMmNotify('Meet Mobile Results: Anna Claire Outlaw - DQ (unofficial), Girls 13&O 100 Yard Back (Evt. #11)').status, 'DQ');
+  assert.equal(parseMmNotify('Meet Mobile is updating'), null);
+});
+
+test('notifications match the running session, never override typed times, list strangers', () => {
+  const P = pkg();
+  let ops = [];
+  const op = (type, data, at) => ops.push({ id: 'op' + ops.length + 'xxxxxxx', at, by: 'Coach', type, data });
+  op('entries', heatSheetRows(P, derive(P, []), parseHeatSheet(SHEET), 4), '2026-11-14T20:00:00.000Z');
+  op('mmnotify', { text: 'Results: Coral Fishman - 1:04.10 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)' }, '2026-11-14T23:30:00.000Z'); // 6:30 PM ET
+  op('mmnotify', { text: 'Results: Penny Lane - 59.10 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)' }, '2026-11-14T23:31:00.000Z');
+  op('mmnotify', { text: 'Results: Some Stranger - 58.00 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)' }, '2026-11-14T23:32:00.000Z');
+  op('mmnotify', { text: 'gibberish' }, '2026-11-14T23:33:00.000Z');
+  let M = derive(P, ops);
+  const fish = M.rows.filter((r) => r.swimmer.name.startsWith('Fishman') && r.event === 11);
+  assert.equal(fish.find((r) => r.round === 'Finals').result.time, 6410);
+  assert.ok(!fish.find((r) => r.round === 'Prelims')?.result);
+  assert.deepEqual(M.notices.map((n) => n.status), ['matched', 'matched', 'not-ours', 'unread']);
+  // a coach's typed time wins over a later notification
+  const penny = M.rows.find((r) => r.swimmer.name.startsWith('Lane') && r.event === 11 && r.round === 'Finals');
+  op('result', { entry: penny.id, time: 5900, status: 'OK', source: 'manual' }, '2026-11-14T23:40:00.000Z');
+  op('mmnotify', { text: 'Results: Penny Lane - 59.12 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)' }, '2026-11-14T23:41:00.000Z');
+  M = derive(P, ops);
+  assert.equal(M.rows.find((r) => r.id === penny.id).result.time, 5900);
+  assert.equal(M.notices.slice(-1)[0].status, 'kept');
+});
+
+test('worker: notify endpoint needs the meet key and dedupes re-posts', { skip: !DatabaseSync }, async () => {
+  const env = d1();
+  const owner = { email: 'o@x.org', name: 'Owner', roles: ['owner'] };
+  const audit = async () => {};
+  await handleMeetdayAdmin(env, owner, 'POST', '/meetday/meet', { pkg: pkg() }, audit, new URL('https://x.test/api/admin/meetday/meet'));
+  const post = (key, body) => handleMeetdayNotify(new Request(`https://x.test/api/meetday/notify?meet=test-meet&key=${key}`, { method: 'POST', body }), env, new URL(`https://x.test/api/meetday/notify?meet=test-meet&key=${key}`));
+  assert.equal((await post('abcdefghijklmnop1234', 'x')).status, 403);
+  await handleMeetdayAdmin(env, owner, 'POST', '/meetday/ops', { meet: 'test-meet', ops: [{ id: 'keyop000001', type: 'notifykey', data: { key: 'abcdefghijklmnop1234' } }] }, audit);
+  const text = 'Results: Violet Derry - 1:02.81 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)';
+  assert.equal((await post('abcdefghijklmnop1234', text)).status, 200);
+  assert.equal((await post('abcdefghijklmnop1234', JSON.stringify({ title: 'Meet Mobile', text }))).status, 200);
+  assert.equal((await post('abcdefghijklmnop1234', text)).status, 200);
+  const r = await handleMeetdayAdmin(env, owner, 'GET', '/meetday/ops', {}, audit, new URL('https://x.test/api/admin/meetday/ops?meet=test-meet'));
+  const got = (await r.json()).ops.filter((o) => o.type === 'mmnotify');
+  assert.equal(got.length, 2); // plain + JSON-with-title differ; the exact repeat is dropped
+  assert.equal(got[0].by, 'Meet Mobile');
 });
