@@ -5,6 +5,7 @@ import { handleAdmin } from './admin.mjs';
 import { handleContent } from './content.mjs';
 import { handleAssessmentPublic } from './assessment-public.mjs';
 import { syncAll } from './alumni.mjs';
+import { handleMeetdayNotify } from './meetday.mjs';
 
 export default {
   async fetch(req, env) {
@@ -12,6 +13,7 @@ export default {
     if (url.pathname.startsWith('/api/carpool/')) return handleCarpool(req, env, url);
     if (url.pathname.startsWith('/api/assessment/')) return handleAssessmentPublic(req, env, url);
     if (url.pathname.startsWith('/api/content/')) return handleContent(req, env, url);
+    if (url.pathname === '/api/meetday/notify') return handleMeetdayNotify(req, env, url);
     if (url.pathname.startsWith('/api/admin/')) return handleAdmin(req, env, url);
     return fail(404, 'Not found');
   },

@@ -5,10 +5,10 @@
 // small operations (a result, a note, a re-seeded heat, "official results loaded"). Phones keep both in
 // IndexedDB, queue their own ops while offline and push/pull when signal comes back. Ops carry a
 // client-made id, so a retried push never duplicates anything.
-import { json, fail, clean } from './util.mjs';
+import { json, fail, clean, sha } from './util.mjs';
 
 const ID = /^[a-z0-9][a-z0-9-]{2,60}$/;
-const OP_TYPES = new Set(['result', 'note', 'entries', 'official', 'scratch', 'source', 'undo', 'times']);
+const OP_TYPES = new Set(['result', 'note', 'entries', 'official', 'scratch', 'source', 'undo', 'times', 'notifykey', 'mmnotify']);
 const MAX_PKG = 1_500_000;
 const MAX_OP = 200_000;
 
@@ -113,4 +113,26 @@ export function blockedHost(h) {
   if (/^(127\.|10\.|0\.|169\.254\.|192\.168\.)/.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
   if (/^(::1|fc|fd|fe80)/.test(h) || !h.includes('.')) return true;
   return false;
+}
+
+// Public, key-protected: Meet Mobile notifications forwarded from a coach's Android phone (MacroDroid).
+// POST /api/meetday/notify?meet=<id>&key=<key>, body = the notification text (plain text, or JSON
+// { text } / { title, text }). The key is made in Meet Day › Tools and stored as a 'notifykey' op.
+export async function handleMeetdayNotify(req, env, url) {
+  if (req.method !== 'POST') return fail(405, 'POST the notification text.');
+  const meet = String(url.searchParams.get('meet') || ''), key = String(url.searchParams.get('key') || '');
+  if (!ID.test(meet) || !/^[A-Za-z0-9]{16,64}$/.test(key)) return fail(400, 'Bad meet or key');
+  const k = await env.DB.prepare(`SELECT data FROM meetday_op WHERE meet_id = ? AND type = 'notifykey' ORDER BY seq DESC LIMIT 1`).bind(meet).first();
+  let want = null; try { want = k && JSON.parse(k.data).key; } catch { /* none */ }
+  if (!want || want !== key) return fail(403, 'Wrong key');
+  let raw = (await req.text()).slice(0, 4000);
+  if (/^\s*\{/.test(raw)) { try { const j = JSON.parse(raw); raw = [j.title, j.text, j.body].filter(Boolean).join(' ') || raw; } catch { /* keep raw */ } }
+  else if (/^[a-z_]+=/.test(raw) && /application\/x-www-form-urlencoded/.test(req.headers.get('content-type') || '')) { const f = new URLSearchParams(raw); raw = [f.get('title'), f.get('text') || f.get('body')].filter(Boolean).join(' ') || raw; }
+  const text = clean(raw, 600);
+  if (!text) return fail(400, 'Empty notification');
+  // Same text in the same hour = Android re-posting one notification; prelims and finals are hours apart.
+  const id = 'mm' + (await sha(meet + '|' + new Date().toISOString().slice(0, 13) + '|' + text)).slice(0, 30);
+  await env.DB.prepare(`INSERT OR IGNORE INTO meetday_op (meet_id, op_id, at, by_email, by_name, type, data) VALUES (?, ?, ?, 'meet-mobile', 'Meet Mobile', 'mmnotify', ?)`)
+    .bind(meet, id, new Date().toISOString(), JSON.stringify({ text })).run();
+  return json({ ok: true });
 }

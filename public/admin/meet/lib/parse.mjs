@@ -355,3 +355,14 @@ export function ocrTime(tok) {
   if (sec >= 60) return null;
   return (min * 60 + sec) * 100 + cs;
 }
+
+// ---------- Meet Mobile push notifications ----------
+// "Results: Violet Derry - 1:02.81 (unofficial), Girls 13&O 100 Yard Back (Evt. #11)"
+const MM_RE = new RegExp(String.raw`Results:\s*(.+?)\s+[-–]\s+(${TIME}|DQ|NS|DFS|SCR|DNF|NT)\s*[A-Za-z]?\s*(?:\((unofficial|official)\))?\s*,?\s*(.*?)\s*\(\s*Evt\.?\s*#?\s*(\d+)\s*\)`, 'i');
+export function parseMmNotify(text) {
+  const m = String(text || '').replace(/\s+/g, ' ').match(MM_RE);
+  if (!m) return null;
+  const v = m[2].toUpperCase();
+  const time = /^[A-Z]+$/.test(v) ? null : toCs(m[2]);
+  return { name: m[1].trim(), time, status: time != null ? 'OK' : v === 'NT' ? 'NS' : v, official: /^official$/i.test(m[3] || ''), eventTitle: m[4].trim(), event: +m[5] };
+}
