@@ -144,3 +144,12 @@ details.gnotes summary::after{content:'+';margin-left:auto;color:var(--gray)}
 details.gnotes[open] summary::after{content:'–'}
 details.gnotes textarea{margin-top:6px;min-height:60px}
 #tag-list .timein input,.timein #tag-new{font:16px var(--f-body);text-align:left;letter-spacing:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px}
+.pooltag{display:inline-block;font:700 10px var(--f-mono);text-transform:uppercase;letter-spacing:.04em;color:var(--teal-dark);background:var(--teal-tint);border-radius:5px;padding:2px 5px;margin-right:6px;vertical-align:2px}
+.chip.now{border-color:var(--coral);color:var(--coral)}
+a.chip{color:inherit;text-decoration:none}
+a.chip[aria-pressed=true]{color:#fff}
+.nowbar{display:flex;gap:6px;margin:0 0 10px}
+.nowbar button small{display:block;color:var(--gray);font-size:11px}
+.nowbar button{flex:1;min-width:0;text-align:left;border:1px solid var(--coral);background:#fff;border-radius:10px;padding:6px 9px;font:12px/1.3 var(--f-body);color:var(--ink);cursor:pointer}
+.nowbar button b{color:var(--coral)}
+.nowbar button span{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

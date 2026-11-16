@@ -1,8 +1,8 @@
 // NSEA Meet Day: coaches' meet app. Offline-first: everything renders from IndexedDB; the server is only
 // for syncing between coaches and for fetching live results pages.
-import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
+import { fmt, readPdf, pdfLines, parseHeatSheet, parseSessionReport, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor } from './lib/model.mjs';
+import { derive, sessionSummary, parseTyped, notesFor, blocksOf, blockOf, blockFlow, nowInPools, poolName } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
 
@@ -19,7 +19,7 @@ const tagList = () => (S.model && S.model.tags) || S.settings.tags || TAGS;
 const TIER_TXT = { hit: 'Got it', under: 'Seed under', 1: '≤1%', 3: '≤3%' };
 const KIND_TXT = { record: 'REC', top10: 'T10', cut: 'CUT' };
 
-const S = { meets: [], meetId: null, pkg: null, ops: [], model: null, settings: { cuts: DEFAULT_CUTS }, me: null, online: navigator.onLine, syncing: false, lastSync: null, outbox: 0, authed: true, filter: 'all', q: '', poll: null };
+const S = { pool: '', meets: [], meetId: null, pkg: null, ops: [], model: null, settings: { cuts: DEFAULT_CUTS }, me: null, online: navigator.onLine, syncing: false, lastSync: null, outbox: 0, authed: true, filter: 'all', q: '', poll: null };
 const $ = (s, r = document) => r.querySelector(s);
 const app = $('#app');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -50,6 +50,9 @@ async function loadMeet(id) {
   recompute();
 }
 const SS = () => (S.model && S.model.sessions) || (S.pkg ? S.pkg.sessions : []);
+// The package as the ingest helpers should see it: with sessions as changed by ops (times, timeline).
+const PK = () => ({ ...S.pkg, sessions: SS(), events: (S.model && S.model.events) || S.pkg.events });
+const BB = () => blocksOf(SS());
 function recompute() { S.model = S.pkg ? derive(S.pkg, S.ops, S.settings) : null; }
 async function addOp(type, data) {
   const op = { id: rid(), meet: S.meetId, at: new Date().toISOString(), by: (S.me && S.me.name) || 'me', type, data, local: true };
@@ -211,17 +214,20 @@ function renderMeet() {
 
   <h2>Daily overview</h2>
   ${days.map((d) => {
-    const ss = sessionsOf(d);
+    const bs = BB().filter((b) => b.day === d);
     return `<div class="card day"><p class="kicker">${esc(dayName(d))}${d === todayIso() ? ' · today' : ''}</p>
-      ${ss.map((s) => {
-        const rows = M.rows.filter((r) => r.session === s.n && !r.scratched);
+      ${bs.map((B) => {
+        const ns = new Set(B.sessions.map((x) => x.n));
+        const rows = M.rows.filter((r) => ns.has(r.session) && !r.scratched);
         const sw = new Set(rows.map((r) => r.swimmerId)).size;
-        return `<div class="sess"><div class="when">${esc(s.start)}</div><div class="what">
-          <b>${esc(s.name)}</b><div class="small muted">${esc(s.label)}</div>
-          ${s.nsea === false ? '' : `<div class="small">${s.warmup ? `Warm-up <b>${esc(s.warmup.time)}</b> · ${esc(s.warmup.pool)} ${esc(s.warmup.lanes)}` : ''}</div>
-          <div class="small">${rows.length ? `${sw} swimmers · ${rows.length} swims` : esc(s.note || 'Entries come from the heat sheet.')} ${M.official.get(s.n)?.on ? '<span class="pill ok">official</span>' : ''}</div>
+        const off = B.sessions.every((x) => M.official.get(x.n)?.on);
+        return `<div class="sess"><div class="when">${esc(B.start)}</div><div class="what">
+          <b>${esc(B.name)}</b><div class="small muted">${esc(B.label)}</div>
+          ${!B.nsea ? '' : `<div class="small">${B.warmup ? `Warm-up <b>${esc(B.warmup.time)}</b> · ${esc(B.warmup.pool)} ${esc(B.warmup.lanes)}` : ''}</div>
+          ${B.multi ? `<div class="small">${B.sessions.map((x) => `${esc(poolName(x))} ${esc(hm(x.start))}–${esc(hm(x.finish || ''))} (${rows.filter((r) => r.session === x.n).length})`).join(' · ')}</div>` : ''}
+          <div class="small">${rows.length ? `${sw} swimmers · ${rows.length} swims` : esc(B.note || 'Entries come from the heat sheet.')} ${off ? '<span class="pill ok">official</span>' : ''}</div>
           <div>${pills(flagCounts(rows))}</div>
-          <div class="btns" style="margin-top:6px"><a class="btn sm" href="#/day/${d}/${s.n}">Events</a>${rows.length ? `<a class="btn sm ghost" href="#/summary/${s.n}">Session summary</a>` : ''}</div>`}
+          <div class="btns" style="margin-top:6px"><a class="btn sm" href="#/day/${d}/${B.n}">Events</a>${rows.length ? `<a class="btn sm ghost" href="#/summary/${B.n}">Session summary</a>` : ''}</div>`}
         </div></div>`;
       }).join('')}</div>`;
   }).join('')}
@@ -240,57 +246,67 @@ function renderMeet() {
 
 // ---------- day / session event flow ----------
 function renderDay(day, sessN) {
-  const ss = sessionsOf(day).filter((s) => s.nsea !== false);
-  if (!ss.length) { app.innerHTML = '<p class="empty">No sessions for us that day.</p>'; return; }
-  const s = ss.find((x) => String(x.n) === String(sessN)) || (day === todayIso() ? ss.find((x) => clockMin(x.finish) > nowMin()) : null) || ss[0];
-  const M = S.model;
-  let rows = M.rows.filter((r) => r.session === s.n && !r.meetOut);
-  const nowEv = day === todayIso() ? nowEvent(rows, nowMin()) : null;
+  const bs = BB().filter((b) => b.day === day && b.nsea);
+  if (!bs.length) { app.innerHTML = '<p class="empty">No sessions for us that day.</p>'; return; }
+  const B = bs.find((x) => x.sessions.some((y) => String(y.n) === String(sessN))) || (day === todayIso() ? bs.find((x) => clockMin(x.finish) > nowMin()) : null) || bs[0];
+  const M = S.model, ns = new Set(B.sessions.map((x) => x.n));
+  if (S.pool && !B.sessions.some((x) => poolName(x) === S.pool)) S.pool = '';
+  let rows = M.rows.filter((r) => ns.has(r.session) && !r.meetOut);
   const q = S.q.trim().toLowerCase();
   if (q) rows = rows.filter((r) => r.swimmer.name.toLowerCase().includes(q));
   if (S.filter === 'flag') rows = rows.filter((r) => (r.result ? r.post : r.pre).some((f) => !f.improve && !f.open));
   if (S.filter === 'todo') rows = rows.filter((r) => !r.result && !r.scratched);
   if (S.filter === 'notes') rows = rows.filter((r) => r.notes.length);
-  const off = M.official.get(s.n);
+  const allOff = B.sessions.every((x) => M.official.get(x.n)?.on), someOff = B.sessions.filter((x) => M.official.get(x.n)?.on);
   const narrowed = !!q || S.filter !== 'all';
-  const flow = sessionFlow(S.pkg, s, rows).filter((it) => it.rows.length || !narrowed);
+  const all = blockFlow(PK(), B, rows);
+  const now = day === todayIso() ? nowInPools(all, nowMin()) : [];
+  const nowSet = new Set(now.map((x) => `${x.item.num}-${x.item.round}`));
+  const flow = all.filter((it) => (it.rows.length || !narrowed) && (!S.pool || it.pool === S.pool));
+  const w = B.warmup;
   app.innerHTML = `
-  ${ss.length > 1 ? `<div class="chips" style="margin-bottom:10px">${ss.map((x) => `<a class="chip" href="#/day/${day}/${x.n}" aria-pressed="${x.n === s.n}" style="text-decoration:none;color:inherit">${esc(x.name)}</a>`).join('')}</div>` : ''}
-  <p class="kicker">${esc(dayName(day))} · Session ${s.n}</p>
-  <h1>${esc(s.name)}</h1>
-  ${s.warmup ? `<div class="warm"><p class="kicker">Our warm-up · ${esc(s.warmup.group)}</p><div class="big">${esc(s.warmup.time)}</div>
-    <div><b>${esc(s.warmup.pool)}</b> · lanes ${esc(s.warmup.lanes)}</div><div class="small">${esc(s.warmup.sprints || '')}</div>
-    <div class="small">Meet starts <b>${esc(s.start)}</b> · est. finish ${esc(s.finish || '')}</div></div>` : ''}
-  ${s.note ? `<div class="banner warn">${esc(s.note)}</div>` : ''}
-  ${notesCard(s)}
-  <div class="banner ${off && off.on ? 'off' : 'unoff'}">${off && off.on ? `Official results loaded (${esc(off.by)}).` : 'Times and flags here are <b>unofficial</b> until the official results are loaded.'}</div>
+  ${bs.length > 1 ? `<div class="chips" style="margin-bottom:10px">${bs.map((x) => `<a class="chip" href="#/day/${day}/${x.n}" aria-pressed="${x.key === B.key}">${esc(x.name)}</a>`).join('')}</div>` : ''}
+  <p class="kicker">${esc(dayName(day))} · Session ${esc(B.multi ? B.lead.block : B.n)}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
+  <h1>${esc(B.name)}</h1>
+  ${w ? `<div class="warm"><p class="kicker">Our warm-up · ${esc(w.group)}</p><div class="big">${esc(w.time)}</div>
+    <div><b>${esc(w.pool)}</b> · lanes ${esc(w.lanes)}</div><div class="small">${esc(w.sprints || '')}</div>
+    ${B.multi ? B.sessions.map((x) => `<div class="small"><b>${esc(poolName(x))}</b>: starts ${esc(hm(x.start))} · est. finish ${esc(hm(x.finish || ''))}</div>`).join('')
+      : `<div class="small">Meet starts <b>${esc(B.start)}</b> · est. finish ${esc(B.finish || '')}</div>`}</div>`
+    : B.multi ? `<div class="card tight">${B.sessions.map((x) => `<div class="small"><b>${esc(poolName(x))}</b>: starts ${esc(hm(x.start))} · est. finish ${esc(hm(x.finish || ''))}</div>`).join('')}</div>` : ''}
+  ${B.note ? `<div class="banner warn">${esc(B.note)}</div>` : ''}
+  ${notesCard(B.lead)}
+  <div class="banner ${allOff ? 'off' : 'unoff'}">${allOff ? 'Official results loaded.' : someOff.length ? `Official for ${someOff.map((x) => esc(poolName(x))).join(', ')} only; the rest is <b>unofficial</b>.` : 'Times and flags here are <b>unofficial</b> until the official results are loaded.'}</div>
+    ${now.length ? `<div class="nowbar">${now.map((x) => { const it = x.item, h = x.live && it.heats && it.minutes > 0 ? Math.min(it.heats, Math.floor(((nowMin() - it.startMin) * it.heats) / it.minutes) + 1) : null;
+      return `<button data-act="now" data-ev="${it.num}-${esc(it.round)}"><b>${x.live ? 'Now' : 'Next'}</b>${x.pool ? ` · ${esc(x.pool)}` : ''}<span>#${it.num} ${esc((it.ev.title || '').replace(/^(Girls|Boys|Mixed) /, '').replace(/^13 & Over /, ''))}</span><small>${h ? `about heat ${h} of ${it.heats}` : x.live ? '' : `starts ~${esc(hm(it.start))}`}</small></button>`; }).join('')}</div>` : ''}
   <div class="sticky noprint">
     <input type="search" id="q" placeholder="Find a swimmer" value="${esc(S.q)}" autocomplete="off">
+    ${B.multi ? `<div class="chips pools" style="margin-top:8px">${[['', 'Both pools'], ...B.sessions.map((x) => [poolName(x), poolName(x)])].map(([k, t]) => `<button class="chip" data-act="pool" data-p="${esc(k)}" aria-pressed="${S.pool === k}">${esc(t)}</button>`).join('')}</div>` : ''}
     <div class="chips" style="margin-top:8px">
       ${[['all', 'All'], ['flag', 'Flagged'], ['todo', 'No result yet'], ['notes', 'Notes']].map(([k, t]) => `<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${S.filter === k}">${t}</button>`).join('')}
-      ${nowEv ? `<button class="chip" data-act="now" data-ev="${nowEv}">Now: #${nowEv}</button>` : ''}
-      <a class="chip" href="#/summary/${s.n}" style="text-decoration:none;color:inherit">Session summary</a>
-      <a class="chip" href="#/tools/${s.n}" style="text-decoration:none;color:inherit">Upload / live</a>
+      <a class="chip" href="#/summary/${B.n}" style="text-decoration:none;color:inherit">Session summary</a>
+      <a class="chip" href="#/tools/${B.n}" style="text-decoration:none;color:inherit">Upload / live</a>
     </div>
   </div>
-  ${flow.map((it) => eventBlock(it, nowEv)).join('') || '<p class="empty">No swims match.</p>'}`;
+  ${flow.map((it) => eventBlock(it, nowSet)).join('') || '<p class="empty">No swims match.</p>'}`;
   const qi = $('#q');
-  qi.oninput = () => { S.q = qi.value; const pos = qi.selectionStart; renderDay(day, s.n); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); };
+  qi.oninput = () => { S.q = qi.value; const pos = qi.selectionStart; renderDay(day, B.n); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); };
 }
 const hm = (t) => String(t || '').replace(/^0/, '');
-function eventBlock(it, nowEv) {
+function eventBlock(it, nowSet) {
+  const isNow = nowSet && nowSet.has(`${it.num}-${it.round}`);
+  const pool = it.pool ? `<span class="pooltag">${esc(it.pool)}</span>` : '';
   const e = it.ev || {};
   const round = /Prelim/.test(it.round) ? ' · Prelims' : /2$/.test(it.round) ? ' · Night heat' : '';
   const heats = it.heats ? `${it.heats} heat${it.heats === 1 ? '' : 's'}` : '';
   const same = it.end && it.start.slice(-2) === it.end.slice(-2);
   const when = it.start ? (it.end && it.minutes > 0 ? `~${esc(hm(same ? it.start.slice(0, -3) : it.start))}–${esc(hm(it.end))}` : `~${esc(hm(it.start))}`) : '';
-  const head = `<header><span class="n">#${it.num}</span><span class="t">${esc(e.title || '')}${round}</span>
+  const head = `<header><span class="n">#${it.num}</span><span class="t">${pool}${esc(e.title || '')}${round}</span>
     <span class="s">${when}${heats ? (when ? '<br>' : '') + heats : ''}</span></header>`;
   if (!it.rows.length) {
-    return `<section class="ev none ${it.num === nowEv ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
+    return `<section class="ev none ${isNow ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
       <div class="none-line">No ${esc(S.pkg.teamName)} swimmers${it.minutes > 0 ? ` · about ${it.minutes} min` : ''}${!heats ? ' · heats TBD' : ''}</div></section>`;
   }
-  return `<section class="ev ${it.num === nowEv ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
+  return `<section class="ev ${isNow ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
     ${it.heatGroups.map((h) => `<div class="heat"><span>${h.heat ? `Heat ${h.heat}${h.of ? ` of ${h.of}` : ''}` : 'Heat TBD'}</span>${h.start ? `<span class="hs">~${esc(hm(h.start))}</span>` : ''}</div>
       ${h.rows.map((r) => rowHtml(r, false)).join('')}`).join('')}</section>`;
 }
@@ -349,15 +365,15 @@ $('#sheet-bg').onclick = closeSheet;
 
 // ---------- end of session summary ----------
 function renderSummary(n) {
-  const s = SS().find((x) => x.n === n);
+  const B = blockOf(SS(), n), s = B && B.lead;
   if (!s) { app.innerHTML = '<p class="empty">Session not found.</p>'; return; }
-  const X = sessionSummary(S.model, n);
+  const ns = B.sessions.map((x) => x.n), X = sessionSummary(S.model, ns);
   const tag = X.official ? '' : ' <span class="pill off">unofficial</span>';
   const li = (a) => a.map(({ r, f }) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} ${f.sub ? `<span class="muted">(${esc(f.sub)})</span>` : ''}</li>`).join('');
-  const finalsBack = /Prelim/.test(s.events.map((e) => e.round).join()) ? S.model.rows.filter((r) => r.session === n && /Prelim/.test(r.round) && r.result && r.result.place && r.result.place <= 40) : [];
+  const finalsBack = /Prelim/.test(B.sessions.flatMap((x) => x.events).map((e) => e.round).join()) ? S.model.rows.filter((r) => ns.includes(r.session) && /Prelim/.test(r.round) && r.result && r.result.place && r.result.place <= 40) : [];
   app.innerHTML = `
-  <p class="kicker">${esc(dayName(s.day))} · Session ${s.n}</p>
-  <h1>${esc(s.name)}: session summary</h1>
+  <p class="kicker">${esc(dayName(s.day))} · Session ${esc(B.multi ? s.block : s.n)}${B.multi ? ` · ${B.sessions.map((x) => esc(poolName(x))).join(' + ')}` : ''}</p>
+  <h1>${esc(B.name)}: session summary</h1>
   <div class="banner ${X.official ? 'off' : 'unoff'}">${X.official ? 'Built from official results.' : `Unofficial: built from ${X.swum ? 'live / entered times' : 'no results yet'}. ${X.pending ? X.pending + ' swims still have no result.' : ''} Load official results to confirm.`}</div>
   <div class="grid2" style="margin-bottom:12px">
     <div class="stat"><b>${X.swum}/${X.entries}</b><span>swims with a result</span></div>
@@ -379,8 +395,8 @@ function renderSummary(n) {
 }
 const ordinal = (n) => (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 function summaryText(n) {
-  const s = SS().find((x) => x.n === n), X = sessionSummary(S.model, n);
-  const L = [`${S.pkg.short || S.pkg.name} · ${s.name}${X.official ? '' : ' (UNOFFICIAL)'}`, `${X.swum}/${X.entries} swims · ${X.best} best times (${X.pctBest}%) · ${fmt(X.drop)} dropped`];
+  const B = blockOf(SS(), n), s = B.lead, X = sessionSummary(S.model, B.sessions.map((x) => x.n));
+  const L = [`${S.pkg.short || S.pkg.name} · ${B.name}${X.official ? '' : ' (UNOFFICIAL)'}`, `${X.swum}/${X.entries} swims · ${X.best} best times (${X.pctBest}%) · ${fmt(X.drop)} dropped`];
   const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${r.swimmer.first || r.swimmer.name} ${r.swimmer.last || ''} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
   sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
   const N = notesFor(S.model, s), gn = [...N.session, ...N.day, ...N.meet];
@@ -415,16 +431,20 @@ function renderTools() {
 
   ${(() => { const s = SS().find((x) => x.n === sessN); if (!s) return ''; return `<div class="card"><h3>Session times</h3><p class="small muted">Host moved the session? Change the times here. Every heat and event start already loaded for this session moves by the same amount, and the change syncs to all coaches.${s.changed ? ` Last changed by ${esc(s.changed.by || 'a coach')}${s.changed.shift ? ` (${s.changed.shift > 0 ? '+' : ''}${s.changed.shift} min)` : ''}.` : ''}</p>
     <label class="f" for="tm-start">Events start</label><input id="tm-start" value="${esc(s.start || '')}" placeholder="6:50 PM">
+    ${(() => { const B = blockOf(SS(), s.n); return B && B.multi ? `<label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" id="tm-both" checked style="width:auto"> Move every pool of this session (${B.sessions.map((x) => esc(poolName(x))).join(', ')}) by the same amount</label>` : ''; })()}
     ${s.warmup ? `<label class="f" for="tm-warm">Warm-up</label><input id="tm-warm" value="${esc(s.warmup.time || '')}">
     <p class="small muted" style="margin:4px 0 0">Leave warm-up as is and it moves by the same amount as the start.</p>` : ''}
     <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="save-times" data-s="${s.n}">Save times</button></div></div>`; })()}
+
+  <div class="card"><h3>Meet timeline (session report PDF)</h3><p class="small muted">The host's Hy-Tek session report / timeline: event start times and heat counts for every session, and each pool's session when the meet runs in two pools. Load the newest one; times already changed with Session times are replaced by it.</p>
+    <input type="file" id="f-timeline" accept="application/pdf,.pdf"><div id="o-timeline"></div></div>
 
   <div class="card"><h3>Heat sheet (PDF)</h3><p class="small muted">Finals sheets and updated programs. Our heats and lanes for that session are replaced with what's on the sheet.</p>
     <input type="file" id="f-heat" accept="application/pdf,.pdf"><div id="o-heat"></div></div>
 
   <div class="card"><h3>Photo of a heat sheet (re-seed)</h3><p class="small muted">Take a picture of the posted re-seed. Only our swimmers' lines are read; you check the result before it's applied.</p>
     <label class="f" for="ev-photo">Event (if the photo doesn't show the event title)</label>
-    <select id="ev-photo"><option value="">— read it from the photo —</option>${evs.map((e) => `<option value="${e.num}">#${e.num} ${esc(S.pkg.events[e.num]?.title || '')} (${esc(e.round)})</option>`).join('')}</select>
+    <select id="ev-photo"><option value="">— read it from the photo —</option>${evs.map((e) => `<option value="${e.num}">#${e.num} ${esc(PK().events[e.num]?.title || '')} (${esc(e.round)})</option>`).join('')}</select>
     <input type="file" id="f-photo" accept="image/*" capture="environment" style="margin-top:8px"><div id="o-photo"></div></div>
 
   <div class="card"><h3>Live results web page</h3><p class="small muted">Paste the address the host pushes results to (Hy-Tek real-time results, a results page or PDF). Checked every minute while this screen is open; nothing counts as official until you mark it.</p>
@@ -443,7 +463,7 @@ function renderTools() {
 
   <div class="card"><h3>Meet Mobile screenshot</h3><p class="small muted">In Meet Mobile, filter each event's results to Favorites (our swimmers) and screenshot it. Add several events' screenshots at once: the event is read from the title on each screen. Times are unofficial.</p>
     <label class="f" for="ev-shot">Event (only if the title can't be read)</label>
-    <select id="ev-shot"><option value="">— read it from the screenshot —</option>${evs.map((e) => `<option value="${e.num}">#${e.num} ${esc(S.pkg.events[e.num]?.title || '')} (${esc(e.round)})</option>`).join('')}</select>
+    <select id="ev-shot"><option value="">— read it from the screenshot —</option>${evs.map((e) => `<option value="${e.num}">#${e.num} ${esc(PK().events[e.num]?.title || '')} (${esc(e.round)})</option>`).join('')}</select>
     <input type="file" id="f-shot" accept="image/*" multiple style="margin-top:8px"><div id="o-shot"></div></div>
 
   <div class="card"><h3>Official results</h3><p class="small muted">When the host posts official results, load the results PDF (or the official results page above with “official” ticked). Then mark the session official.</p>
@@ -489,6 +509,7 @@ function bindTools() {
   };
   const sess = $('#sess'); if (sess) sess.onchange = () => { location.hash = '#/tools/' + sess.value; };
   on('f-heat', heatUpload);
+  on('f-timeline', timelineUpload);
   on('f-photo', photoUpload);
   on('f-shot', shotUpload);
   on('f-official', officialUpload);
@@ -532,8 +553,8 @@ async function heatUpload(files, el) {
   const lib = await pdfjs();
   const pages = await readPdf(lib, new Uint8Array(await files[0].arrayBuffer()));
   const parsed = parseHeatSheet(pdfLines(pages));
-  const sess = guessSession(S.pkg, parsed) || selSession();
-  const data = heatSheetRows(S.pkg, S.model, parsed, sess);
+  const sess = guessSession(PK(), parsed) || selSession();
+  const data = heatSheetRows(PK(), S.model, parsed, sess);
   if (!data.rows.length) {
     const lanes = parsed.events.flatMap((e) => e.heats.flatMap((h) => h.lanes));
     const teams = [...new Set(lanes.map((l) => l.team))].slice(0, 8);
@@ -549,11 +570,27 @@ async function heatUpload(files, el) {
   }
   reviewEntries(el, data, `${parsed.session || files[0].name}: ${parsed.events.length} events, ${data.rows.length} ${S.pkg.teamName} swims → Session ${sess} (${esc(SS().find((s) => s.n === sess)?.name)})`);
 }
+async function timelineUpload(files, el) {
+  busy(el, 'Reading the timeline…');
+  const lib = await pdfjs();
+  const parsed = parseSessionReport(pdfLines(await readPdf(lib, new Uint8Array(await files[0].arrayBuffer()))));
+  if (!parsed.length) return out(el, '<p class="small">No “Session: …” headings found. This needs the Hy-Tek Session Report (timeline) PDF.</p>');
+  const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const match = (p) => SS().find((x) => x.code && String(x.code).toUpperCase() === String(p.code).toUpperCase()) || SS().find((x) => norm(x.name) === norm(p.name));
+  out(el, `<p class="small"><b>${parsed.length} sessions read.</b> Check the times, then apply.</p><table class="t review"><thead><tr><th>Session</th><th>Times</th><th style="text-align:right">Events</th></tr></thead><tbody>
+    ${parsed.map((p) => `<tr><td>${esc(p.code)} ${esc(p.name)} ${match(p) ? '' : '<span class="pill t-3">new</span>'}</td><td class="mono small">${esc(hm(p.start || '?'))}–${esc(hm(p.finish || '?'))}</td><td class="num">${p.events.length}${p.events.some((e) => e.heats == null) ? ' <span class="pill t-3">check</span>' : ''}</td></tr>`).join('')}</tbody></table>
+    <div class="btns" style="margin-top:8px"><button class="btn solid" id="apply">Apply</button><button class="btn ghost" id="cancel">Cancel</button></div>`);
+  $('#cancel', el).onclick = () => out(el, '');
+  $('#apply', el).onclick = async () => {
+    await addOp('timeline', { sessions: parsed });
+    out(el, `<p class="small" style="color:var(--teal-dark)">Timeline applied to ${parsed.length} sessions.</p>`);
+  };
+}
 async function photoUpload(files, el) {
   busy(el, 'Reading the photo (this takes a few seconds)…');
   const text = await ocr(files[0], el, { columns: true });
   const ev = +$('#ev-photo').value || null;
-  const data = photoHeatRows(S.pkg, S.model, text, selSession(), ev);
+  const data = photoHeatRows(PK(), S.model, text, selSession(), ev);
   if (!data.rows.length) return out(el, `<p class="small">Couldn't find our swimmers in that photo. Try a straighter, closer shot, or pick the event.</p><details><summary class="small">What was read</summary><pre class="small">${esc(text)}</pre></details>`);
   reviewEntries(el, data, `Found ${data.rows.length} of our swimmers. Check heats and lanes before applying.`, true);
   el.insertAdjacentHTML('beforeend', `<details><summary class="small muted">What the photo reader saw</summary><pre class="small" style="white-space:pre-wrap">${esc(text)}</pre></details>`);
@@ -580,8 +617,8 @@ async function shotUpload(files, el) {
   for (const [i, f] of [...files].entries()) {
     busy(el, `Reading screenshot ${i + 1} of ${files.length}…`);
     const text = await ocr(f, el);
-    const r = screenshotResults(S.pkg, S.model, text, { event: files.length === 1 ? picked : null, session: selSession() });
-    if (!r.event && picked) Object.assign(r, screenshotResults(S.pkg, S.model, text, { event: picked, session: selSession() }));
+    const r = screenshotResults(PK(), S.model, text, { event: files.length === 1 ? picked : null, session: selSession() });
+    if (!r.event && picked) Object.assign(r, screenshotResults(PK(), S.model, text, { event: picked, session: selSession() }));
     if (!r.event) { missed.push(f.name || `screenshot ${i + 1}`); continue; }
     all.push(...r.results.map((x) => ({ ...x, event: r.event })));
   }
@@ -606,7 +643,7 @@ async function officialUpload(files, el) {
   const lib = await pdfjs();
   const pages = await readPdf(lib, new Uint8Array(await files[0].arrayBuffer()));
   const swims = parseResults(pdfLines(pages));
-  const list = resultOps(S.pkg, S.model, swims, { source: 'official results PDF', official: true, session: selSession() });
+  const list = resultOps(PK(), S.model, swims, { source: 'official results PDF', official: true, session: selSession() });
   reviewResults(el, list, 'official results PDF', true);
 }
 
@@ -630,7 +667,7 @@ async function liveCheck(quiet) {
     const links = resultLinks(got.text, got.url).filter((l) => want.has(l.event)).slice(0, 30);
     for (const l of links) { try { const p = await api('POST', '/meetday/fetch', { url: l.href }); text += '\n' + (p.type === 'text' ? htmlToText(p.text) : ''); } catch { /* one page failing shouldn't stop the rest */ } }
   }
-  const list = resultsFromText(S.pkg, S.model, text, { source: 'live results', official: false, session });
+  const list = resultsFromText(PK(), S.model, text, { source: 'live results', official: false, session });
   for (const r of list) await addOp('result', { entry: r.entry, time: r.time, status: r.status, place: r.place ?? null, source: 'live results', official: false });
   if (!S.model.sources.some((x) => x.url === url)) await addOp('source', { kind: 'live', url });
   if (el) out(el, `<p class="small">${list.length ? `Added ${list.length} new time${list.length > 1 ? 's' : ''}` : 'No new times yet'} · ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} (unofficial)</p>`);
@@ -669,7 +706,8 @@ document.addEventListener('click', async (ev) => {
     if (a === 'close-go') { closeSheet(); return; }
     if (a === 'meet') { await loadMeet(t.dataset.id); render(); return; }
     if (a === 'filter') { S.filter = t.dataset.f; render(); return; }
-    if (a === 'now') { const el = document.querySelector(`[id^="ev-${t.dataset.ev}-"]`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (a === 'now') { const el = document.getElementById(`ev-${t.dataset.ev}`); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (a === 'pool') { S.pool = t.dataset.p; render(); return; }
     if (a === 'tag') { t.setAttribute('aria-pressed', t.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); return; }
     if (a === 'mm-key') {
       if (S.model.notifyKey && !confirm('Make a new key? The old address stops working until MacroDroid gets the new one.')) return;
@@ -686,7 +724,10 @@ document.addEventListener('click', async (ev) => {
       const data = { session: n, start: minClock(a1), shift: a0 == null ? 0 : a1 - a0 };
       if (warmEl && warmEl.value.trim() && warmEl.value.trim() !== (s.warmup && s.warmup.time)) data.warmup = warmEl.value.trim();
       if (!data.shift && !data.warmup) { toast('Nothing changed'); return; }
-      await addOp('times', data);
+      const B = blockOf(SS(), n);
+      if ($('#tm-both') && $('#tm-both').checked && B && B.multi && data.shift) {
+        for (const x of B.sessions) await addOp('times', { ...data, session: x.n, start: x.n === n ? data.start : minClock(clockMin(x.start) + data.shift) });
+      } else await addOp('times', data);
       toast(data.shift ? `Session moved ${data.shift > 0 ? '+' : ''}${data.shift} min` : 'Warm-up updated'); render(); return;
     }
     if (a === 'save-time') {

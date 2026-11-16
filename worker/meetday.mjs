@@ -8,7 +8,7 @@
 import { json, fail, clean, sha } from './util.mjs';
 
 const ID = /^[a-z0-9][a-z0-9-]{2,60}$/;
-const OP_TYPES = new Set(['result', 'note', 'entries', 'official', 'scratch', 'source', 'undo', 'times', 'notifykey', 'mmnotify', 'mscratch', 'gnote', 'tags']);
+const OP_TYPES = new Set(['result', 'note', 'entries', 'official', 'scratch', 'source', 'undo', 'times', 'notifykey', 'mmnotify', 'mscratch', 'gnote', 'tags', 'timeline']);
 const MAX_PKG = 1_500_000;
 const MAX_OP = 200_000;
 

@@ -9,9 +9,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { readPdf, pdfLines, parseHeatSheet, teamEntries, parseHy3, toCs, sameSwimmer, parseEventTitle } from '../../public/admin/meet/lib/parse.mjs';
+import { readPdf, pdfLines, parseHeatSheet, teamEntries, parseHy3, toCs, sameSwimmer, parseEventTitle, parseSessionReport } from '../../public/admin/meet/lib/parse.mjs';
 import { buildRefs } from '../../public/admin/meet/lib/refs.mjs';
-import { entryKey, heatInfoOf, applyHeatInfo } from '../../public/admin/meet/lib/model.mjs';
+import { entryKey, heatInfoOf, applyHeatInfo, applyTimeline } from '../../public/admin/meet/lib/model.mjs';
 import { guessSession } from '../../public/admin/meet/lib/ingest.mjs';
 
 const cfgPath = path.resolve(process.argv[2] || '');
@@ -27,16 +27,34 @@ const hy = parseHy3(fs.readFileSync(inMeet(cfg.hy3), 'latin1'));
 const swimmers = hy.swimmers.map((s) => ({ id: s.id, name: `${cap(s.last)}, ${s.first}`, first: s.first, last: cap(s.last), sex: s.sex, age: s.age }));
 const byId = new Map(swimmers.map((s) => [s.id, s]));
 
-// Events: titles from heat sheets, then config, then HY3 (distance/stroke)
+// Sessions: from the config, then the host's session report (timeline) if given. Multi-pool meets: the
+// report's sub-sessions (2G / 2B ...) become one session per pool; a config entry with just { block: "2", ... }
+// is a template whose warm-up, label, note and nsea flag go to every pool of that block.
+const templates = cfg.sessions.filter((s) => s.block && !s.events);
+let pkgSessions = cfg.sessions.filter((s) => s.events).map((s) => ({ ...s, events: s.events.map(([num, round, start]) => ({ num, round, start: start || null })) }));
 const events = {};
+if (cfg.sessionReport) {
+  const parsed = parseSessionReport(pdfLines(await readPdf(pdfjs, new Uint8Array(fs.readFileSync(inMeet(cfg.sessionReport)))))) ;
+  applyTimeline(pkgSessions, { start: cfg.start }, parsed);
+  for (const p of parsed) for (const e of p.events) if (!events[e.num]) {
+    const t = parseEventTitle(`Event ${e.num} ${e.title.replace(/^(Girls|Boys|Mixed|Women|Men)\s+(\d)/i, '$1 Open $2').replace(/(\d+) (Freestyle|Backstroke|Breaststroke|Butterfly|IM|Individual Medley)/i, '$1 Yard $2')}`);
+    if (t) events[e.num] = { ...t, title: t.title.replace(' Open ', ' ') };
+  }
+  console.log(`session report: ${parsed.length} sessions (${parsed.map((p) => p.code).join(' ')})`);
+}
+for (const s of pkgSessions) {
+  const t = templates.find((x) => String(x.block) === String(s.block) || (x.code && x.code === s.code));
+  if (t) for (const k of ['warmup', 'label', 'note', 'nsea']) if (s[k] == null && t[k] != null) s[k] = k === 'warmup' ? { ...t[k] } : t[k];
+}
+
+// Events: titles from heat sheets, then config, then session report, then HY3 (distance/stroke)
 const sessOf = {};
-for (const s of cfg.sessions) for (const [num, round, start, title] of s.events) {
-  (sessOf[num] ||= []).push({ session: s.n, round, start: start || null });
+for (const s of pkgSessions) for (const e of s.events) (sessOf[e.num] ||= []).push({ session: s.n, round: e.round, start: e.start || null });
+for (const s of cfg.sessions) for (const [num, , , title] of s.events || []) {
   if (title) events[num] = { num, ...parseEventTitle(`Event ${num} ${title.replace(/(\d+) /, '$1 Yard ')}`) };
 }
 const sheetEntries = [];
 const report = [];
-const pkgSessions = cfg.sessions.map((s) => ({ ...s, events: s.events.map(([num, round, start]) => ({ num, round, start: start || null })) }));
 for (const f of cfg.heatSheets) {
   const pages = await readPdf(pdfjs, new Uint8Array(fs.readFileSync(inMeet(f))));
   const p = parseHeatSheet(pdfLines(pages));
@@ -63,7 +81,7 @@ for (const e of hy.entries) {
   entries.push({
     id: entryKey(e.event, first ? first.round : 'Finals', s.id), swimmerId: s.id, event: e.event,
     session: first ? first.session : null, round: first ? first.round : 'Finals',
-    heat: hs ? hs.heat : null, heats: hs ? hs.heats : null, lane: hs ? hs.lane : null, start: hs ? hs.start : (first && first.start) || null,
+    heat: hs ? hs.heat : null, heats: hs ? hs.heats : null, lane: hs ? hs.lane : null, start: hs ? hs.start : null,
     seed: hs ? hs.seed : e.seed, entrySeed: e.seed, source: hs ? 'heat sheet' : 'entries',
   });
 }
@@ -88,7 +106,7 @@ const pkg = {
   format: 'nsea-meetday/1', id: cfg.id, name: cfg.name, short: cfg.short, host: cfg.host, venue: cfg.venue,
   start: cfg.start, end: cfg.end, course: cfg.course || 'SCY', teamName: cfg.teamName || 'NSEA', teamMatch: cfg.teamMatch || 'nsea',
   general: cfg.general || [], sessions: pkgSessions,
-  events, swimmers, entries, refs, builtAt: new Date().toISOString(), sources: [cfg.hy3, ...cfg.heatSheets],
+  events, swimmers, entries, refs, builtAt: new Date().toISOString(), sources: [cfg.hy3, ...(cfg.sessionReport ? [cfg.sessionReport] : []), ...cfg.heatSheets],
 };
 const out = path.resolve(process.argv[3] || path.join(base, `${cfg.id}.meetday.json`));
 fs.writeFileSync(out, JSON.stringify(pkg));
