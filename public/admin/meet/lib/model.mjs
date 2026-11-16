@@ -2,6 +2,7 @@
 import { flagsFor, DEFAULT_CUTS } from './flags.mjs';
 import { sameSwimmer, clockMin, minClock, parseMmNotify } from './parse.mjs';
 
+export const relayKey = (event, round, letter) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-R${letter}`;
 export const entryKey = (event, round, swimmerId) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-${swimmerId}`;
 
 export function derive(pkg, ops, settings = {}) {
@@ -12,15 +13,19 @@ export function derive(pkg, ops, settings = {}) {
   const undone = new Set(sorted.filter((o) => o.type === 'undo').map((o) => o.data && o.data.op));
   const results = new Map(), notes = new Map(), scratch = new Map(), official = new Map(), sources = [];
   const notices = []; let notifyKey = null;
-  const meetOut = new Map(), gnotes = [], renames = []; let tags = null;
+  const meetOut = new Map(), gnotes = [], renames = [], legsOf = new Map(); let tags = null;
   const events = { ...pkg.events };
-  const addEvents = (list) => { for (const e of list || []) if (e && e.num && !events[e.num] && (e.title || e.dist)) events[e.num] = { num: e.num, sex: e.sex, dist: e.dist, stroke: e.stroke, relay: !!e.relay, course: pkg.course, title: String(e.title || '').replace(/ Yard /, ' ').replace(/ Open /, ' ') }; };
+  const addEvents = (list) => { for (const e of list || []) if (e && e.num && !events[e.num] && (e.title || e.dist)) events[e.num] = { ...(e.tt ? { tt: true, ttSession: e.ttSession, shown: e.shown ?? null } : {}), num: e.num, sex: e.sex, dist: e.dist, stroke: e.stroke, relay: !!e.relay, course: pkg.course, title: String(e.title || '').replace(/ Yard /, ' ').replace(/ Open /, ' ') }; };
   const sessions = pkg.sessions.map((x) => ({ ...x, warmup: x.warmup ? { ...x.warmup } : x.warmup, events: (x.events || []).map((e) => ({ ...e })) }));
 
   for (const o of sorted) {
     if (undone.has(o.id) || o.type === 'undo') continue;
     const d = o.data || {};
-    if (o.type === 'entries') { addEvents(d.newEvents); applyEntries(entries, swimmers, d); applyHeatInfo(sessions, d); }
+    if (o.type === 'entries') {
+      addEvents(d.newEvents); applyEntries(entries, swimmers, d); applyHeatInfo(sessions, d);
+      const ts = sessions.find((x) => x.n === d.session && x.tt);
+      if (ts) for (const r of d.rows || []) if (!ts.events.some((e) => e.num === r.event)) ts.events.push({ num: r.event, round: r.round || 'Finals' });
+    }
     else if (o.type === 'result') results.set(d.entry, { ...d, by: o.by, at: o.at, op: o.id });
     else if (o.type === 'note') (notes.get(d.entry) || notes.set(d.entry, []).get(d.entry)).push({ ...d, by: o.by, at: o.at, op: o.id });
     else if (o.type === 'scratch') scratch.set(d.entry, !!d.on);
@@ -29,6 +34,8 @@ export function derive(pkg, ops, settings = {}) {
     else if (o.type === 'times') applyTimes(sessions, entries, d, o);
     else if (o.type === 'timeline') { applyTimeline(sessions, pkg, d.sessions, { at: o.at, by: o.by }); for (const x of d.sessions || []) addEvents(x.events); }
     else if (o.type === 'notifykey') notifyKey = d.key || null;
+    else if (o.type === 'legs') legsOf.set(d.entry, Array.isArray(d.legs) ? d.legs.slice(0, 4) : []);
+    else if (o.type === 'session') addSession(sessions, d, o);
     else if (o.type === 'mscratch') { if (d.on) meetOut.set(d.swimmer, { by: o.by, at: o.at, why: d.why || '' }); else meetOut.delete(d.swimmer); }
     else if (o.type === 'gnote') gnotes.push({ scope: d.scope, key: d.key ?? null, text: d.text || '', tags: d.tags || [], by: o.by, at: o.at, op: o.id });
     else if (o.type === 'tags') { if (Array.isArray(d.list)) tags = d.list.filter(Boolean); if (d.rename && d.rename.from && d.rename.to) renames.push(d.rename); }
@@ -43,8 +50,22 @@ export function derive(pkg, ops, settings = {}) {
   }
   const rows = [];
   for (const e of entries.values()) {
-    const s = swimmers.get(e.swimmerId);
     const ev = events[e.event] || {};
+    if (e.relay) {
+      // A relay: the "swimmer" is the team's relay; legs are swimmer ids (or names not on our roster).
+      const legs = (legsOf.get(e.id) || e.legs || []).slice(0, 4);
+      const legSw = legs.map((x) => (typeof x === 'number' ? swimmers.get(x) : null) || (x ? { name: String(x), unknown: true } : null));
+      const r = results.get(e.id) || null, off = official.get(e.session);
+      rows.push({
+        ...e, swimmer: { id: `R${e.relay}`, name: `${pkg.teamName || 'NSEA'} ${e.relay} relay`, first: `${e.relay} relay`, relay: true, sex: ev.sex }, ev, result: r,
+        notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id), meetOut: false, legs, legSw,
+        legOut: legs.filter((x) => meetOut.has(x)).map((x) => swimmers.get(x)?.name).filter(Boolean),
+        official: !!(off && off.on) || !!(r && r.official), pre: [], post: [],
+        delta: r && r.time != null && e.seed != null ? r.time - e.seed : null, startMin: clockMin(e.start || ''),
+      });
+      continue;
+    }
+    const s = swimmers.get(e.swimmerId);
     if (!s) continue;
     const r = results.get(e.id) || null;
     const off = official.get(e.session);
@@ -59,7 +80,7 @@ export function derive(pkg, ops, settings = {}) {
     });
   }
   rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(sessions, a) - order(sessions, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
-  return { rows, swimmers, official, sources, results, sessions, events, notices, notifyKey, meetOut, gnotes, tags };
+  return { rows, swimmers, official, sources, results, sessions, events, legsOf, notices, notifyKey, meetOut, gnotes, tags };
 }
 
 // Session time change (e.g. the host pushes the session back 30 min).
@@ -103,6 +124,14 @@ export function applyEntries(entries, swimmers, d) {
   const touched = new Set(rows.map((r) => `${r.event}|${r.round}`));
   const keep = new Set();
   for (const r of rows) {
+    if (r.relay) {
+      const id = relayKey(r.event, r.round, r.relay);
+      const old = entries.get(id);
+      const legs = (r.legs || []).map((x) => (typeof x === 'number' ? x : ([...swimmers.values()].find((s) => sameSwimmer(s.name, x)) || {}).id ?? x));
+      entries.set(id, { ...(old || {}), id, relay: r.relay, swimmerId: null, event: r.event, round: r.round, session: d.session ?? (old && old.session), heat: r.heat ?? null, heats: r.heats ?? null, lane: r.lane ?? null, seed: r.seed ?? (old && old.seed) ?? null, start: r.start || (old && old.start) || null, legs: legs.some(Boolean) ? legs : (old && old.legs) || [], source: d.source || 'heat sheet update' });
+      keep.add(id);
+      continue;
+    }
     let sid = r.swimmerId;
     if (sid == null || !swimmers.has(sid)) {
       const found = [...swimmers.values()].find((s) => sameSwimmer(s.name, r.name));
@@ -134,6 +163,25 @@ export function applyHeatInfo(sessions, d) {
   }
 }
 export const heatInfoOf = (parsed) => parsed.events.map((e) => ({ num: e.num, round: e.heats[0]?.round || null, heats: e.heats.length, starts: e.heats.map((h) => h.start || null) }));
+
+// Event for a time-trial swim. TT sheets have their own numbering (or none), so TT events get numbers of
+// their own from 9001 up; the number printed on the sheet is kept as `shown`. Same distance/stroke/sex in the
+// same TT session -> same event. Returns { num, meta } (meta only when the event is new).
+export function ttEvent(events, session, { dist, stroke, sex, shown } = {}) {
+  const same = Object.values(events).find((e) => e.tt && e.ttSession === session && e.dist === dist && e.stroke === stroke && e.sex === sex && (shown == null || e.shown == null || String(e.shown) === String(shown)));
+  if (same) return { num: same.num };
+  const num = Math.max(9000, ...Object.keys(events).map(Number)) + 1;
+  const sx = sex === 'F' ? 'Girls' : sex === 'M' ? 'Boys' : 'Mixed';
+  return { num, meta: { num, sex, dist, stroke, course: 'SCY', title: `${sx} ${dist} ${stroke}`, tt: true, ttSession: session, shown: shown ?? null } };
+}
+
+// A session added in the app (time trials, or anything else not in the meet file). data: { n, day, name, start?, tt? }
+export function addSession(sessions, d, o = {}) {
+  if (!d || !d.day || !d.name) return;
+  const n = d.n && !sessions.some((x) => x.n === d.n) ? d.n : Math.max(900, ...sessions.map((x) => x.n)) + 1;
+  sessions.push({ n, day: d.day, name: d.name, label: d.tt ? 'Time trials' : (d.label || ''), start: d.start && clockMin(d.start) != null ? minClock(clockMin(d.start)) : null, finish: null, events: [], tt: !!d.tt, nsea: true, addedBy: o.by, op: o.id });
+  sessions.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0) || (clockMin(a.start || '') ?? 1e4) - (clockMin(b.start || '') ?? 1e4));
+}
 
 // ---------- multi-pool meets ----------
 // Hy-Tek splits a session run in two pools into sub-sessions ("2G Saturday Prelim - Girls Scoreboard",
@@ -278,21 +326,22 @@ export function sessionSummary(model, session) {
   const set = new Set([].concat(session));
   const rows = model.rows.filter((r) => set.has(r.session) && !r.scratched);
   const swum = rows.filter((r) => r.result && (r.result.time != null || r.result.status !== 'OK'));
-  const timed = swum.filter((r) => r.result.time != null);
+  const timed = swum.filter((r) => r.result.time != null && !r.relay);
   const best = timed.filter((r) => r.seed == null || r.result.time < r.seed);
   const drop = best.filter((r) => r.seed != null).reduce((n, r) => n + (r.seed - r.result.time), 0);
   const ach = (kind) => timed.flatMap((r) => r.post.filter((f) => f.kind === kind && f.tier === 'hit' && !f.open).map((f) => ({ r, f })));
   const close = timed.flatMap((r) => r.pre.filter((f) => (f.tier === '1' || f.tier === 'under') && !f.open && !f.improve && !r.post.some((p) => p.label === f.label)).map((f) => ({ r, f, miss: r.result.time - f.target })))
     .filter((x) => x.miss > 0 && x.miss <= x.f.target * 0.01);
   const dq = swum.filter((r) => r.result.status && r.result.status !== 'OK');
-  const swimmers = [...new Set(rows.map((r) => r.swimmerId))].map((id) => {
+  const relays = rows.filter((r) => r.relay);
+  const swimmers = [...new Set(rows.filter((r) => !r.relay).map((r) => r.swimmerId))].map((id) => {
     const mine = rows.filter((r) => r.swimmerId === id);
     return { swimmer: model.swimmers.get(id), rows: mine, best: mine.filter((r) => r.result && r.result.time != null && (r.seed == null || r.result.time < r.seed)).length };
   }).sort((a, b) => a.swimmer.name.localeCompare(b.swimmer.name));
   return {
     entries: rows.length, swum: swum.length, timed: timed.length, best: best.length, drop,
     pctBest: timed.length ? Math.round((best.length / timed.length) * 100) : 0,
-    records: ach('record'), top10: ach('top10'), cuts: ach('cut'), close, dq, swimmers,
+    records: ach('record'), top10: ach('top10'), cuts: ach('cut'), close, dq, swimmers, relays,
     notes: rows.flatMap((r) => r.notes.map((n) => ({ r, n }))),
     official: rows.length > 0 && rows.every((r) => r.official),
     pending: rows.filter((r) => !r.result).length,

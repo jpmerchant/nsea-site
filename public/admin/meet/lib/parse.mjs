@@ -127,6 +127,18 @@ export function parseHeatSheet(lines) {
       ev.heats.push(heat);
       continue;
     }
+    // Relays: "4 Nsea Swim-NC A 1:20.00"; some programs list the legs under it: "1) Derry, Violet 17 2) Wert, Sophie 17 ..."
+    if (ev && ev.relay) {
+      const rl = parseRelayLine(t);
+      if (rl) {
+        if (!heat) { heat = { heat: ev.heats.length + 1, of: null, round: 'Finals', start: null, lanes: [], noHeading: true }; ev.heats.push(heat); }
+        heat.lanes.push(rl);
+        continue;
+      }
+      const legs = [...t.matchAll(/([1-4])\)\s*([A-Za-zÀ-ÿ'’.\- ]+?,\s*[A-Za-zÀ-ÿ'’.\- ]+?)\s+([WM]?\d{1,2})\b/g)];
+      const last = heat && heat.lanes[heat.lanes.length - 1];
+      if (legs.length && last && last.relay) { for (const m of legs) last.legs[+m[1] - 1] = m[2].replace(/\s+/g, ' ').trim(); continue; }
+    }
     const ln = parseLaneLine(t);
     if (ln && ev && !heat) { heat = { heat: ev.heats.length + 1, of: null, round: 'Finals', start: null, lanes: [], noHeading: true }; ev.heats.push(heat); }
     if (ln && heat) heat.lanes.push(ln);
@@ -160,11 +172,22 @@ export function parseLaneLine(t) {
   return { lane: +m[1], name: m[2].replace(/\s+/g, ' ').trim(), age: +m[3], team: m[4].trim(), seed: /^N[TSP]$/.test(m[5]) ? null : toCs(m[5]) };
 }
 
-// Keep only one team's swimmers. teamMatch: RegExp tested against the team column.
+// Relay lane line: lane, team, relay letter, seed. Team names may be cut short ("New Wave Swim Te-NC").
+const RELAY_RE = new RegExp(String.raw`^(\d{1,2})\s+(.+?)\s+'?([A-Z])'?\s+(NT|NS|${TIME})(?:\s*[A-Za-z*#]{0,3})(?:\s+_+)?$`);
+export function parseRelayLine(t) {
+  const c = t.replace(/\s+/g, ' ').replace(/(\s+_{2,})+\s*$/, '').trim();
+  const m = c.match(RELAY_RE);
+  if (!m || +m[1] < 1 || +m[1] > 12 || /,/.test(m[2])) return null;
+  return { lane: +m[1], team: m[2].trim(), letter: m[3], relay: true, seed: /^N[TS]$/.test(m[4]) ? null : toCs(m[4]), legs: [] };
+}
+
+// Keep only one team's swimmers (and relays). teamMatch: RegExp tested against the team column.
 export function teamEntries(parsed, teamMatch) {
   const out = [];
   for (const e of parsed.events) for (const h of e.heats) for (const l of h.lanes)
-    if (teamMatch.test(l.team)) out.push({ event: e.num, heat: h.heat, heats: h.of, round: h.round, start: h.start, lane: l.lane, name: l.name, age: l.age, team: l.team, seed: l.seed });
+    if (teamMatch.test(l.team)) out.push(l.relay
+      ? { event: e.num, heat: h.heat, heats: h.of, round: h.round, start: h.start, lane: l.lane, relay: l.letter, legs: l.legs.filter(Boolean).length ? l.legs : [], name: `Relay ${l.letter}`, team: l.team, seed: l.seed }
+      : { event: e.num, heat: h.heat, heats: h.of, round: h.round, start: h.start, lane: l.lane, name: l.name, age: l.age, team: l.team, seed: l.seed });
   return out;
 }
 
@@ -275,7 +298,8 @@ export async function readPdf(pdfjs, data) {
 // Returns { meet: { name, start, end }, swimmers: [{ id, last, first, sex, birth, age, usaId }], entries: [{ swimmerId, event, dist, stroke, seed }] }
 const HY3_STROKE = { A: 'Free', B: 'Back', C: 'Breast', D: 'Fly', E: 'IM' };
 export function parseHy3(text) {
-  const out = { meet: null, swimmers: [], entries: [] };
+  const out = { meet: null, swimmers: [], entries: [], relays: [] };
+  let cur = null;
   for (const raw of String(text).split(/\r?\n/)) {
     const l = raw.replace(/\s+$/, '');
     if (l.startsWith('B1')) {
@@ -284,6 +308,14 @@ export function parseHy3(text) {
     } else if (l.startsWith('D1')) {
       const m = l.match(/^D1([MF])\s*(\d+)(.{20})(.{20})(.{20})?\s*([0-9A-Z*]{14})?\s+(\d{8})\s+(\d{1,2})/);
       if (m) out.swimmers.push({ id: +m[2], sex: m[1], last: m[3].trim(), first: (m[5] && m[5].trim()) || m[4].trim(), usaId: m[6] || null, birth: mdy(m[7]), age: +m[8] });
+    } else if (l.startsWith('F1')) {
+      // relay entry: team code + letter, sexes, distance + stroke (A free relay, E medley relay), ages, fee, event, seed
+      const t = l.match(/^F1(\S+?)-?([A-Z])\s/), d = l.slice(8).match(/([MFX])([MFX])([MFX])\s+(\d+)([A-E])(.{6})\s+[\d.]+\s+(\d+)\s/);
+      const seeds = [...l.matchAll(/(\d+\.\d{2})([YLS])/g)].map((x) => +x[1]).filter((x) => x > 0);
+      if (t && d) { cur = { relay: t[2], team: t[1], sex: d[1] === d[2] && d[2] === d[3] ? d[1] : 'X', dist: +d[4], stroke: d[5] === 'E' ? 'Medley Relay' : 'Free Relay', event: +d[7], seed: seeds.length ? Math.round(seeds[0] * 100) : null, legs: [] }; out.relays.push(cur); }
+    } else if (l.startsWith('F3') && cur) {
+      const m = l.match(/^F3[MF]\s*(\d+).{5}F(\d)/);
+      if (m) cur.legs[+m[2] - 1] = +m[1];
     } else if (l.startsWith('E1')) {
       // fixed columns: sex 2, athlete 3-7, distance 15-20, stroke 21; then fee, event number, seed time + course
       const id = parseInt(l.slice(3, 8), 10), dist = parseInt(l.slice(15, 21), 10), st = HY3_STROKE[l[21]];

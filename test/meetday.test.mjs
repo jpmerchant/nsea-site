@@ -5,8 +5,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { parseSessionReport, parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime, parseMmNotify } from '../public/admin/meet/lib/parse.mjs';
 import { flagsFor } from '../public/admin/meet/lib/flags.mjs';
 import { buildRefs } from '../public/admin/meet/lib/refs.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor, blocksOf, blockFlow, nowInPools, applyTimeline } from '../public/admin/meet/lib/model.mjs';
-import { heatSheetRows, resultsFromText, screenshotResults, photoHeatRows, guessSession, htmlToText, resultLinks } from '../public/admin/meet/lib/ingest.mjs';
+import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor, blocksOf, blockFlow, nowInPools, applyTimeline, ttEvent } from '../public/admin/meet/lib/model.mjs';
+import { ttPhotoRows, heatSheetRows, resultsFromText, screenshotResults, photoHeatRows, guessSession, htmlToText, resultLinks } from '../public/admin/meet/lib/ingest.mjs';
 import { handleMeetdayAdmin, blockedHost, handleMeetdayNotify } from '../worker/meetday.mjs';
 let DatabaseSync;
 try { ({ DatabaseSync } = await import('node:sqlite')); } catch { /* older Node */ }
@@ -432,4 +432,58 @@ test('two-pool meet: session report (split columns, two sessions per page), bloc
   const M2 = derive({ ...P, sessions: ss }, [{ id: 'opTLxxxxxxxx', at: '2026-11-14T10:00:00Z', by: 'JP', type: 'timeline', data: { sessions: [{ ...R[1], start: '08:40 AM', events: [{ ...R[1].events[0], start: '08:40 AM' }] }] } }]);
   assert.equal(M2.sessions.length, 3); assert.equal(M2.sessions.find((s) => s.code === '2G').events[0].start, '08:40 AM');
   assert.equal(sessionSummary(M, B[0].sessions.map((s) => s.n)).entries, 2);
+});
+
+test('relays: heat sheet lines with legs, HY3 relay entries, legs op, swimmer page and summary', () => {
+  const sheet = ['Meet Program - Saturday finals', 'Event 17 Girls 13 & Over 200 Yard Freestyle Relay', 'Lane Team Relay Seed Time', 'Heat 1 of 2 Finals Starts at 07:10 PM',
+    '3 RSA-NC A 1:52.00', '4 Nsea Swim-NC A 1:50.00', '1) Fishman, Coral 15 2) Lane, Penny 17', '3) Someone, Else 16 4) Reef, Rita 14', '5 New Wave Swim Te-NC B NT',
+    'Heat 2 Finals (#17 Girls 13 & Over 200 Yard Freestyle Relay)', '6 Nsea Swim-NC B 2:01.00'];
+  const p = parseHeatSheet(sheet);
+  const mine = p.events[0].heats.flatMap((h) => h.lanes).filter((l) => /nsea/i.test(l.team));
+  assert.deepEqual(mine.map((l) => [l.letter, l.lane, l.seed]), [['A', 4, 11000], ['B', 6, 12100]]);
+  const hy = parseHy3(['F1NSEA-A   0FFF   200A 13109     15.00 17        0Y  112.22Y', 'F3F    1FishmF1F', 'F3F    2Lane F2F', 'F1NSEA-A   0MMM   200E 13109     15.00 18        0Y  103.38Y'].join('\n'));
+  assert.deepEqual(hy.relays.map((r) => [r.relay, r.sex, r.dist, r.stroke, r.event, r.seed, r.legs.filter(Boolean).length]), [['A', 'F', 200, 'Free Relay', 17, 11222, 2], ['A', 'M', 200, 'Medley Relay', 18, 10338, 0]]);
+
+  const P = pkg();
+  P.sessions[1].events.push({ num: 17, round: 'Finals' });
+  P.events[17] = { num: 17, sex: 'F', dist: 200, stroke: 'Free', relay: true, title: 'Girls 13 & Over 200 Free Relay' };
+  let M = derive(P, []);
+  const data = heatSheetRows(P, M, p, 4);
+  const ops = [{ id: 'opR1xxxxxxxx', at: '2026-11-14T20:00:00Z', by: 'JP', type: 'entries', data }];
+  M = derive(P, ops);
+  const A = M.rows.find((r) => r.relay === 'A'), B = M.rows.find((r) => r.relay === 'B');
+  assert.equal(A.id, '17-F-RA'); assert.equal(A.lane, 4); assert.equal(B.heat, 2);
+  assert.deepEqual(A.legs.slice(0, 2), [1, 2]); assert.equal(A.legSw[2].unknown, true); assert.equal(A.swimmer.name, 'NSEA A relay');
+  ops.push({ id: 'opR2xxxxxxxx', at: '2026-11-14T20:05:00Z', by: 'JP', type: 'legs', data: { entry: '17-F-RA', legs: [2, 1, null, 3] } });
+  ops.push({ id: 'opR3xxxxxxxx', at: '2026-11-14T20:06:00Z', by: 'JP', type: 'mscratch', data: { swimmer: 3, on: true } });
+  ops.push({ id: 'opR4xxxxxxxx', at: '2026-11-14T23:00:00Z', by: 'JP', type: 'result', data: { entry: '17-F-RA', time: 10950, status: 'OK', source: 'manual' } });
+  M = derive(P, ops);
+  const A2 = M.rows.find((r) => r.id === '17-F-RA');
+  assert.deepEqual(A2.legs, [2, 1, null, 3]); assert.deepEqual(A2.legOut, ['Reef, Rocco']); assert.equal(A2.delta, -50);
+  const X = sessionSummary(M, 4);
+  assert.equal(X.relays.length, 2); assert.ok(X.swimmers.every((w) => w.swimmer));
+  // replace mode: a newer sheet without relay B drops it
+  M = derive(P, [...ops, { id: 'opR5xxxxxxxx', at: '2026-11-15T00:00:00Z', by: 'JP', type: 'entries', data: heatSheetRows(P, M, parseHeatSheet(sheet.slice(0, 9)), 4) }]);
+  assert.equal(M.rows.filter((r) => r.relay).length, 1);
+});
+
+test('time trials: session added in the app, TT events, swims merged in, photo rows', () => {
+  const P = pkg();
+  const ops = [{ id: 'opT1xxxxxxxx', at: '2026-11-14T16:00:00Z', by: 'JP', type: 'session', data: { n: 901, day: '2026-11-14', name: 'Saturday time trials', start: '12:30 PM', tt: true } }];
+  let M = derive(P, ops);
+  const tt = M.sessions.find((s) => s.n === 901);
+  assert.ok(tt && tt.tt); assert.equal(M.sessions.indexOf(tt), 1); // between prelims (10:15) and finals (6:20)
+  const ev = { ...M.events };
+  const a = ttEvent(ev, 901, { dist: 200, stroke: 'Free', sex: 'F', shown: 101 }); ev[a.num] = a.meta;
+  const b = ttEvent(ev, 901, { dist: 200, stroke: 'Free', sex: 'F', shown: 101 });
+  assert.equal(a.num, 9001); assert.equal(b.num, 9001); assert.equal(b.meta, undefined);
+  ops.push({ id: 'opT2xxxxxxxx', at: '2026-11-14T16:05:00Z', by: 'JP', type: 'entries', data: { session: 901, mode: 'merge', source: 'time trials', newEvents: [a.meta], rows: [{ event: 9001, round: 'Finals', swimmerId: 1, name: 'Fishman, Coral', heat: 1, lane: 4, seed: 13000 }] } });
+  M = derive(P, ops);
+  const r = M.rows.find((x) => x.session === 901);
+  assert.equal(r.ev.tt, true); assert.equal(r.ev.dist, 200); assert.ok(Array.isArray(r.pre));
+  assert.deepEqual(M.sessions.find((s) => s.n === 901).events.map((e) => e.num), [9001]);
+  // removing the session op (undo) removes the session
+  assert.equal(derive(P, [...ops, { id: 'opT3xxxxxxxx', at: '2026-11-14T17:00:00Z', by: 'JP', type: 'undo', data: { op: 'opT1xxxxxxxx' } }]).sessions.some((s) => s.n === 901), false);
+  const rows = ttPhotoRows(M, 'TIME TRIALS\nEvent 101 Girls 13 & Over 200 Yard Freestyle\nHeat 1 of 2\n3 Smith, Jane 15 RSA-NC 2:10.00\n4 Fishman, Coral 15 Nsea Swim-NC 2:09.15\nHeat 2\n2 Lane, Penny 17 Nsea 2:01.00');
+  assert.deepEqual(rows.map((x) => [x.swimmerId, x.dist, x.stroke, x.shown, x.heat, x.lane, x.seed]), [[1, 200, 'Free', 101, 1, 4, 12915], [2, 200, 'Free', 101, 2, 2, 12100]]);
 });

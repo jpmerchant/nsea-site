@@ -11,7 +11,7 @@ import path from 'node:path';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { readPdf, pdfLines, parseHeatSheet, teamEntries, parseHy3, toCs, sameSwimmer, parseEventTitle, parseSessionReport } from '../../public/admin/meet/lib/parse.mjs';
 import { buildRefs } from '../../public/admin/meet/lib/refs.mjs';
-import { entryKey, heatInfoOf, applyHeatInfo, applyTimeline } from '../../public/admin/meet/lib/model.mjs';
+import { entryKey, relayKey, heatInfoOf, applyHeatInfo, applyTimeline } from '../../public/admin/meet/lib/model.mjs';
 import { guessSession } from '../../public/admin/meet/lib/ingest.mjs';
 
 const cfgPath = path.resolve(process.argv[2] || '');
@@ -85,13 +85,27 @@ for (const e of hy.entries) {
     seed: hs ? hs.seed : e.seed, entrySeed: e.seed, source: hs ? 'heat sheet' : 'entries',
   });
 }
-for (const x of sheetEntries) if (!entries.some((e) => e.event === x.event && sameSwimmer(byId.get(e.swimmerId).name, x.name))) unmatched.push(x);
+for (const x of sheetEntries.filter((y) => !y.relay)) if (!entries.some((e) => e.event === x.event && sameSwimmer(byId.get(e.swimmerId).name, x.name))) unmatched.push(x);
 for (const x of unmatched) {
   // On the heat sheet but not in our entry file (late add): keep it, as a swimmer without HY3 data
   let s = swimmers.find((y) => sameSwimmer(y.name, x.name));
   if (!s) { s = { id: 1000 + swimmers.length, name: x.name, first: x.name.split(',')[1]?.trim() || '', last: x.name.split(',')[0], sex: events[x.event]?.sex || 'X', age: x.age }; swimmers.push(s); byId.set(s.id, s); }
   const first = (sessOf[x.event] || [])[0];
   entries.push({ id: entryKey(x.event, first ? first.round : x.round, s.id), swimmerId: s.id, event: x.event, session: first?.session ?? null, round: first?.round || x.round, heat: x.heat, heats: x.heats, lane: x.lane, start: x.start, seed: x.seed, entrySeed: null, source: 'heat sheet (not in entry file)' });
+}
+
+// Relays: the HY3 has our relay entries with legs; heat sheets add heat, lane and the host's seed.
+for (const r of hy.relays || []) {
+  if (!events[r.event]) events[r.event] = { num: r.event, sex: r.sex, dist: r.dist, stroke: r.stroke, relay: true, course: 'SCY', title: `${r.sex === 'F' ? 'Girls' : r.sex === 'M' ? 'Boys' : 'Mixed'} ${r.dist} ${r.stroke}` };
+  const first = (sessOf[r.event] || [])[0];
+  const hs = sheetEntries.find((x) => x.relay === r.relay && x.event === r.event);
+  entries.push({ id: relayKey(r.event, first ? first.round : 'Finals', r.relay), relay: r.relay, swimmerId: null, event: r.event, session: first ? first.session : null, round: first ? first.round : 'Finals',
+    heat: hs ? hs.heat : null, heats: hs ? hs.heats : null, lane: hs ? hs.lane : null, start: hs ? hs.start : null, seed: hs ? hs.seed : r.seed, entrySeed: r.seed, legs: r.legs.filter((x) => byId.has(x)).length ? r.legs : [], source: hs ? 'heat sheet' : 'entries' });
+}
+for (const x of sheetEntries.filter((y) => y.relay)) {
+  if (entries.some((e) => e.relay === x.relay && e.event === x.event)) continue;
+  const first = (sessOf[x.event] || [])[0];
+  entries.push({ id: relayKey(x.event, first ? first.round : x.round, x.relay), relay: x.relay, swimmerId: null, event: x.event, session: first?.session ?? null, round: first?.round || x.round, heat: x.heat, heats: x.heats, lane: x.lane, start: x.start, seed: x.seed, entrySeed: null, legs: (x.legs || []).map((n) => (swimmers.find((s) => sameSwimmer(s.name, n)) || {}).id ?? n), source: 'heat sheet (not in entry file)' });
 }
 
 const refs = buildRefs({
