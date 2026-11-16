@@ -13,18 +13,21 @@ export function derive(pkg, ops, settings = {}) {
   const results = new Map(), notes = new Map(), scratch = new Map(), official = new Map(), sources = [];
   const notices = []; let notifyKey = null;
   const meetOut = new Map(), gnotes = [], renames = []; let tags = null;
+  const events = { ...pkg.events };
+  const addEvents = (list) => { for (const e of list || []) if (e && e.num && !events[e.num] && (e.title || e.dist)) events[e.num] = { num: e.num, sex: e.sex, dist: e.dist, stroke: e.stroke, relay: !!e.relay, course: pkg.course, title: String(e.title || '').replace(/ Yard /, ' ').replace(/ Open /, ' ') }; };
   const sessions = pkg.sessions.map((x) => ({ ...x, warmup: x.warmup ? { ...x.warmup } : x.warmup, events: (x.events || []).map((e) => ({ ...e })) }));
 
   for (const o of sorted) {
     if (undone.has(o.id) || o.type === 'undo') continue;
     const d = o.data || {};
-    if (o.type === 'entries') { applyEntries(entries, swimmers, d); applyHeatInfo(sessions, d); }
+    if (o.type === 'entries') { addEvents(d.newEvents); applyEntries(entries, swimmers, d); applyHeatInfo(sessions, d); }
     else if (o.type === 'result') results.set(d.entry, { ...d, by: o.by, at: o.at, op: o.id });
     else if (o.type === 'note') (notes.get(d.entry) || notes.set(d.entry, []).get(d.entry)).push({ ...d, by: o.by, at: o.at, op: o.id });
     else if (o.type === 'scratch') scratch.set(d.entry, !!d.on);
     else if (o.type === 'official') official.set(d.session, { on: !!d.on, by: o.by, at: o.at });
     else if (o.type === 'source') sources.push({ ...d, at: o.at, by: o.by });
     else if (o.type === 'times') applyTimes(sessions, entries, d, o);
+    else if (o.type === 'timeline') { applyTimeline(sessions, pkg, d.sessions, { at: o.at, by: o.by }); for (const x of d.sessions || []) addEvents(x.events); }
     else if (o.type === 'notifykey') notifyKey = d.key || null;
     else if (o.type === 'mscratch') { if (d.on) meetOut.set(d.swimmer, { by: o.by, at: o.at, why: d.why || '' }); else meetOut.delete(d.swimmer); }
     else if (o.type === 'gnote') gnotes.push({ scope: d.scope, key: d.key ?? null, text: d.text || '', tags: d.tags || [], by: o.by, at: o.at, op: o.id });
@@ -41,7 +44,7 @@ export function derive(pkg, ops, settings = {}) {
   const rows = [];
   for (const e of entries.values()) {
     const s = swimmers.get(e.swimmerId);
-    const ev = pkg.events[e.event] || {};
+    const ev = events[e.event] || {};
     if (!s) continue;
     const r = results.get(e.id) || null;
     const off = official.get(e.session);
@@ -55,8 +58,8 @@ export function derive(pkg, ops, settings = {}) {
       startMin: clockMin(e.start || ''),
     });
   }
-  rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(pkg, a) - order(pkg, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
-  return { rows, swimmers, official, sources, results, sessions, notices, notifyKey, meetOut, gnotes, tags };
+  rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(sessions, a) - order(sessions, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
+  return { rows, swimmers, official, sources, results, sessions, events, notices, notifyKey, meetOut, gnotes, tags };
 }
 
 // Session time change (e.g. the host pushes the session back 30 min).
@@ -88,8 +91,8 @@ export function applyTimes(sessions, entries, d, o = {}) {
   s.changed = { by: o.by, at: o.at, shift: m };
 }
 
-function order(pkg, r) {
-  const s = pkg.sessions.find((x) => x.n === r.session);
+function order(sessions, r) {
+  const s = sessions.find((x) => x.n === r.session);
   const i = s ? s.events.findIndex((e) => e.num === r.event && (e.round || 'Finals') === (r.round || 'Finals')) : -1;
   return i < 0 ? 999 : i;
 }
@@ -132,6 +135,97 @@ export function applyHeatInfo(sessions, d) {
 }
 export const heatInfoOf = (parsed) => parsed.events.map((e) => ({ num: e.num, round: e.heats[0]?.round || null, heats: e.heats.length, starts: e.heats.map((h) => h.start || null) }));
 
+// ---------- multi-pool meets ----------
+// Hy-Tek splits a session run in two pools into sub-sessions ("2G Saturday Prelim - Girls Scoreboard",
+// "2B ... - Boys Divewell"). In the app each pool is its own session (its own events, times, heat sheet,
+// official flag) and sessions sharing a `block` are shown and summarised together.
+const poolOf = (name) => (String(name || '').match(/\s-\s(.+)$/) || [])[1] || null;
+const blockName = (name) => String(name || '').replace(/\s-\s.+$/, '').trim();
+const isoPlus = (iso, days) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); };
+const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+// parsed: parseSessionReport() output. Updates matching sessions (by code, then name) with start, finish, heat
+// counts and event start times; sessions not in the meet yet are added. Coach-entered warm-ups/notes are kept.
+export function applyTimeline(sessions, pkg, parsed, o = {}) {
+  if (!Array.isArray(parsed)) return;
+  for (const p of parsed) {
+    let s = sessions.find((x) => x.code && p.code && String(x.code).toUpperCase() === String(p.code).toUpperCase())
+      || sessions.find((x) => norm(x.name) === norm(p.name));
+    if (!s) {
+      const day = p.day && pkg.start ? isoPlus(pkg.start, p.day - 1) : (sessions[sessions.length - 1] || {}).day;
+      const blk = String(p.code || '').match(/^(\d+)[A-Z]$/i);
+      const mate = blk && sessions.find((x) => x.block === blk[1] && x.warmup);
+      s = { n: Math.max(0, ...sessions.map((x) => x.n)) + 1, day, name: p.name, label: '', events: [], added: true, ...(mate ? { warmup: { ...mate.warmup }, nsea: mate.nsea } : {}) };
+      sessions.push(s);
+    }
+    s.code = s.code || p.code;
+    const blk = String(p.code || '').match(/^(\d+)[A-Z]$/i);
+    if (blk) { s.block = s.block || blk[1]; s.pool = s.pool || poolOf(p.name) || p.pool; }
+    if (p.start) s.start = p.start;
+    if (p.finish) s.finish = p.finish;
+    if (p.interval) s.interval = p.interval;
+    for (const pe of p.events || []) {
+      let e = s.events.find((x) => x.num === pe.num);
+      if (!e) { e = { num: pe.num, round: pe.round }; s.events.push(e); }
+      if (pe.start) e.start = pe.start;
+      if (pe.heats != null) e.heats = pe.heats;
+      if (pe.entries != null) e.entries = pe.entries;
+      if (!e.round) e.round = pe.round;
+    }
+    const idx = new Map((p.events || []).map((e, i) => [e.num, i]));
+    s.events.sort((a, b) => (idx.get(a.num) ?? 999) - (idx.get(b.num) ?? 999));
+    s.timeline = { at: o.at || null, by: o.by || null };
+  }
+  sessions.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0) || (clockMin(a.start || '') ?? 0) - (clockMin(b.start || '') ?? 0) || String(a.pool || '').localeCompare(String(b.pool || '')));
+}
+
+// Sessions grouped for display: pools of the same block together, everything else on its own.
+export function blocksOf(sessions) {
+  const out = [];
+  for (const s of sessions) {
+    const k = s.block ? `${s.day}|${s.block}` : `n${s.n}`;
+    let b = out.find((x) => x.key === k);
+    if (!b) out.push(b = { key: k, day: s.day, sessions: [] });
+    b.sessions.push(s);
+  }
+  for (const b of out) {
+    const ss = b.sessions;
+    b.lead = ss[0];
+    b.n = ss[0].n;
+    b.multi = ss.length > 1;
+    b.name = b.multi ? blockName(ss[0].name) : ss[0].name;
+    b.label = ss.map((x) => x.label).find(Boolean) || '';
+    const st = ss.map((x) => clockMin(x.start || '')).filter((x) => x != null), fi = ss.map((x) => clockMin(x.finish || '')).filter((x) => x != null);
+    b.start = st.length ? minClock(Math.min(...st)) : ss[0].start;
+    b.finish = fi.length ? minClock(Math.max(...fi)) : ss[0].finish;
+    b.warmup = (ss.find((x) => x.warmup) || {}).warmup || null;
+    b.nsea = ss.some((x) => x.nsea !== false);
+    b.note = ss.map((x) => x.note).filter(Boolean)[0] || '';
+  }
+  return out;
+}
+export const blockOf = (sessions, n) => blocksOf(sessions).find((b) => b.sessions.some((s) => s.n === n)) || null;
+export const poolName = (s) => s.pool ? (poolOf(s.name) || s.pool) : '';
+
+// One block's events from every pool, in time order; each item carries its pool.
+export function blockFlow(pkg, block, rows) {
+  const items = [];
+  for (const s of block.sessions) for (const it of sessionFlow(pkg, s, rows.filter((r) => r.session === s.n))) items.push({ ...it, session: s.n, pool: block.multi ? poolName(s) : '' });
+  if (block.multi) items.sort((a, b) => (a.startMin ?? 1e4) - (b.startMin ?? 1e4) || a.num - b.num);
+  return items;
+}
+// What's on now (or next) in each pool: the latest event that has started, else the first one.
+export function nowInPools(items, now) {
+  const by = new Map();
+  for (const it of items) { if (it.startMin == null) continue; (by.get(it.pool) || by.set(it.pool, []).get(it.pool)).push(it); }
+  return [...by.entries()].map(([pool, list]) => {
+    const on = list.filter((x) => x.startMin <= now + 2 && (x.endMin == null || now < x.endMin)).pop();
+    const next = list.find((x) => x.startMin > now);
+    if (!on && !next && list[list.length - 1].endMin != null && now >= list[list.length - 1].endMin) return null;
+    return { pool, item: on || next, live: !!on };
+  }).filter(Boolean);
+}
+
 // ---------- session event flow ----------
 // Every event in the session, in order, with our swims grouped by heat. Events with none of our swimmers
 // are kept (rows: []), with the heat count and an approximate start / end where known.
@@ -166,6 +260,8 @@ export function sessionFlow(pkg, session, rows) {
     it.start = it.startMin != null ? minClock(it.startMin) : null;
     it.end = it.endMin != null ? minClock(it.endMin) : null;
     it.minutes = it.endMin != null ? it.endMin - it.startMin : null;
+    // No heat start times on the sheet (common in prelim programs): spread the event's time over its heats.
+    if (it.minutes > 0 && it.heats) for (const h of it.heatGroups) if (!h.start && h.heat) { h.start = minClock(it.startMin + Math.round(((h.heat - 1) * it.minutes) / it.heats)); h.est = true; }
   });
   return items;
 }
@@ -179,7 +275,8 @@ export function notesFor(model, session) {
 
 // ---------- session summary ----------
 export function sessionSummary(model, session) {
-  const rows = model.rows.filter((r) => r.session === session && !r.scratched);
+  const set = new Set([].concat(session));
+  const rows = model.rows.filter((r) => set.has(r.session) && !r.scratched);
   const swum = rows.filter((r) => r.result && (r.result.time != null || r.result.status !== 'OK'));
   const timed = swum.filter((r) => r.result.time != null);
   const best = timed.filter((r) => r.seed == null || r.result.time < r.seed);

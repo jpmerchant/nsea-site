@@ -2,10 +2,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime, parseMmNotify } from '../public/admin/meet/lib/parse.mjs';
+import { parseSessionReport, parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime, parseMmNotify } from '../public/admin/meet/lib/parse.mjs';
 import { flagsFor } from '../public/admin/meet/lib/flags.mjs';
 import { buildRefs } from '../public/admin/meet/lib/refs.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor } from '../public/admin/meet/lib/model.mjs';
+import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor, blocksOf, blockFlow, nowInPools, applyTimeline } from '../public/admin/meet/lib/model.mjs';
 import { heatSheetRows, resultsFromText, screenshotResults, photoHeatRows, guessSession, htmlToText, resultLinks } from '../public/admin/meet/lib/ingest.mjs';
 import { handleMeetdayAdmin, blockedHost, handleMeetdayNotify } from '../worker/meetday.mjs';
 let DatabaseSync;
@@ -396,4 +396,40 @@ test('meet scratch, coach notes by scope, tag list and renames', () => {
   M = derive(P, ops);
   assert.equal(M.rows.find((r) => r.swimmerId === 2).scratched, false);
   assert.equal(notesFor(M, null).meet.length, 0);
+});
+
+test('two-pool meet: session report (split columns, two sessions per page), blocks, merged flow and now per pool', () => {
+  // pdf.js order from a real Hy-Tek report: event column, then the numbers column, both sessions on one page
+  const report = [
+    'Session Report', 'Session: 2B  Saturday Prelim - Boys Divewell', 'Day of Meet: 2  Starts at 08:30 AM  Heat Interval: 30 Seconds',
+    'Round  Event', 'Prelims  8 Boys 13 & Over 50 Freestyle', 'Prelims  10 Boys 13 & Over 100 Breaststroke', 'Entry / Heat Totals:', 'Finish Time',
+    'Session: 2G  Saturday Prelim - Girls Scoreboard', 'Day of Meet: 2  Starts at 08:31 AM', 'Prelims  7 Girls 13 & Over 50 Freestyle', 'Prelims  9 Girls 13 & Over 100 Breaststroke', 'Finish Time',
+    'Entries  Heats  Starts at', '173  22  u  08:30 AM  _______', '117  15  u  08:51 AM  _______', '====  ====', '290  37', '09:20 AM  _______',
+    '215  27  u  08:31 AM  _______', '140  18  u  08:58 AM  _______', '09:35 AM  _______',
+    'Session: 4  Saturday Finals', 'Day of Meet: 2  Starts at 05:30 PM', 'Finals  7 Girls 13 & Over 50 Freestyle  32  4  u  05:30 PM  _______', 'Finish Time  07:04 PM  _______',
+  ];
+  const R = parseSessionReport(report);
+  assert.deepEqual(R.map((s) => s.code), ['2B', '2G', '4']);
+  assert.equal(R[0].pool, 'Divewell'); assert.equal(R[0].finish, '09:20 AM'); assert.equal(R[1].finish, '09:35 AM');
+  assert.deepEqual(R[1].events.map((e) => [e.num, e.round, e.heats, e.start]), [[7, 'Prelims', 27, '08:31 AM'], [9, 'Prelims', 18, '08:58 AM']]);
+  assert.equal(R[2].events[0].heats, 4); assert.equal(R[0].events[0].stroke, 'Free');
+
+  const P = pkg(); P.start = '2026-11-13'; P.sessions = [];
+  P.entries = [{ id: '7-P-1', swimmerId: 1, event: 7, session: null, round: 'Prelims', heat: 14, lane: 4, seed: 2900 }, { id: '8-P-3', swimmerId: 3, event: 8, session: null, round: 'Prelims', heat: 2, lane: 5, seed: 3100 }];
+  const ss = []; applyTimeline(ss, P, R);
+  assert.deepEqual(ss.map((s) => [s.code, s.block || null, s.day]), [['2B', '2', '2026-11-14'], ['2G', '2', '2026-11-14'], ['4', null, '2026-11-14']]);
+  const B = blocksOf(ss);
+  assert.equal(B.length, 2); assert.equal(B[0].name, 'Saturday Prelim'); assert.equal(B[0].multi, true); assert.equal(B[0].start, '08:30 AM'); assert.equal(B[0].finish, '09:35 AM');
+  P.entries[0].session = ss[1].n; P.entries[1].session = ss[0].n;
+  const M = derive({ ...P, sessions: ss }, []);
+  const flow = blockFlow({ ...P, sessions: ss }, B[0], M.rows);
+  assert.deepEqual(flow.map((x) => `${x.num}:${x.pool}`), ['8:Boys Divewell', '7:Girls Scoreboard', '10:Boys Divewell', '9:Girls Scoreboard']);
+  const g = flow.find((x) => x.num === 7);
+  assert.equal(g.heatGroups[0].heat, 14); assert.equal(g.heatGroups[0].start, '08:44 AM'); // 27 heats over 27 min
+  const now = nowInPools(flow, 9 * 60 + 5);
+  assert.deepEqual(now.map((x) => [x.pool, x.item.num, x.live]), [['Boys Divewell', 10, true], ['Girls Scoreboard', 9, true]]);
+  // a later timeline (op) updates the same sessions instead of adding new ones
+  const M2 = derive({ ...P, sessions: ss }, [{ id: 'opTLxxxxxxxx', at: '2026-11-14T10:00:00Z', by: 'JP', type: 'timeline', data: { sessions: [{ ...R[1], start: '08:40 AM', events: [{ ...R[1].events[0], start: '08:40 AM' }] }] } }]);
+  assert.equal(M2.sessions.length, 3); assert.equal(M2.sessions.find((s) => s.code === '2G').events[0].start, '08:40 AM');
+  assert.equal(sessionSummary(M, B[0].sessions.map((s) => s.n)).entries, 2);
 });

@@ -366,3 +366,45 @@ export function parseMmNotify(text) {
   const time = /^[A-Z]+$/.test(v) ? null : toCs(m[2]);
   return { name: m[1].trim(), time, status: time != null ? 'OK' : v === 'NT' ? 'NS' : v, official: /^official$/i.test(m[3] || ''), eventTitle: m[4].trim(), event: +m[5] };
 }
+
+// Hy-Tek "Session Report" (the meet timeline). Multi-pool meets split a session into sub-sessions
+// ("Session: 2G Saturday Prelim - Girls Scoreboard", "2B ... - Boys Divewell") that run at the same time.
+// pdf.js often reads the event column and the entries/heats/start column as separate runs of lines,
+// so events and number rows are collected in order and paired up.
+// Returns [{ code, name, pool, day, start, finish, interval, events: [{ num, round, title, sex, dist, stroke, relay, entries, heats, start }] }]
+export function parseSessionReport(lines) {
+  const L = lines.map((l) => (typeof l === 'string' ? l : l.text)).map((t) => t.replace(/\s+/g, ' ').trim());
+  const out = [], pending = [];
+  let s = null;
+  const T = String.raw`(\d{1,2}:\d{2}\s*[AP]M)`;
+  const EV = /^(Prelims|Finals|Semis|Timed Finals|Swim-?off)\s+(\d+)\s+(.+?)(?:\s+(\d+)\s+(\d+)\s+[a-z]?\s*(\d{1,2}:\d{2}\s*[AP]M))?(?:\s+_+)?$/i;
+  const NUM = new RegExp(String.raw`^(\d+)\s+(\d+)\s+[a-z]?\s*${T}(?:\s+_+)?$`, 'i');
+  const FIN = new RegExp(String.raw`^(?:Finish Time\s+)?${T}(?:\s+_+)?$`, 'i');
+  const clk = (t) => minClock(clockMin(t));
+  for (const t of L) {
+    const h = t.match(/^Session:\s*(\S+)\s+(.+)$/i);
+    if (h) { const name = h[2].trim(); s = { code: h[1], name, pool: (name.match(/\s-\s(?:Girls|Boys|Mixed|Women|Men)?\s*(.+)$/i) || [])[1] || null, day: null, start: null, finish: null, interval: null, events: [] }; out.push(s); continue; }
+    if (!s) continue;
+    const d = t.match(new RegExp(String.raw`Day of Meet:\s*(\d+).*?Starts at\s+${T}(?:.*?Heat Interval:\s*(.+))?`, 'i'));
+    if (d) { s.day = +d[1]; s.start = clk(d[2]); s.interval = d[3] ? d[3].trim() : null; continue; }
+    // Columns can come out after several sessions' event lists (more than one session on a page), so number
+    // rows and finish times fill the oldest event / session still waiting for one.
+    const fin = t.match(FIN);
+    if (fin) {
+      const m = clockMin(fin[1]), ok = (x) => !x.finish && (x.start == null || clockMin(x.start) <= m);
+      const w = out.find((x) => ok(x) && x.events.length && x.events.every((e) => e.heats != null)) || out.find(ok);
+      if (w) w.finish = clk(fin[1]);
+      continue;
+    }
+    const e = t.match(EV);
+    if (e) {
+      const ti = parseEventTitle(`Event ${e[2]} ${e[3].trim().replace(/^(Girls|Boys|Mixed|Women|Men)\s+(\d)/i, '$1 Open $2').replace(/(\d+) (Freestyle|Backstroke|Breaststroke|Butterfly|IM|Individual Medley)/i, '$1 Yard $2')}`) || {};
+      const ev = { num: +e[2], round: /prelim/i.test(e[1]) ? 'Prelims' : /semi/i.test(e[1]) ? 'Semis' : 'Finals', title: e[3].trim(), sex: ti.sex, dist: ti.dist, stroke: ti.stroke, relay: !!ti.relay, entries: e[6] ? +e[4] : null, heats: e[6] ? +e[5] : null, start: e[6] ? clk(e[6]) : null };
+      s.events.push(ev); if (!e[6]) pending.push(ev);
+      continue;
+    }
+    const n = t.match(NUM);
+    if (n && pending.length) Object.assign(pending.shift(), { entries: +n[1], heats: +n[2], start: clk(n[3]) });
+  }
+  return out;
+}
