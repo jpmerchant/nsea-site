@@ -12,6 +12,7 @@ export function derive(pkg, ops, settings = {}) {
   const undone = new Set(sorted.filter((o) => o.type === 'undo').map((o) => o.data && o.data.op));
   const results = new Map(), notes = new Map(), scratch = new Map(), official = new Map(), sources = [];
   const notices = []; let notifyKey = null;
+  const meetOut = new Map(), gnotes = [], renames = []; let tags = null;
   const sessions = pkg.sessions.map((x) => ({ ...x, warmup: x.warmup ? { ...x.warmup } : x.warmup, events: (x.events || []).map((e) => ({ ...e })) }));
 
   for (const o of sorted) {
@@ -25,9 +26,18 @@ export function derive(pkg, ops, settings = {}) {
     else if (o.type === 'source') sources.push({ ...d, at: o.at, by: o.by });
     else if (o.type === 'times') applyTimes(sessions, entries, d, o);
     else if (o.type === 'notifykey') notifyKey = d.key || null;
+    else if (o.type === 'mscratch') { if (d.on) meetOut.set(d.swimmer, { by: o.by, at: o.at, why: d.why || '' }); else meetOut.delete(d.swimmer); }
+    else if (o.type === 'gnote') gnotes.push({ scope: d.scope, key: d.key ?? null, text: d.text || '', tags: d.tags || [], by: o.by, at: o.at, op: o.id });
+    else if (o.type === 'tags') { if (Array.isArray(d.list)) tags = d.list.filter(Boolean); if (d.rename && d.rename.from && d.rename.to) renames.push(d.rename); }
     else if (o.type === 'mmnotify') notices.push(applyNotify(pkg, sessions, entries, swimmers, results, d, o));
   }
 
+  // Renaming a tag relabels the notes that already use it (deleting a tag leaves old notes as they were).
+  const relabel = (t) => renames.reduce((x, r) => (x === r.from ? r.to : x), t);
+  if (renames.length) {
+    for (const list of notes.values()) for (const n of list) n.tags = (n.tags || []).map(relabel);
+    for (const n of gnotes) n.tags = n.tags.map(relabel);
+  }
   const rows = [];
   for (const e of entries.values()) {
     const s = swimmers.get(e.swimmerId);
@@ -39,14 +49,14 @@ export function derive(pkg, ops, settings = {}) {
     const pre = flagsFor(swim, pkg.refs, { cuts });
     const post = r && r.time != null ? flagsFor({ ...swim, time: r.time }, pkg.refs, { cuts }) : [];
     rows.push({
-      ...e, swimmer: s, ev, result: r, notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id),
+      ...e, swimmer: s, ev, result: r, notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id) || meetOut.has(e.swimmerId), meetOut: meetOut.has(e.swimmerId),
       official: !!(off && off.on) || !!(r && r.official), pre, post,
       delta: r && r.time != null && e.seed != null ? r.time - e.seed : null,
       startMin: clockMin(e.start || ''),
     });
   }
   rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(pkg, a) - order(pkg, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
-  return { rows, swimmers, official, sources, results, sessions, notices, notifyKey };
+  return { rows, swimmers, official, sources, results, sessions, notices, notifyKey, meetOut, gnotes, tags };
 }
 
 // Session time change (e.g. the host pushes the session back 30 min).
@@ -158,6 +168,13 @@ export function sessionFlow(pkg, session, rows) {
     it.minutes = it.endMin != null ? it.endMin - it.startMin : null;
   });
   return items;
+}
+
+// General (not per-swim) coach notes that apply to a session: the session's own, its day's and the meet's.
+export function notesFor(model, session) {
+  const g = model.gnotes || [];
+  if (!session) return { meet: g.filter((n) => n.scope === 'meet'), day: [], session: [] };
+  return { meet: g.filter((n) => n.scope === 'meet'), day: g.filter((n) => n.scope === 'day' && n.key === session.day), session: g.filter((n) => n.scope === 'session' && n.key === session.n) };
 }
 
 // ---------- session summary ----------

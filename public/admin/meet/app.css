@@ -138,3 +138,9 @@ label.f{display:block;font:600 13px var(--f-body);margin:10px 0 4px}
   body{background:#fff;padding:0}
   .card,.ev{break-inside:avoid;border-color:#ccc}
 }
+details.gnotes summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:baseline}
+details.gnotes summary::-webkit-details-marker{display:none}
+details.gnotes summary::after{content:'+';margin-left:auto;color:var(--gray)}
+details.gnotes[open] summary::after{content:'–'}
+details.gnotes textarea{margin-top:6px;min-height:60px}
+#tag-list .timein input,.timein #tag-new{font:16px var(--f-body);text-align:left;letter-spacing:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px}

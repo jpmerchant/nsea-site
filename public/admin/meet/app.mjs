@@ -2,7 +2,7 @@
 // for syncing between coaches and for fetching live results pages.
 import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow } from './lib/model.mjs';
+import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
 
@@ -15,6 +15,7 @@ const CDN = {
   tessLang: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int',
 };
 const TAGS = ['Great start', 'Breakouts', 'Underwaters', 'Turns', 'Finish', 'Pacing', 'Went out fast', 'Faded', 'Stroke count', 'Talk after', 'DQ review'];
+const tagList = () => (S.model && S.model.tags) || S.settings.tags || TAGS;
 const TIER_TXT = { hit: 'Got it', under: 'Seed under', 1: '≤1%', 3: '≤3%' };
 const KIND_TXT = { record: 'REC', top10: 'T10', cut: 'CUT' };
 
@@ -103,7 +104,7 @@ async function sync(force) {
     S.lastSync = new Date(); await store.set('lastSync', S.lastSync.toISOString());
     S.outbox = (await store.outbox()).length;
     // Don't redraw under someone mid-task (uploads/reviews on Tools, an open swim sheet, typing in search)
-    if ((changed && !hadPkg) || (changed && route().v !== 'tools' && $('#sheet').hidden && document.activeElement?.id !== 'q')) render();
+    if ((changed && !hadPkg) || (changed && route().v !== 'tools' && $('#sheet').hidden && !['q', 'gnote', 'tag-new'].includes(document.activeElement?.id))) render();
   } catch (e) {
     if (e.auth) S.authed = false;
     else if (!navigator.onLine) S.online = false;
@@ -157,6 +158,26 @@ function renderNoMeet() {
   if (route().v === 'tools') renderTools();
 }
 
+// ---------- general coach notes (meet / day / session) ----------
+const SCOPE_TXT = { meet: 'Whole meet', day: 'This day', session: 'This session' };
+const tm = (at) => new Date(at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+function gnoteList(list, label) {
+  if (!list.length) return '';
+  return `<p class="kicker" style="margin:8px 0 2px">${esc(label)}</p><ul class="notes">${list.map((n) => `<li>${n.tags.length ? `<b>${n.tags.map(esc).join(' · ')}</b> ` : ''}${esc(n.text)}<small>${esc(n.by)} · ${esc(tm(n.at))} · <a href="#" data-act="undo" data-op="${esc(n.op)}">remove</a></small></li>`).join('')}</ul>`;
+}
+// session: a session object or null (meet page). Notes are added for the chosen scope.
+function notesCard(session) {
+  const N = notesFor(S.model, session);
+  const scopes = session ? ['session', 'day', 'meet'] : ['meet'];
+  const count = N.meet.length + N.day.length + N.session.length;
+  return `<details class="card gnotes" ${count ? 'open' : ''}><summary><b>Coach notes</b> <span class="muted small">${count ? count + ' note' + (count === 1 ? '' : 's') : 'none yet'}</span></summary>
+    ${session ? gnoteList(N.session, 'This session') + gnoteList(N.day, dayName(session.day)) : ''}${gnoteList(N.meet, 'Whole meet')}
+    <div class="tags" style="margin-top:8px">${tagList().map((t) => `<button class="chip" data-act="tag" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
+    <textarea id="gnote" placeholder="Pool notes, reminders, who's on which events, things to tell the team…"></textarea>
+    <div class="btns" style="margin-top:8px">${scopes.length > 1 ? `<select id="gscope" style="width:auto">${scopes.map((k) => `<option value="${k}">${SCOPE_TXT[k]}</option>`).join('')}</select>` : ''}
+      <button class="btn" data-act="save-gnote" ${session ? `data-s="${session.n}"` : ''}>Add note</button></div></details>`;
+}
+
 // ---------- meet summary ----------
 function sessionsOf(day) { return SS().filter((s) => s.day === day); }
 function flagCounts(rows) {
@@ -180,11 +201,13 @@ function renderMeet() {
     <div class="grid2" style="margin-top:12px">
       <div class="stat"><b>${swimmers.length}</b><span>${esc(P.teamName)} swimmers (${girls} G · ${swimmers.length - girls} B)</span></div>
       <div class="stat"><b>${M.rows.filter((r) => !r.scratched).length}</b><span>swims entered</span></div>
-      <div class="stat"><b>${M.rows.filter((r) => r.pre.some((f) => f.kind === 'record' && !f.open && f.tier)).length}</b><span>possible team records</span></div>
-      <div class="stat"><b>${M.rows.filter((r) => r.pre.some((f) => f.kind === 'cut' && f.tier)).length}</b><span>swims near a new cut</span></div>
+      <div class="stat"><b>${M.rows.filter((r) => !r.scratched && r.pre.some((f) => f.kind === 'record' && !f.open && f.tier)).length}</b><span>possible team records</span></div>
+      <div class="stat"><b>${M.rows.filter((r) => !r.scratched && r.pre.some((f) => f.kind === 'cut' && f.tier)).length}</b><span>swims near a new cut</span></div>
     </div>
     <div class="legend">${['hit', 'under', '1', '3'].map((k) => `<span class="pill t-${k}">${k === 'hit' ? 'Got it (unofficial)' : k === 'under' ? 'Seed already under' : k === '1' ? 'Within 1%' : 'Within 3%'}</span>`).join('')}</div>
   </div>
+
+  ${notesCard(null)}
 
   <h2>Daily overview</h2>
   ${days.map((d) => {
@@ -207,6 +230,7 @@ function renderMeet() {
   ${P.general.map((g, i) => `<details class="info" ${i < 2 ? 'open' : ''}><summary>${esc(g.title)}</summary><ul>${g.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`).join('')}
 
   <h2>Swimmers</h2>
+  ${M.meetOut.size ? `<div class="banner warn">Not attending (scratched from the meet): ${[...M.meetOut.keys()].map((id) => M.swimmers.get(id)).filter(Boolean).map((w) => `<a href="#/swimmer/${w.id}">${esc(w.name)}</a>`).join(', ')}</div>` : ''}
   <div class="card tight"><table class="t"><tbody>${swimmers.map(({ s, n }) => {
     const c = flagCounts(M.rows.filter((r) => r.swimmerId === s.id));
     return `<tr data-act="go" data-href="#/swimmer/${s.id}" style="cursor:pointer"><td><b>${esc(s.name)}</b> <span class="muted small">${s.age}</span><div>${pills(c)}</div></td><td class="num">${n} swims</td></tr>`;
@@ -220,7 +244,7 @@ function renderDay(day, sessN) {
   if (!ss.length) { app.innerHTML = '<p class="empty">No sessions for us that day.</p>'; return; }
   const s = ss.find((x) => String(x.n) === String(sessN)) || (day === todayIso() ? ss.find((x) => clockMin(x.finish) > nowMin()) : null) || ss[0];
   const M = S.model;
-  let rows = M.rows.filter((r) => r.session === s.n);
+  let rows = M.rows.filter((r) => r.session === s.n && !r.meetOut);
   const nowEv = day === todayIso() ? nowEvent(rows, nowMin()) : null;
   const q = S.q.trim().toLowerCase();
   if (q) rows = rows.filter((r) => r.swimmer.name.toLowerCase().includes(q));
@@ -238,6 +262,7 @@ function renderDay(day, sessN) {
     <div><b>${esc(s.warmup.pool)}</b> · lanes ${esc(s.warmup.lanes)}</div><div class="small">${esc(s.warmup.sprints || '')}</div>
     <div class="small">Meet starts <b>${esc(s.start)}</b> · est. finish ${esc(s.finish || '')}</div></div>` : ''}
   ${s.note ? `<div class="banner warn">${esc(s.note)}</div>` : ''}
+  ${notesCard(s)}
   <div class="banner ${off && off.on ? 'off' : 'unoff'}">${off && off.on ? `Official results loaded (${esc(off.by)}).` : 'Times and flags here are <b>unofficial</b> until the official results are loaded.'}</div>
   <div class="sticky noprint">
     <input type="search" id="q" placeholder="Find a swimmer" value="${esc(S.q)}" autocomplete="off">
@@ -304,14 +329,15 @@ function openEntry(id) {
     <div class="timein"><input id="t" inputmode="decimal" autocomplete="off" placeholder="e.g. 5912 or 2:15.33" value="${res && res.time != null ? fmt(res.time) : ''}"><button class="btn solid" data-act="save-time" data-id="${esc(id)}">Save</button></div>
     <div class="btns" style="margin-top:8px">${['DQ', 'NS'].map((s) => `<button class="btn sm ghost" data-act="status" data-s="${s}" data-id="${esc(id)}">${s}</button>`).join('')}
       ${res ? `<button class="btn sm ghost" data-act="clear-time" data-id="${esc(id)}">Clear time</button>` : ''}
-      <button class="btn sm ghost" data-act="scratch" data-id="${esc(id)}">${r.scratched ? 'Un-scratch' : 'Scratch'}</button></div>
+      ${r.meetOut ? '' : `<button class="btn sm ghost" data-act="scratch" data-id="${esc(id)}">${r.scratched ? 'Un-scratch' : 'Scratch'}</button>`}</div>
+    ${r.meetOut ? `<p class="small" style="color:var(--coral)">Scratched from the whole meet. <a href="#/swimmer/${r.swimmerId}" data-act="close-go">Change on ${esc(r.swimmer.first || 'their')} page</a></p>` : ''}
     <details style="margin-top:10px"><summary class="small" style="cursor:pointer;color:var(--teal-dark)">Change heat / lane${r.heat ? '' : ' (not set yet)'}</summary>
       <div class="timein" style="margin-top:8px"><input id="hh" inputmode="numeric" placeholder="Heat" value="${r.heat ?? ''}" style="font-size:18px"><input id="ll" inputmode="numeric" placeholder="Lane" value="${r.lane ?? ''}" style="font-size:18px"><button class="btn" data-act="save-hl" data-id="${esc(id)}">Save</button></div></details>
     <h3 style="margin-top:14px">Flags ${res && res.time != null ? (r.official ? '' : '<span class="pill off">unofficial</span>') : '<span class="muted small">(from seed)</span>'}</h3>
     ${flags.length ? `<ul class="flaglist">${flags.map((f) => `<li><span class="pill t-${f.tier}">${TIER_TXT[f.tier]}</span><span><b>${esc(f.label)}</b> <span class="muted">${esc(f.sub || '')}</span>${f.target != null && isFinite(f.target) ? ` · target <span class="mono">${fmt(f.target)}</span>${r.seed != null && !(res && res.time != null) ? ` · needs <span class="mono">${r.seed > f.target ? '−' + fmt(r.seed - f.target) : 'a PB'}</span>` : ''}${res && res.time != null ? ` · <span class="mono">${f.gap <= 0 ? 'by ' + fmt(-f.gap) : ''}</span>` : ''}` : ''}</span></li>`).join('')}</ul>` : '<p class="small muted">Nothing within 3% of a record, Top 10 or the cuts we flag.</p>'}
     <h3 style="margin-top:14px">Notes</h3>
     ${r.notes.length ? `<ul class="notes">${r.notes.map((n) => `<li>${n.tags && n.tags.length ? `<b>${n.tags.map(esc).join(' · ')}</b> ` : ''}${esc(n.text)}<small>${esc(n.by)} · ${new Date(n.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${n.op ? ` · <a href="#" data-act="undo" data-op="${esc(n.op)}">remove</a>` : ''}</small></li>`).join('')}</ul>` : ''}
-    <div class="tags">${TAGS.map((t) => `<button class="chip" data-act="tag" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
+    <div class="tags">${tagList().map((t) => `<button class="chip" data-act="tag" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
     <textarea id="note" placeholder="Race feedback, things to talk about…"></textarea>
     <div class="btns" style="margin-top:8px"><button class="btn" data-act="save-note" data-id="${esc(id)}">Add note</button><button class="btn ghost" data-act="close">Close</button></div>
     <p class="small muted" style="margin-top:10px"><a href="#/swimmer/${r.swimmerId}" data-act="close-go">All of ${esc(r.swimmer.first || r.swimmer.name)}'s swims →</a></p>`);
@@ -345,6 +371,7 @@ function renderSummary(n) {
   ${finalsBack.length ? `<div class="card"><h3>Back for finals (top 40)${tag}</h3><ul class="sumlist">${finalsBack.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} · ${r.result.place}${ordinal(r.result.place)} <span class="mono">${fmt(r.result.time)}</span></li>`).join('')}</ul></div>` : ''}
   ${X.close.length ? `<div class="card"><h3>Just missed (within 1%)</h3><ul class="sumlist">${X.close.map(({ r, f, miss }) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} by <span class="mono">${fmt(miss)}</span></li>`).join('')}</ul></div>` : ''}
   ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} · ${esc(r.result.status)}</li>`).join('')}</ul></div>` : ''}
+  ${(() => { const N = notesFor(S.model, s); return N.meet.length + N.day.length + N.session.length ? `<div class="card"><h3>Coach notes</h3>${gnoteList(N.session, 'This session')}${gnoteList(N.day, dayName(s.day))}${gnoteList(N.meet, 'Whole meet')}</div>` : ''; })()}
   <div class="card"><h3>By swimmer</h3><table class="t"><thead><tr><th>Swim</th><th style="text-align:right">Seed</th><th style="text-align:right">Time</th><th style="text-align:right">+/−</th></tr></thead><tbody>
   ${X.swimmers.map((w) => `<tr><td colspan="4" style="background:var(--panel)"><b>${esc(w.swimmer.name)}</b> <span class="muted small">${w.best}/${w.rows.length} best times</span></td></tr>${w.rows.map((r) => `<tr><td>#${r.event} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc([...(n.tags || []), n.text].filter(Boolean).join(' · '))).join('<br>')}</div>` : ''}</td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}`).join('')}
   </tbody></table></div>
@@ -356,6 +383,8 @@ function summaryText(n) {
   const L = [`${S.pkg.short || S.pkg.name} · ${s.name}${X.official ? '' : ' (UNOFFICIAL)'}`, `${X.swum}/${X.entries} swims · ${X.best} best times (${X.pctBest}%) · ${fmt(X.drop)} dropped`];
   const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${r.swimmer.first || r.swimmer.name} ${r.swimmer.last || ''} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
   sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
+  const N = notesFor(S.model, s), gn = [...N.session, ...N.day, ...N.meet];
+  if (gn.length) { L.push('', 'COACH NOTES'); gn.forEach((x) => L.push(`• ${[...x.tags, x.text].filter(Boolean).join(' · ')}`)); }
   return L.join('\n');
 }
 
@@ -364,7 +393,10 @@ function renderSwimmer(id) {
   const sw = S.model.swimmers.get(id);
   if (!sw) { app.innerHTML = '<p class="empty">Swimmer not found.</p>'; return; }
   const rows = S.model.rows.filter((r) => r.swimmerId === id);
+  const out = S.model.meetOut.get(id);
   app.innerHTML = `<p class="kicker">${esc(S.pkg.short || S.pkg.name)}</p><h1>${esc(sw.name)} <span class="muted small">${sw.age ?? ''}</span></h1>
+  ${out ? `<div class="banner warn">Scratched from the whole meet${out.why ? ` (${esc(out.why)})` : ''} · ${esc(out.by || '')} ${esc(tm(out.at))}. Their swims are hidden from the event flow and left out of summaries.</div>` : ''}
+  <div class="btns" style="margin-bottom:10px"><button class="btn sm ${out ? 'solid' : 'ghost'}" data-act="mscratch" data-id="${id}" data-on="${out ? '0' : '1'}">${out ? 'Back in the meet' : 'Scratch from whole meet'}</button></div>
   ${SS().filter((s) => rows.some((r) => r.session === s.n)).map((s) => `<h3>${esc(dayShort(s.day))} · ${esc(s.name)}</h3><div class="ev">${rows.filter((r) => r.session === s.n).map((r) => rowHtml(r).replace('<div class="who">', `<div class="who"><span class="small muted">#${r.event} ${esc(r.ev.title || '')}</span><br>`)).join('')}</div>`).join('')}
   ${rows.filter((r) => r.session == null).length ? `<h3>Not placed in a session</h3><div class="ev">${rows.filter((r) => r.session == null).map((r) => rowHtml(r)).join('')}</div>` : ''}`;
 }
@@ -422,6 +454,11 @@ function renderTools() {
     <div class="btns"><button class="btn" data-act="offline-libs">Download readers for offline</button></div><div id="o-off"></div></div>
 
   ${S.pkg ? `<div class="card"><h3>Cuts to flag</h3><div class="tags">${(S.pkg.refs.cutNames || []).map((c) => `<button class="chip" data-act="cut" data-c="${esc(c)}" aria-pressed="${S.settings.cuts.includes(c)}">${esc(c)}</button>`).join('')}</div></div>` : ''}
+
+  ${S.pkg ? `<div class="card"><h3>Note tags</h3><p class="small muted">The quick tags on swim and coach notes. Changes sync to every coach for this meet; renaming a tag also relabels notes that already use it.</p>
+    <div id="tag-list">${tagList().map((t, i) => `<div class="timein" style="margin-top:6px"><input data-tag-i="${i}" value="${esc(t)}" aria-label="Tag ${i + 1}"><button class="btn sm" data-act="tag-save" data-i="${i}">Save</button><button class="btn sm ghost" data-act="tag-del" data-i="${i}" aria-label="Delete ${esc(t)}">✕</button></div>`).join('')}</div>
+    <div class="timein" style="margin-top:10px"><input id="tag-new" placeholder="New tag"><button class="btn solid" data-act="tag-add">Add</button></div>
+    ${S.model.tags ? `<div class="btns" style="margin-top:8px"><button class="btn sm ghost" data-act="tag-reset">Reset to the standard list</button></div>` : ''}</div>` : ''}
 
   <div class="card"><h3>Meet file</h3><p class="small muted">Load a Meet Day package (.meetday.json) built from the meet folder. Coaches' phones pick it up on their next sync.</p>
     <input type="file" id="f-pkg" accept=".json,application/json"><div id="o-pkg"></div>
@@ -668,12 +705,34 @@ document.addEventListener('click', async (ev) => {
     if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); return; }
     if (a === 'clear-time') { const r = S.model.rows.find((x) => x.id === t.dataset.id); if (r && r.result) await addOp('undo', { op: r.result.op }); closeSheet(); return; }
     if (a === 'scratch') { const r = S.model.rows.find((x) => x.id === t.dataset.id); await addOp('scratch', { entry: t.dataset.id, on: !r.scratched }); closeSheet(); return; }
+    if (a === 'save-gnote') {
+      const text = $('#gnote').value.trim(), card = t.closest('.gnotes');
+      const tags = [...card.querySelectorAll('[data-act=tag][aria-pressed=true]')].map((x) => x.textContent);
+      if (!text && !tags.length) { toast('Write a note or pick a tag'); return; }
+      const scope = $('#gscope') ? $('#gscope').value : 'meet', s = SS().find((x) => x.n === +t.dataset.s);
+      await addOp('gnote', { scope, key: scope === 'session' ? s.n : scope === 'day' ? s.day : null, text, tags }); toast('Note added'); return;
+    }
+    if (a === 'mscratch') {
+      const id = +t.dataset.id, on = t.dataset.on === '1', w = S.model.swimmers.get(id);
+      if (on) { const why = prompt(`Scratch ${w.name} from the whole meet? Their swims are hidden and left out of summaries. Reason (optional):`, ''); if (why === null) return; await addOp('mscratch', { swimmer: id, on: true, why: why.trim() }); }
+      else await addOp('mscratch', { swimmer: id, on: false });
+      toast(on ? 'Scratched from the meet' : 'Back in the meet'); return;
+    }
+    if (a === 'tag-add' || a === 'tag-save' || a === 'tag-del' || a === 'tag-reset') {
+      let list = [...tagList()], rename = null;
+      if (a === 'tag-add') { const v = $('#tag-new').value.trim(); if (!v) return; if (list.includes(v)) { toast('Already a tag'); return; } list.push(v); }
+      if (a === 'tag-save') { const i = +t.dataset.i, v = $(`[data-tag-i="${i}"]`).value.trim(); if (!v || v === list[i]) return; if (list.includes(v)) { toast('Already a tag'); return; } rename = { from: list[i], to: v }; list[i] = v; }
+      if (a === 'tag-del') { const i = +t.dataset.i; if (!confirm(`Delete the tag "${list[i]}"? Notes that already use it keep it.`)) return; list.splice(i, 1); }
+      if (a === 'tag-reset') list = [...TAGS];
+      S.settings.tags = list; await store.set('settings', S.settings);
+      await addOp('tags', rename ? { list, rename } : { list }); toast('Tags updated'); return;
+    }
     if (a === 'save-note') {
       const text = $('#note').value.trim(); const tags = [...document.querySelectorAll('#sheet [data-act=tag][aria-pressed=true]')].map((x) => x.textContent);
       if (!text && !tags.length) { toast('Write a note or pick a tag'); return; }
       await addOp('note', { entry: t.dataset.id, text, tags }); openEntry(t.dataset.id); toast('Note added'); return;
     }
-    if (a === 'undo') { ev.preventDefault(); await addOp('undo', { op: t.dataset.op }); const id = $('#sheet [data-act=save-note]')?.dataset.id; if (id) openEntry(id); return; }
+    if (a === 'undo') { ev.preventDefault(); if (!t.closest('#sheet') && !confirm('Remove this note?')) return; await addOp('undo', { op: t.dataset.op }); const id = $('#sheet [data-act=save-note]')?.dataset.id; if (id) openEntry(id); return; }
     if (a === 'official') { const on = !S.model.official.get(+t.dataset.s)?.on; if (on && !confirm('Mark this session official? Do this once the official results have been loaded.')) return; await addOp('official', { session: +t.dataset.s, on }); render(); return; }
     if (a === 'copy-summary') { await navigator.clipboard.writeText(summaryText(+t.dataset.s)); toast('Copied'); return; }
     if (a === 'print') { window.print(); return; }
