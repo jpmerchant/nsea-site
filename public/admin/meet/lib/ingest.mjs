@@ -28,6 +28,7 @@ const roundFor = (pkg, session, event, fallback) => {
 export function heatSheetRows(pkg, model, parsed, session, mode = 'replace') {
   const mine = teamEntries(parsed, teamRe(pkg));
   const rows = mine.map((x) => {
+    if (x.relay) return { event: x.event, round: roundFor(pkg, session, x.event, x.round), relay: x.relay, name: `${pkg.teamName || 'NSEA'} ${x.relay} relay`, legs: x.legs || [], heat: x.heat, heats: x.heats, lane: x.lane, seed: x.seed, start: x.start };
     const s = [...model.swimmers.values()].find((y) => sameSwimmer(y.name, x.name));
     const ev = parsed.events.find((e) => e.num === x.event) || {};
     return { event: x.event, round: roundFor(pkg, session, x.event, x.round), swimmerId: s ? s.id : null, name: x.name, age: x.age, sex: ev.sex, heat: x.heat, heats: x.heats, lane: x.lane, seed: x.seed, start: x.start, isNew: !s };
@@ -182,3 +183,31 @@ export function resultLinks(html, baseUrl) {
 const decode = (s) => s.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n));
 
 export { parseHeatSheet };
+
+// ---------- time trials ----------
+// OCR text of a time-trial heat sheet photo -> proposed swims for the coach to correct. TT sheets are often
+// marked up by hand (heats combined, swimmers moved, events merged), which OCR can't read, so this only finds
+// our swimmers' printed lines and the nearest event / heat headings; everything is editable before applying.
+// Returns [{ swimmerId, name, sex, dist, stroke, shown, heat, lane, seed }]
+const TT_EVENT = /(?:Event\s*#?\s*(\d{1,3})\s+)?(?:(Girls|Boys|Women|Men|Mixed)\s+)?(?:[\d&\s\-]*(?:&\s*(?:Over|Under)|O|U)?\s+)?(25|50|100|200|400|500|1000|1650)\s*(?:Yard|Y|Meter|M)?\s*(Free(?:style)?|Back(?:stroke)?|Breast(?:stroke)?|Fly|Butterfly|IM|Individual Medley)\b/i;
+const TT_STROKE = { free: 'Free', freestyle: 'Free', back: 'Back', backstroke: 'Back', breast: 'Breast', breaststroke: 'Breast', fly: 'Fly', butterfly: 'Fly', im: 'IM', 'individual medley': 'IM' };
+export function ttPhotoRows(model, text) {
+  const lines = String(text).split(/\r?\n/).map(ocrFix).filter(Boolean);
+  const team = [...model.swimmers.values()];
+  const rows = [];
+  let ev = null, heat = null;
+  for (const l of lines) {
+    const h = l.match(/^\W{0,3}Heat\s*(\d{1,2})/i);
+    if (h) heat = +h[1];
+    const e = !team.some((sw) => lineHasSwimmer(l, sw.name)) && l.match(TT_EVENT);
+    if (e) { ev = { shown: e[1] ? +e[1] : null, sex: /girl|wom/i.test(e[2] || '') ? 'F' : /boy|men/i.test(e[2] || '') ? 'M' : null, dist: +e[3], stroke: TT_STROKE[e[4].toLowerCase()] || e[4] }; if (!h) continue; }
+    if (h) continue;
+    const s = team.find((sw) => lineHasSwimmer(l, sw.name));
+    if (!s) continue;
+    const lane = (l.match(/^\W{0,3}(\d{1,2})\b/) || [])[1];
+    const toks = l.split(' ');
+    const seed = toks.map(ocrTime).filter((x) => x != null && x > 1000).pop() ?? null;
+    rows.push({ swimmerId: s.id, name: s.name, sex: s.sex, dist: ev?.dist ?? null, stroke: ev?.stroke ?? null, shown: ev?.shown ?? null, heat, lane: lane && +lane <= 12 ? +lane : null, seed });
+  }
+  return rows;
+}

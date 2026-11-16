@@ -1,6 +1,6 @@
 // Meet Day service worker: the app shell and readers are cached so the app opens with no signal.
 // API calls are never cached here (the app keeps its own data in IndexedDB).
-const SHELL = 'meetday-shell-v5';
+const SHELL = 'meetday-shell-v6';
 const LIBS = 'meetday-libs-v1';
 const FILES = ['./', 'index.html', 'app.mjs', 'app.css', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png',
   'lib/parse.mjs', 'lib/flags.mjs', 'lib/model.mjs', 'lib/ingest.mjs', 'lib/store.mjs', 'lib/refs.mjs',

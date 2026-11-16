@@ -2,8 +2,8 @@
 // for syncing between coaches and for fetching live results pages.
 import { fmt, readPdf, pdfLines, parseHeatSheet, parseSessionReport, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
-import { derive, sessionSummary, parseTyped, notesFor, blocksOf, blockOf, blockFlow, nowInPools, poolName } from './lib/model.mjs';
-import { guessSession, heatSheetRows, photoHeatRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
+import { derive, sessionSummary, parseTyped, notesFor, blocksOf, blockOf, blockFlow, nowInPools, poolName, ttEvent } from './lib/model.mjs';
+import { guessSession, heatSheetRows, photoHeatRows, ttPhotoRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
 
 const CDN = {
@@ -107,7 +107,7 @@ async function sync(force) {
     S.lastSync = new Date(); await store.set('lastSync', S.lastSync.toISOString());
     S.outbox = (await store.outbox()).length;
     // Don't redraw under someone mid-task (uploads/reviews on Tools, an open swim sheet, typing in search)
-    if ((changed && !hadPkg) || (changed && route().v !== 'tools' && $('#sheet').hidden && !['q', 'gnote', 'tag-new'].includes(document.activeElement?.id))) render();
+    if ((changed && !hadPkg) || (changed && route().v !== 'tools' && $('#sheet').hidden && !['q', 'gnote', 'tag-new'].includes(document.activeElement?.id) && !document.querySelector('#o-ttphoto table'))) render();
   } catch (e) {
     if (e.auth) S.authed = false;
     else if (!navigator.onLine) S.online = false;
@@ -266,7 +266,7 @@ function renderDay(day, sessN) {
   const w = B.warmup;
   app.innerHTML = `
   ${bs.length > 1 ? `<div class="chips" style="margin-bottom:10px">${bs.map((x) => `<a class="chip" href="#/day/${day}/${x.n}" aria-pressed="${x.key === B.key}">${esc(x.name)}</a>`).join('')}</div>` : ''}
-  <p class="kicker">${esc(dayName(day))} · Session ${esc(B.multi ? B.lead.block : B.n)}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
+  <p class="kicker">${esc(dayName(day))} · ${B.lead.tt ? 'Time trials (added in the app)' : `Session ${esc(B.multi ? B.lead.block : (B.lead.code || B.n))}`}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
   <h1>${esc(B.name)}</h1>
   ${w ? `<div class="warm"><p class="kicker">Our warm-up · ${esc(w.group)}</p><div class="big">${esc(w.time)}</div>
     <div><b>${esc(w.pool)}</b> · lanes ${esc(w.lanes)}</div><div class="small">${esc(w.sprints || '')}</div>
@@ -274,6 +274,8 @@ function renderDay(day, sessN) {
       : `<div class="small">Meet starts <b>${esc(B.start)}</b> · est. finish ${esc(B.finish || '')}</div>`}</div>`
     : B.multi ? `<div class="card tight">${B.sessions.map((x) => `<div class="small"><b>${esc(poolName(x))}</b>: starts ${esc(hm(x.start))} · est. finish ${esc(hm(x.finish || ''))}</div>`).join('')}</div>` : ''}
   ${B.note ? `<div class="banner warn">${esc(B.note)}</div>` : ''}
+  ${B.lead.tt ? `<div class="card ttcard"><h3>Time trials</h3><p class="small muted">Add our swims as they're posted. Officials' handwritten changes (combined heats, moved lanes, merged events) can't be read from a photo, so check every row before applying.</p>
+    <div class="btns"><button class="btn solid" data-act="tt-add" data-s="${B.n}">Add swims</button><label class="btn">Photo of the sheet<input type="file" id="f-ttphoto" accept="image/*" capture="environment" hidden></label></div><div id="o-ttphoto"></div></div>` : ''}
   ${notesCard(B.lead)}
   <div class="banner ${allOff ? 'off' : 'unoff'}">${allOff ? 'Official results loaded.' : someOff.length ? `Official for ${someOff.map((x) => esc(poolName(x))).join(', ')} only; the rest is <b>unofficial</b>.` : 'Times and flags here are <b>unofficial</b> until the official results are loaded.'}</div>
     ${now.length ? `<div class="nowbar">${now.map((x) => { const it = x.item, h = x.live && it.heats && it.minutes > 0 ? Math.min(it.heats, Math.floor(((nowMin() - it.startMin) * it.heats) / it.minutes) + 1) : null;
@@ -288,9 +290,16 @@ function renderDay(day, sessN) {
     </div>
   </div>
   ${flow.map((it) => eventBlock(it, nowSet)).join('') || '<p class="empty">No swims match.</p>'}`;
+  const tf = $('#f-ttphoto');
+  if (tf) tf.onchange = async () => { const o = $('#o-ttphoto'); if (!tf.files.length) return; const f = tf.files[0]; tf.value = '';
+    busy(o, 'Reading the photo (this takes a few seconds)…');
+    try { const text = await ocr(f, o, { columns: true }); const rows = ttPhotoRows(S.model, text); ttReview(o, B.n, rows.length ? rows : [{}], rows.length ? `Found ${rows.length} of our swimmers. Fix events, heats and lanes to match the officials' changes, add anyone missed, then apply.` : "Couldn't find our swimmers in the photo. Add them by hand below.", text); }
+    catch (e) { out(o, `<p class="small" style="color:var(--coral)">${esc(e.message)}</p>`); } };
   const qi = $('#q');
   qi.oninput = () => { S.q = qi.value; const pos = qi.selectionStart; renderDay(day, B.n); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); };
 }
+// Event number as the coach sees it: time-trial events show the sheet's number (or "TT").
+function evNo(num) { const e = PK().events[num] || {}; return e.tt ? (e.shown ? `TT #${e.shown}` : 'TT') : `#${num}`; }
 const hm = (t) => String(t || '').replace(/^0/, '');
 function eventBlock(it, nowSet) {
   const isNow = nowSet && nowSet.has(`${it.num}-${it.round}`);
@@ -300,7 +309,7 @@ function eventBlock(it, nowSet) {
   const heats = it.heats ? `${it.heats} heat${it.heats === 1 ? '' : 's'}` : '';
   const same = it.end && it.start.slice(-2) === it.end.slice(-2);
   const when = it.start ? (it.end && it.minutes > 0 ? `~${esc(hm(same ? it.start.slice(0, -3) : it.start))}–${esc(hm(it.end))}` : `~${esc(hm(it.start))}`) : '';
-  const head = `<header><span class="n">#${it.num}</span><span class="t">${pool}${esc(e.title || '')}${round}</span>
+  const head = `<header><span class="n">${evNo(it.num)}</span><span class="t">${pool}${esc(e.title || '')}${round}</span>
     <span class="s">${when}${heats ? (when ? '<br>' : '') + heats : ''}</span></header>`;
   if (!it.rows.length) {
     return `<section class="ev none ${isNow ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
@@ -321,9 +330,16 @@ function rowHtml(r, showHeat = true) {
     ${showHeat ? `<div class="hl ${r.heat ? '' : 'tbd'}">${r.heat ? `H${r.heat}<br>L${r.lane ?? '?'}` : 'TBD'}</div>`
       : `<div class="hl lane ${r.lane ? '' : 'tbd'}"><small>Lane</small>${r.lane ?? '?'}</div>`}
     <div class="who"><b>${esc(r.swimmer.name)}</b> <span class="muted small">${r.swimmer.age ?? ''}</span>${r.notes.length ? `<span class="note-dot">✎${r.notes.length}</span>` : ''}
+      ${r.relay ? legsLine(r) : ''}
       <div class="seed">seed ${fmt(r.seed)}${r.scratched ? ' · SCRATCHED' : ''}</div><div>${chips}</div></div>
     <div class="res">${res ? `<b>${res.time != null ? fmt(res.time) : esc(res.status)}</b>${d != null ? `<small class="${d < 0 ? 'drop' : 'add'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</small>` : ''}<br>${r.official ? '<span class="pill ok">official</span>' : '<span class="pill off">unofficial</span>'}` : '<span class="muted small">tap to add</span>'}</div>
   </div>`;
+}
+const shortName = (w) => (w ? (w.unknown ? w.name : `${w.first || w.name.split(',')[1]?.trim() || ''} ${(w.last || w.name.split(',')[0] || '').charAt(0)}`.trim()) : '');
+function legsLine(r) {
+  const any = r.legSw.some(Boolean);
+  return `<div class="legs">${any ? r.legSw.map((w, i) => `<span>${i + 1} ${w ? esc(shortName(w)) : '<i>?</i>'}</span>`).join('') : '<span class="muted">legs not set · tap to add</span>'}</div>
+    ${r.legOut.length ? `<div class="small" style="color:var(--coral)">⚠ ${r.legOut.map(esc).join(', ')} scratched from the meet</div>` : ''}`;
 }
 function shortLabel(f) {
   if (f.kind === 'record') return f.label.replace('Team record ', '');
@@ -338,7 +354,7 @@ function openEntry(id) {
   const res = r.result;
   const flags = res && res.time != null ? r.post : r.pre;
   sheet(`
-    <p class="kicker">#${r.event} ${esc(r.ev.title || '')} · ${esc(r.round)}</p>
+    <p class="kicker">${evNo(r.event)} ${esc(r.ev.title || '')} · ${esc(r.round)}</p>
     <h2 style="margin-bottom:2px">${esc(r.swimmer.name)} <span class="muted small">${r.swimmer.age ?? ''}</span></h2>
     <p class="small muted" style="margin-top:0">${r.heat ? `Heat ${r.heat}${r.heats ? ' of ' + r.heats : ''} · Lane ${r.lane}` : 'Heat/lane not set'}${r.start ? ' · ~' + esc(r.start) : ''} · Seed <b class="mono">${fmt(r.seed)}</b></p>
     <label class="f" for="t">Time ${res ? `<span class="muted">(now ${res.time != null ? fmt(res.time) : esc(res.status)}, ${esc(res.source || 'manual')}${r.official ? ', official' : ', unofficial'})</span>` : ''}</label>
@@ -349,15 +365,24 @@ function openEntry(id) {
     ${r.meetOut ? `<p class="small" style="color:var(--coral)">Scratched from the whole meet. <a href="#/swimmer/${r.swimmerId}" data-act="close-go">Change on ${esc(r.swimmer.first || 'their')} page</a></p>` : ''}
     <details style="margin-top:10px"><summary class="small" style="cursor:pointer;color:var(--teal-dark)">Change heat / lane${r.heat ? '' : ' (not set yet)'}</summary>
       <div class="timein" style="margin-top:8px"><input id="hh" inputmode="numeric" placeholder="Heat" value="${r.heat ?? ''}" style="font-size:18px"><input id="ll" inputmode="numeric" placeholder="Lane" value="${r.lane ?? ''}" style="font-size:18px"><button class="btn" data-act="save-hl" data-id="${esc(id)}">Save</button></div></details>
-    <h3 style="margin-top:14px">Flags ${res && res.time != null ? (r.official ? '' : '<span class="pill off">unofficial</span>') : '<span class="muted small">(from seed)</span>'}</h3>
-    ${flags.length ? `<ul class="flaglist">${flags.map((f) => `<li><span class="pill t-${f.tier}">${TIER_TXT[f.tier]}</span><span><b>${esc(f.label)}</b> <span class="muted">${esc(f.sub || '')}</span>${f.target != null && isFinite(f.target) ? ` · target <span class="mono">${fmt(f.target)}</span>${r.seed != null && !(res && res.time != null) ? ` · needs <span class="mono">${r.seed > f.target ? '−' + fmt(r.seed - f.target) : 'a PB'}</span>` : ''}${res && res.time != null ? ` · <span class="mono">${f.gap <= 0 ? 'by ' + fmt(-f.gap) : ''}</span>` : ''}` : ''}</span></li>`).join('')}</ul>` : '<p class="small muted">Nothing within 3% of a record, Top 10 or the cuts we flag.</p>'}
+    ${r.relay ? legsEditor(r) : ''}
+    ${r.relay ? '' : `<h3 style="margin-top:14px">Flags ${res && res.time != null ? (r.official ? '' : '<span class="pill off">unofficial</span>') : '<span class="muted small">(from seed)</span>'}</h3>
+    ${flags.length ? `<ul class="flaglist">${flags.map((f) => `<li><span class="pill t-${f.tier}">${TIER_TXT[f.tier]}</span><span><b>${esc(f.label)}</b> <span class="muted">${esc(f.sub || '')}</span>${f.target != null && isFinite(f.target) ? ` · target <span class="mono">${fmt(f.target)}</span>${r.seed != null && !(res && res.time != null) ? ` · needs <span class="mono">${r.seed > f.target ? '−' + fmt(r.seed - f.target) : 'a PB'}</span>` : ''}${res && res.time != null ? ` · <span class="mono">${f.gap <= 0 ? 'by ' + fmt(-f.gap) : ''}</span>` : ''}` : ''}</span></li>`).join('')}</ul>` : '<p class="small muted">Nothing within 3% of a record, Top 10 or the cuts we flag.</p>'}`}
     <h3 style="margin-top:14px">Notes</h3>
     ${r.notes.length ? `<ul class="notes">${r.notes.map((n) => `<li>${n.tags && n.tags.length ? `<b>${n.tags.map(esc).join(' · ')}</b> ` : ''}${esc(n.text)}<small>${esc(n.by)} · ${new Date(n.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${n.op ? ` · <a href="#" data-act="undo" data-op="${esc(n.op)}">remove</a>` : ''}</small></li>`).join('')}</ul>` : ''}
     <div class="tags">${tagList().map((t) => `<button class="chip" data-act="tag" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
     <textarea id="note" placeholder="Race feedback, things to talk about…"></textarea>
     <div class="btns" style="margin-top:8px"><button class="btn" data-act="save-note" data-id="${esc(id)}">Add note</button><button class="btn ghost" data-act="close">Close</button></div>
-    <p class="small muted" style="margin-top:10px"><a href="#/swimmer/${r.swimmerId}" data-act="close-go">All of ${esc(r.swimmer.first || r.swimmer.name)}'s swims →</a></p>`);
+    ${r.relay ? '' : `<p class="small muted" style="margin-top:10px"><a href="#/swimmer/${r.swimmerId}" data-act="close-go">All of ${esc(r.swimmer.first || r.swimmer.name)}'s swims →</a></p>`}`);
   setTimeout(() => { const t = $('#t'); if (t && !res) t.focus(); }, 60);
+}
+function legsEditor(r) {
+  const sw = [...S.model.swimmers.values()].filter((w) => (r.legs.includes(w.id) || !S.model.meetOut.has(w.id)) && (!r.ev.sex || r.ev.sex === 'X' || w.sex === r.ev.sex)).sort((a, b) => a.name.localeCompare(b.name));
+  const names = r.ev.stroke === 'Medley' || /medley/i.test(r.ev.title || '') ? ['Back', 'Breast', 'Fly', 'Free'] : ['1st', '2nd', '3rd', '4th'];
+  return `<h3 style="margin-top:14px">Legs</h3>
+    ${[0, 1, 2, 3].map((i) => { const cur = r.legs[i];
+      return `<label class="f" for="leg${i}">${names[i]}</label><select id="leg${i}"><option value="">—</option>${typeof cur === 'string' ? `<option value="s:${esc(cur)}" selected>${esc(cur)} (not on roster)</option>` : ''}${sw.map((w) => `<option value="${w.id}" ${cur === w.id ? 'selected' : ''}>${esc(w.name)} ${w.age ?? ''}${S.model.meetOut.has(w.id) ? ' (scratched)' : ''}</option>`).join('')}</select>`; }).join('')}
+    <div class="btns" style="margin-top:8px"><button class="btn" data-act="save-legs" data-id="${esc(r.id)}">Save legs</button></div>`;
 }
 function sheet(html) { const s = $('#sheet'); s.innerHTML = '<div class="grab"></div>' + html; s.hidden = false; $('#sheet-bg').hidden = false; }
 function closeSheet() { $('#sheet').hidden = true; $('#sheet-bg').hidden = true; $('#sheet').innerHTML = ''; }
@@ -369,7 +394,7 @@ function renderSummary(n) {
   if (!s) { app.innerHTML = '<p class="empty">Session not found.</p>'; return; }
   const ns = B.sessions.map((x) => x.n), X = sessionSummary(S.model, ns);
   const tag = X.official ? '' : ' <span class="pill off">unofficial</span>';
-  const li = (a) => a.map(({ r, f }) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} ${f.sub ? `<span class="muted">(${esc(f.sub)})</span>` : ''}</li>`).join('');
+  const li = (a) => a.map(({ r, f }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} ${f.sub ? `<span class="muted">(${esc(f.sub)})</span>` : ''}</li>`).join('');
   const finalsBack = /Prelim/.test(B.sessions.flatMap((x) => x.events).map((e) => e.round).join()) ? S.model.rows.filter((r) => ns.includes(r.session) && /Prelim/.test(r.round) && r.result && r.result.place && r.result.place <= 40) : [];
   app.innerHTML = `
   <p class="kicker">${esc(dayName(s.day))} · Session ${esc(B.multi ? s.block : s.n)}${B.multi ? ` · ${B.sessions.map((x) => esc(poolName(x))).join(' + ')}` : ''}</p>
@@ -384,12 +409,13 @@ function renderSummary(n) {
   ${X.records.length ? `<div class="card"><h3>Team records${tag}</h3><ul class="sumlist">${li(X.records)}</ul></div>` : ''}
   ${X.cuts.length ? `<div class="card"><h3>New championship cuts${tag}</h3><ul class="sumlist">${li(X.cuts)}</ul></div>` : ''}
   ${X.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(X.top10)}</ul></div>` : ''}
-  ${finalsBack.length ? `<div class="card"><h3>Back for finals (top 40)${tag}</h3><ul class="sumlist">${finalsBack.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} · ${r.result.place}${ordinal(r.result.place)} <span class="mono">${fmt(r.result.time)}</span></li>`).join('')}</ul></div>` : ''}
-  ${X.close.length ? `<div class="card"><h3>Just missed (within 1%)</h3><ul class="sumlist">${X.close.map(({ r, f, miss }) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} by <span class="mono">${fmt(miss)}</span></li>`).join('')}</ul></div>` : ''}
-  ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · #${r.event} ${esc(r.ev.title)} · ${esc(r.result.status)}</li>`).join('')}</ul></div>` : ''}
+  ${finalsBack.length ? `<div class="card"><h3>Back for finals (top 40)${tag}</h3><ul class="sumlist">${finalsBack.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${r.result.place}${ordinal(r.result.place)} <span class="mono">${fmt(r.result.time)}</span></li>`).join('')}</ul></div>` : ''}
+  ${X.close.length ? `<div class="card"><h3>Just missed (within 1%)</h3><ul class="sumlist">${X.close.map(({ r, f, miss }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} by <span class="mono">${fmt(miss)}</span></li>`).join('')}</ul></div>` : ''}
+  ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}</li>`).join('')}</ul></div>` : ''}
   ${(() => { const N = notesFor(S.model, s); return N.meet.length + N.day.length + N.session.length ? `<div class="card"><h3>Coach notes</h3>${gnoteList(N.session, 'This session')}${gnoteList(N.day, dayName(s.day))}${gnoteList(N.meet, 'Whole meet')}</div>` : ''; })()}
+  ${X.relays.length ? `<div class="card"><h3>Relays</h3><table class="t"><tbody>${X.relays.map((r) => `<tr><td>${evNo(r.event)} ${esc(r.ev.title || '')} <b>${esc(r.relay)}</b><div class="small muted">${r.legSw.map((w, i) => `${i + 1} ${w ? esc(shortName(w)) : '?'}`).join(' · ')}</div></td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
   <div class="card"><h3>By swimmer</h3><table class="t"><thead><tr><th>Swim</th><th style="text-align:right">Seed</th><th style="text-align:right">Time</th><th style="text-align:right">+/−</th></tr></thead><tbody>
-  ${X.swimmers.map((w) => `<tr><td colspan="4" style="background:var(--panel)"><b>${esc(w.swimmer.name)}</b> <span class="muted small">${w.best}/${w.rows.length} best times</span></td></tr>${w.rows.map((r) => `<tr><td>#${r.event} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc([...(n.tags || []), n.text].filter(Boolean).join(' · '))).join('<br>')}</div>` : ''}</td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}`).join('')}
+  ${X.swimmers.map((w) => `<tr><td colspan="4" style="background:var(--panel)"><b>${esc(w.swimmer.name)}</b> <span class="muted small">${w.best}/${w.rows.length} best times</span></td></tr>${w.rows.map((r) => `<tr><td>${evNo(r.event)} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc([...(n.tags || []), n.text].filter(Boolean).join(' · '))).join('<br>')}</div>` : ''}</td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}`).join('')}
   </tbody></table></div>
   <div class="btns noprint"><button class="btn solid" data-act="copy-summary" data-s="${n}">Copy as text</button><button class="btn" data-act="print">Print / PDF</button><a class="btn ghost" href="#/day/${s.day}/${s.n}">Back to events</a></div>`;
 }
@@ -408,12 +434,12 @@ function summaryText(n) {
 function renderSwimmer(id) {
   const sw = S.model.swimmers.get(id);
   if (!sw) { app.innerHTML = '<p class="empty">Swimmer not found.</p>'; return; }
-  const rows = S.model.rows.filter((r) => r.swimmerId === id);
+  const rows = S.model.rows.filter((r) => r.swimmerId === id || (r.relay && r.legs.includes(id)));
   const out = S.model.meetOut.get(id);
   app.innerHTML = `<p class="kicker">${esc(S.pkg.short || S.pkg.name)}</p><h1>${esc(sw.name)} <span class="muted small">${sw.age ?? ''}</span></h1>
   ${out ? `<div class="banner warn">Scratched from the whole meet${out.why ? ` (${esc(out.why)})` : ''} · ${esc(out.by || '')} ${esc(tm(out.at))}. Their swims are hidden from the event flow and left out of summaries.</div>` : ''}
   <div class="btns" style="margin-bottom:10px"><button class="btn sm ${out ? 'solid' : 'ghost'}" data-act="mscratch" data-id="${id}" data-on="${out ? '0' : '1'}">${out ? 'Back in the meet' : 'Scratch from whole meet'}</button></div>
-  ${SS().filter((s) => rows.some((r) => r.session === s.n)).map((s) => `<h3>${esc(dayShort(s.day))} · ${esc(s.name)}</h3><div class="ev">${rows.filter((r) => r.session === s.n).map((r) => rowHtml(r).replace('<div class="who">', `<div class="who"><span class="small muted">#${r.event} ${esc(r.ev.title || '')}</span><br>`)).join('')}</div>`).join('')}
+  ${SS().filter((s) => rows.some((r) => r.session === s.n)).map((s) => `<h3>${esc(dayShort(s.day))} · ${esc(s.name)}</h3><div class="ev">${rows.filter((r) => r.session === s.n).map((r) => rowHtml(r).replace('<div class="who">', `<div class="who"><span class="small muted">${evNo(r.event)} ${esc(r.ev.title || '')}</span><br>`)).join('')}</div>`).join('')}
   ${rows.filter((r) => r.session == null).length ? `<h3>Not placed in a session</h3><div class="ev">${rows.filter((r) => r.session == null).map((r) => rowHtml(r)).join('')}</div>` : ''}`;
 }
 
@@ -435,6 +461,12 @@ function renderTools() {
     ${s.warmup ? `<label class="f" for="tm-warm">Warm-up</label><input id="tm-warm" value="${esc(s.warmup.time || '')}">
     <p class="small muted" style="margin:4px 0 0">Leave warm-up as is and it moves by the same amount as the start.</p>` : ''}
     <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="save-times" data-s="${s.n}">Save times</button></div></div>`; })()}
+
+  <div class="card"><h3>Time trials</h3><p class="small muted">Time trials aren't in the meet file. Add a session for them, then add swims on its page (typed, or from a photo of the sheet).</p>
+    ${SS().filter((x) => x.tt).map((x) => `<div class="small" style="margin:4px 0"><a href="#/day/${x.day}/${x.n}">${esc(dayShort(x.day))} · ${esc(x.name)}</a> · ${S.model.rows.filter((r) => r.session === x.n).length} swims${!S.model.rows.some((r) => r.session === x.n) && x.op ? ` · <a href="#" data-act="tt-remove" data-op="${esc(x.op)}">remove</a>` : ''}</div>`).join('')}
+    <label class="f" for="tt-day">Day</label><select id="tt-day">${[...new Set(SS().map((x) => x.day))].map((d) => `<option value="${d}" ${d === todayIso() ? 'selected' : ''}>${esc(dayName(d))}</option>`).join('')}</select>
+    <label class="f" for="tt-start">About when (optional)</label><input id="tt-start" type="text" placeholder="12:00 PM">
+    <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="tt-new">Add time-trial session</button></div></div>
 
   <div class="card"><h3>Meet timeline (session report PDF)</h3><p class="small muted">The host's Hy-Tek session report / timeline: event start times and heat counts for every session, and each pool's session when the meet runs in two pools. Load the newest one; times already changed with Session times are replaced by it.</p>
     <input type="file" id="f-timeline" accept="application/pdf,.pdf"><div id="o-timeline"></div></div>
@@ -570,6 +602,45 @@ async function heatUpload(files, el) {
   }
   reviewEntries(el, data, `${parsed.session || files[0].name}: ${parsed.events.length} events, ${data.rows.length} ${S.pkg.teamName} swims → Session ${sess} (${esc(SS().find((s) => s.n === sess)?.name)})`);
 }
+// ---------- time trials ----------
+const TT_EVENTS = [[25, 'Free'], [50, 'Free'], [100, 'Free'], [200, 'Free'], [500, 'Free'], [1000, 'Free'], [1650, 'Free'], [25, 'Back'], [50, 'Back'], [100, 'Back'], [200, 'Back'], [25, 'Breast'], [50, 'Breast'], [100, 'Breast'], [200, 'Breast'], [25, 'Fly'], [50, 'Fly'], [100, 'Fly'], [200, 'Fly'], [100, 'IM'], [200, 'IM'], [400, 'IM']];
+function ttReview(el, sessN, rows, head, ocrText) {
+  const roster = [...S.model.swimmers.values()].filter((w) => !S.model.meetOut.has(w.id)).sort((a, b) => a.name.localeCompare(b.name));
+  const row = (r, i) => `<tr data-i="${i}"><td><select data-k="sw"><option value="">—</option>${roster.map((w) => `<option value="${w.id}" ${r.swimmerId === w.id ? 'selected' : ''}>${esc(w.name)}</option>`).join('')}</select></td>
+    <td><select data-k="ev"><option value="">—</option>${TT_EVENTS.map(([d, st]) => `<option value="${d}|${st}" ${r.dist === d && r.stroke === st ? 'selected' : ''}>${d} ${st}</option>`).join('')}</select><input data-k="shown" inputmode="numeric" placeholder="ev #" value="${r.shown ?? ''}" class="ttnum"></td>
+    <td><input data-k="heat" inputmode="numeric" value="${r.heat ?? ''}"></td><td><input data-k="lane" inputmode="numeric" value="${r.lane ?? ''}"></td>
+    <td><input data-k="seed" inputmode="decimal" placeholder="seed" value="${r.seed != null ? fmt(r.seed) : ''}"></td><td><button class="btn sm ghost" data-tt="del" aria-label="Remove row">✕</button></td></tr>`;
+  out(el, `<p class="small"><b>${esc(head)}</b></p><div class="ttwrap"><table class="t review tt"><thead><tr><th>Swimmer</th><th>Event</th><th>Heat</th><th>Lane</th><th>Seed</th><th></th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table></div>
+    <div class="btns" style="margin-top:8px"><button class="btn" data-tt="add">+ Row</button><button class="btn solid" data-tt="apply">Apply</button><button class="btn ghost" data-tt="cancel">Cancel</button></div>
+    ${ocrText ? `<details><summary class="small muted">What the photo reader saw</summary><pre class="small" style="white-space:pre-wrap">${esc(ocrText)}</pre></details>` : ''}`);
+  const tb = $('tbody', el);
+  el.onclick = async (e) => {
+    const b = e.target.closest('[data-tt]'); if (!b) return;
+    e.stopPropagation();
+    const k = b.dataset.tt;
+    if (k === 'del') { b.closest('tr').remove(); return; }
+    if (k === 'cancel') { out(el, ''); return; }
+    if (k === 'add') { const last = tb.lastElementChild; const prev = last ? { dist: +String(last.querySelector('[data-k=ev]').value).split('|')[0] || null, stroke: String(last.querySelector('[data-k=ev]').value).split('|')[1] || null, heat: +last.querySelector('[data-k=heat]').value || null } : {}; tb.insertAdjacentHTML('beforeend', row(prev, tb.children.length)); return; }
+    if (k === 'apply') {
+      const events = { ...PK().events }, newEvents = [], rowsOut = [];
+      for (const tr of tb.children) {
+        const v = (q) => tr.querySelector(`[data-k=${q}]`).value.trim();
+        const sw = S.model.swimmers.get(+v('sw')), [d, st] = v('ev').split('|');
+        if (!sw && !d) continue;
+        if (!sw || !d) { toast('Each row needs a swimmer and an event'); return; }
+        const ev = ttEvent(events, sessN, { dist: +d, stroke: st, sex: sw.sex, shown: v('shown') ? +v('shown') : null });
+        if (ev.meta) { events[ev.num] = ev.meta; newEvents.push(ev.meta); }
+        const typed = parseTyped(v('seed'));
+        const best = S.model.rows.filter((r) => r.swimmerId === sw.id && r.ev.dist === +d && r.ev.stroke === st && !r.ev.tt).map((r) => (r.result && r.result.time != null ? Math.min(r.result.time, r.seed ?? 1e9) : r.seed)).filter((x) => x != null).sort((a, b) => a - b)[0] ?? null;
+        rowsOut.push({ event: ev.num, round: 'Finals', swimmerId: sw.id, name: sw.name, age: sw.age, sex: sw.sex, heat: +v('heat') || null, lane: +v('lane') || null, seed: typed ?? best, start: null });
+      }
+      if (!rowsOut.length) { toast('Nothing to add'); return; }
+      await addOp('entries', { session: sessN, mode: 'merge', source: 'time trials', rows: rowsOut, newEvents });
+      toast(`Added ${rowsOut.length} time-trial swim${rowsOut.length === 1 ? '' : 's'}`);
+    }
+  };
+}
+
 async function timelineUpload(files, el) {
   busy(el, 'Reading the timeline…');
   const lib = await pdfjs();
@@ -746,6 +817,21 @@ document.addEventListener('click', async (ev) => {
     if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); return; }
     if (a === 'clear-time') { const r = S.model.rows.find((x) => x.id === t.dataset.id); if (r && r.result) await addOp('undo', { op: r.result.op }); closeSheet(); return; }
     if (a === 'scratch') { const r = S.model.rows.find((x) => x.id === t.dataset.id); await addOp('scratch', { entry: t.dataset.id, on: !r.scratched }); closeSheet(); return; }
+    if (a === 'tt-new') {
+      const day = $('#tt-day').value, st = $('#tt-start').value.trim();
+      const start = st ? (/[AP]M/i.test(st) ? st : `${st} PM`) : null;
+      const n = Math.max(900, ...SS().map((x) => x.n)) + 1;
+      const name = `${new Date(day + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })} time trials`;
+      await addOp('session', { n, day, name, start, tt: true }); location.hash = `#/day/${day}/${n}`; return;
+    }
+    if (a === 'tt-remove') { ev.preventDefault(); if (!confirm('Remove this time-trial session?')) return; await addOp('undo', { op: t.dataset.op }); return; }
+    if (a === 'tt-add') { const o = $('#o-ttphoto'); ttReview(o, +t.dataset.s, [{}, {}, {}], 'Add swims: pick the swimmer and event, then heat and lane as posted (seed fills in from their entry times if left blank).'); return; }
+    if (a === 'save-legs') {
+      const legs = [0, 1, 2, 3].map((i) => { const v = $('#leg' + i).value; return !v ? null : v.startsWith('s:') ? v.slice(2) : +v; });
+      const ids = legs.filter((x) => typeof x === 'number');
+      if (new Set(ids).size !== ids.length) { toast('Someone is on two legs'); return; }
+      await addOp('legs', { entry: t.dataset.id, legs }); openEntry(t.dataset.id); toast('Legs saved'); return;
+    }
     if (a === 'save-gnote') {
       const text = $('#gnote').value.trim(), card = t.closest('.gnotes');
       const tags = [...card.querySelectorAll('[data-act=tag][aria-pressed=true]')].map((x) => x.textContent);
