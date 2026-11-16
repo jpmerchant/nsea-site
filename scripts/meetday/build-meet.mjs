@@ -11,7 +11,8 @@ import path from 'node:path';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { readPdf, pdfLines, parseHeatSheet, teamEntries, parseHy3, toCs, sameSwimmer, parseEventTitle } from '../../public/admin/meet/lib/parse.mjs';
 import { buildRefs } from '../../public/admin/meet/lib/refs.mjs';
-import { entryKey } from '../../public/admin/meet/lib/model.mjs';
+import { entryKey, heatInfoOf, applyHeatInfo } from '../../public/admin/meet/lib/model.mjs';
+import { guessSession } from '../../public/admin/meet/lib/ingest.mjs';
 
 const cfgPath = path.resolve(process.argv[2] || '');
 if (!fs.existsSync(cfgPath)) { console.error('usage: build-meet.mjs <meetday.config.json> [out.json]'); process.exit(1); }
@@ -35,6 +36,7 @@ for (const s of cfg.sessions) for (const [num, round, start, title] of s.events)
 }
 const sheetEntries = [];
 const report = [];
+const pkgSessions = cfg.sessions.map((s) => ({ ...s, events: s.events.map(([num, round, start]) => ({ num, round, start: start || null })) }));
 for (const f of cfg.heatSheets) {
   const pages = await readPdf(pdfjs, new Uint8Array(fs.readFileSync(inMeet(f))));
   const p = parseHeatSheet(pdfLines(pages));
@@ -42,6 +44,8 @@ for (const f of cfg.heatSheets) {
     const { heats, ...meta } = e;
     events[e.num] = { ...events[e.num], ...meta, heatCount: heats.length, heatStarts: heats.map((h) => h.start), lanesTotal: heats.reduce((n, h) => n + h.lanes.length, 0) };
   }
+  const sn = guessSession({ sessions: pkgSessions }, p);
+  if (sn != null) applyHeatInfo(pkgSessions, { session: sn, heatInfo: heatInfoOf(p) });
   const mine = teamEntries(p, team);
   report.push(`${f}: ${p.session} · ${p.events.length} events · ${mine.length} ${cfg.teamName} swims`);
   for (const x of mine) sheetEntries.push({ ...x, sheet: f, sessionName: p.session });
@@ -83,7 +87,7 @@ const refs = buildRefs({
 const pkg = {
   format: 'nsea-meetday/1', id: cfg.id, name: cfg.name, short: cfg.short, host: cfg.host, venue: cfg.venue,
   start: cfg.start, end: cfg.end, course: cfg.course || 'SCY', teamName: cfg.teamName || 'NSEA', teamMatch: cfg.teamMatch || 'nsea',
-  general: cfg.general || [], sessions: cfg.sessions.map((s) => ({ ...s, events: s.events.map(([num, round, start]) => ({ num, round, start: start || null })) })),
+  general: cfg.general || [], sessions: pkgSessions,
   events, swimmers, entries, refs, builtAt: new Date().toISOString(), sources: [cfg.hy3, ...cfg.heatSheets],
 };
 const out = path.resolve(process.argv[3] || path.join(base, `${cfg.id}.meetday.json`));

@@ -2,7 +2,7 @@
 // for syncing between coaches and for fetching live results pages.
 import { fmt, readPdf, pdfLines, parseHeatSheet, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent } from './lib/model.mjs';
+import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
 
@@ -228,9 +228,8 @@ function renderDay(day, sessN) {
   if (S.filter === 'todo') rows = rows.filter((r) => !r.result && !r.scratched);
   if (S.filter === 'notes') rows = rows.filter((r) => r.notes.length);
   const off = M.official.get(s.n);
-  const groups = [];
-  for (const r of rows) { const k = `${r.event}|${r.round}`; let g = groups.find((x) => x.k === k); if (!g) groups.push(g = { k, ev: r.ev, event: r.event, round: r.round, rows: [] }); g.rows.push(r); }
-  const planned = s.events.filter((e) => !groups.some((g) => g.event === e.num && g.round === e.round));
+  const narrowed = !!q || S.filter !== 'all';
+  const flow = sessionFlow(S.pkg, s, rows).filter((it) => it.rows.length || !narrowed);
   app.innerHTML = `
   ${ss.length > 1 ? `<div class="chips" style="margin-bottom:10px">${ss.map((x) => `<a class="chip" href="#/day/${day}/${x.n}" aria-pressed="${x.n === s.n}" style="text-decoration:none;color:inherit">${esc(x.name)}</a>`).join('')}</div>` : ''}
   <p class="kicker">${esc(dayName(day))} · Session ${s.n}</p>
@@ -249,21 +248,28 @@ function renderDay(day, sessN) {
       <a class="chip" href="#/tools/${s.n}" style="text-decoration:none;color:inherit">Upload / live</a>
     </div>
   </div>
-  ${groups.map((g) => eventBlock(g, nowEv)).join('') || '<p class="empty">No swims match.</p>'}
-  ${planned.length && !q && S.filter === 'all' ? `<div class="card"><h3>Also in this session</h3><p class="small muted">No ${esc(S.pkg.teamName)} swims loaded for these yet${s.n && s.note ? ' (upload the heat sheet)' : ''}:</p><ul class="small">${planned.map((e) => `<li>#${e.num} ${esc(S.pkg.events[e.num]?.title || '')} · ${esc(e.round)} ${e.start ? '· ~' + esc(e.start) : ''}</li>`).join('')}</ul></div>` : ''}`;
+  ${flow.map((it) => eventBlock(it, nowEv)).join('') || '<p class="empty">No swims match.</p>'}`;
   const qi = $('#q');
   qi.oninput = () => { S.q = qi.value; const pos = qi.selectionStart; renderDay(day, s.n); const n = $('#q'); n.focus(); n.setSelectionRange(pos, pos); };
 }
-function eventBlock(g, nowEv) {
-  const e = g.ev || {};
-  const start = g.rows.map((r) => r.startMin).filter((x) => x != null).sort((a, b) => a - b)[0];
-  const heats = e.heatCount ? `${e.heatCount} heats` : '';
-  return `<section class="ev ${g.event === nowEv ? 'now' : ''}" id="ev-${g.event}-${esc(g.round)}">
-    <header><span class="n">#${g.event}</span><span class="t">${esc(e.title || '')}${/Prelim/.test(g.round) ? ' · Prelims' : /2$/.test(g.round) ? ' · Night heat' : g.round === 'Finals' && e.heatCount == null ? '' : ''}</span>
-    <span class="s">${start != null ? '~' + esc(g.rows.find((r) => r.startMin === start).start) : ''}${heats ? '<br>' + heats : ''}</span></header>
-    ${g.rows.map(rowHtml).join('')}</section>`;
+const hm = (t) => String(t || '').replace(/^0/, '');
+function eventBlock(it, nowEv) {
+  const e = it.ev || {};
+  const round = /Prelim/.test(it.round) ? ' · Prelims' : /2$/.test(it.round) ? ' · Night heat' : '';
+  const heats = it.heats ? `${it.heats} heat${it.heats === 1 ? '' : 's'}` : '';
+  const same = it.end && it.start.slice(-2) === it.end.slice(-2);
+  const when = it.start ? (it.end && it.minutes > 0 ? `~${esc(hm(same ? it.start.slice(0, -3) : it.start))}–${esc(hm(it.end))}` : `~${esc(hm(it.start))}`) : '';
+  const head = `<header><span class="n">#${it.num}</span><span class="t">${esc(e.title || '')}${round}</span>
+    <span class="s">${when}${heats ? (when ? '<br>' : '') + heats : ''}</span></header>`;
+  if (!it.rows.length) {
+    return `<section class="ev none ${it.num === nowEv ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
+      <div class="none-line">No ${esc(S.pkg.teamName)} swimmers${it.minutes > 0 ? ` · about ${it.minutes} min` : ''}${!heats ? ' · heats TBD' : ''}</div></section>`;
+  }
+  return `<section class="ev ${it.num === nowEv ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
+    ${it.heatGroups.map((h) => `<div class="heat"><span>${h.heat ? `Heat ${h.heat}${h.of ? ` of ${h.of}` : ''}` : 'Heat TBD'}</span>${h.start ? `<span class="hs">~${esc(hm(h.start))}</span>` : ''}</div>
+      ${h.rows.map((r) => rowHtml(r, false)).join('')}`).join('')}</section>`;
 }
-function rowHtml(r) {
+function rowHtml(r, showHeat = true) {
   const res = r.result;
   const flags = (res && res.time != null ? r.post : r.pre);
   const top = flags.find((f) => !f.open && !f.improve) || flags[0];
@@ -271,7 +277,8 @@ function rowHtml(r) {
   const chips = flags.slice(0, 4).map((f) => `<span class="pill t-${f.tier}" title="${esc(f.label + ' ' + (f.sub || ''))}">${KIND_TXT[f.kind]} ${esc(shortLabel(f))}</span>`).join('');
   const d = r.delta;
   return `<div class="row tier-${esc(tier)} ${r.scratched ? 'scr' : ''}" data-act="entry" data-id="${esc(r.id)}">
-    <div class="hl ${r.heat ? '' : 'tbd'}">${r.heat ? `H${r.heat}<br>L${r.lane ?? '?'}` : 'TBD'}</div>
+    ${showHeat ? `<div class="hl ${r.heat ? '' : 'tbd'}">${r.heat ? `H${r.heat}<br>L${r.lane ?? '?'}` : 'TBD'}</div>`
+      : `<div class="hl lane ${r.lane ? '' : 'tbd'}"><small>Lane</small>${r.lane ?? '?'}</div>`}
     <div class="who"><b>${esc(r.swimmer.name)}</b> <span class="muted small">${r.swimmer.age ?? ''}</span>${r.notes.length ? `<span class="note-dot">✎${r.notes.length}</span>` : ''}
       <div class="seed">seed ${fmt(r.seed)}${r.scratched ? ' · SCRATCHED' : ''}</div><div>${chips}</div></div>
     <div class="res">${res ? `<b>${res.time != null ? fmt(res.time) : esc(res.status)}</b>${d != null ? `<small class="${d < 0 ? 'drop' : 'add'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</small>` : ''}<br>${r.official ? '<span class="pill ok">official</span>' : '<span class="pill off">unofficial</span>'}` : '<span class="muted small">tap to add</span>'}</div>
@@ -359,7 +366,7 @@ function renderSwimmer(id) {
   const rows = S.model.rows.filter((r) => r.swimmerId === id);
   app.innerHTML = `<p class="kicker">${esc(S.pkg.short || S.pkg.name)}</p><h1>${esc(sw.name)} <span class="muted small">${sw.age ?? ''}</span></h1>
   ${SS().filter((s) => rows.some((r) => r.session === s.n)).map((s) => `<h3>${esc(dayShort(s.day))} · ${esc(s.name)}</h3><div class="ev">${rows.filter((r) => r.session === s.n).map((r) => rowHtml(r).replace('<div class="who">', `<div class="who"><span class="small muted">#${r.event} ${esc(r.ev.title || '')}</span><br>`)).join('')}</div>`).join('')}
-  ${rows.filter((r) => r.session == null).length ? `<h3>Not placed in a session</h3><div class="ev">${rows.filter((r) => r.session == null).map(rowHtml).join('')}</div>` : ''}`;
+  ${rows.filter((r) => r.session == null).length ? `<h3>Not placed in a session</h3><div class="ev">${rows.filter((r) => r.session == null).map((r) => rowHtml(r)).join('')}</div>` : ''}`;
 }
 
 // ---------- tools: uploads, photos, live results, settings ----------
