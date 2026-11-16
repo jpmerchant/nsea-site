@@ -52,7 +52,7 @@ const comps = [
   ['IMX / IMR board', 'GitHub Pages (boards repo)', '`/times/standards/imx-imr/progress/`', '`legacy/tools/boards/imx-imr-scy.html`'],
   ['Events calendar (+ `/admin`, `/widget`, .ics feeds)', 'GitHub Pages: `jpmerchant/nsea-events` at `events.nseaswimteam.com`', '`/meets/calendar/` and the home-page deadlines widget. Edited in the admin console (Events & Calendar), which publishes to the same repo', '`legacy/tools/events/`'],
   ['Check My Time (standards explorer)', 'BUILD `/check-my-time`', '`/times/standards/check-my-time/` (featured in the Times & Records menu)', '`legacy/tools/standards/nsea-standards-explorer.html`'],
-  ['SCY comparison (by age group / all ages)', 'BUILD pages', '`/times/standards/compare-*`', '`legacy/tools/standards/`'],
+  ['SCY / LCM comparison (by age group / all ages)', 'BUILD pages', '`/times/standards/compare-*`', '`legacy/tools/standards/`'],
   ['NC Age Group + Senior standards embeds', 'BUILD pages', '`/times/standards/nc-*`', '`legacy/tools/standards/`'],
   ['New board additions embed', 'BUILD `/2025---26-updates`', '`/times/top-times/new-additions/`', '`legacy/tools/standards/`'],
   ['Newsletter issues', 'BUILD `/current`, `/newsletters`', '`/families/newsletter/`', '`legacy/content/newsletters/`'],

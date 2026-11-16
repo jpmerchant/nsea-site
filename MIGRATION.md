@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 102 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 104 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 70 · ready 14 · new 2
+Counts: rebuild 16 · done 72 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
@@ -93,7 +93,7 @@ Merges worth noting: Top 10 Swimmers/Swims/Relays and Team Records collapse from
 | IMX / IMR board | GitHub Pages (boards repo) | `/times/standards/imx-imr/progress/` | `legacy/tools/boards/imx-imr-scy.html` |
 | Events calendar (+ `/admin`, `/widget`, .ics feeds) | GitHub Pages: `jpmerchant/nsea-events` at `events.nseaswimteam.com` | `/meets/calendar/` and the home-page deadlines widget. Edited in the admin console (Events & Calendar), which publishes to the same repo | `legacy/tools/events/` |
 | Check My Time (standards explorer) | BUILD `/check-my-time` | `/times/standards/check-my-time/` (featured in the Times & Records menu) | `legacy/tools/standards/nsea-standards-explorer.html` |
-| SCY comparison (by age group / all ages) | BUILD pages | `/times/standards/compare-*` | `legacy/tools/standards/` |
+| SCY / LCM comparison (by age group / all ages) | BUILD pages | `/times/standards/compare-*` | `legacy/tools/standards/` |
 | NC Age Group + Senior standards embeds | BUILD pages | `/times/standards/nc-*` | `legacy/tools/standards/` |
 | New board additions embed | BUILD `/2025---26-updates` | `/times/top-times/new-additions/` | `legacy/tools/standards/` |
 | Newsletter issues | BUILD `/current`, `/newsletters` | `/families/newsletter/` | `legacy/content/newsletters/` |
@@ -152,7 +152,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/programs/clinics/summer-league-skills/` | Summer League Skills Clinics | page | done | `/offerings#SummerLeagueSkillsClinics` | - |
 | `/programs/fees/` | Fees | page | done | `/fee-structure` | 2026 - 27/2026 - 2027 Fee Summary.docx |
 | `/programs/financial-assistance/` | Scholarships & Financial Assistance | page | done | `/scholarships-and-financial-assistance` | - |
-| `/programs/join/` | Free Assessment | link | ready | - | - |
+| `/programs/join/` | Free Assessment | page | ready | - | - |
 | `/families/` | Family Guide | hub | rebuild | - | - |
 | `/families/new-families/` | New to Swimming | hub | new | - | - |
 | `/families/new-families/faq/` | FAQ | page | done | `/FAQ` | - |
@@ -170,6 +170,8 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/families/newsletter/current/` | Current Issue | tool | done | `/current` | content/newsletters/nsea-newsletter-10-17-2026.html |
 | `/families/newsletter/archive/` | Newsletter Archive | page | done | `/newsletters` | content/newsletters/nsea-newsletter-10-03-2026.html |
 | `/families/newsletter/thought-of-the-month/` | Thought of the Month | tool | done | - | The archive is edited in the admin console (Content, Thought of the Month) |
+| `/families/newsletter/athlete-spotlights/` | Athlete Spotlights | page | done | - | Edited in the admin console (Content, Athlete Spotlights) |
+| `/families/newsletter/athlete-recognition/` | Athlete Recognition | page | done | - | Edited in the admin console (Content, Recognition) |
 | `/families/team-store/` | Team Store | hub | rebuild | - | - |
 | `/families/team-store/apparel/` | Apparel Store | link | ready | - | - |
 | `/families/team-store/caps/` | Cap Order Form | link | ready | - | - |
@@ -181,7 +183,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/meets/` | Meets | hub | rebuild | `/calendar` | - |
 | `/meets/calendar/` | Calendar of Events | tool | ready | `/calendar` | tools/events/ (site-src) |
 | `/meets/guide/` | Guide to Swim Meets | tool | done | `/about-swim-meets` | Project: claude/nsea-guide-to-swim-meets.html |
-| `/meets/uniform/` | Meet Uniform | page | done | `/swim-suit-guide` | - |
+| `/meets/uniform/` | Meet Uniform | page | done | `/swim-suit-guide` | Pictures/NSEA/Caps/Meet Caps (cap proofs); FINIS Suit Guide.pdf |
 | `/meets/pools/` | Meet Pools | page | done | `/meet-pools` | - |
 | `/meets/recaps/` | Meet Recaps | hub | new | - | content/recaps/ |
 | `/meets/recaps/october-suprise-2026/` | October Suprise 2026 | tool | done | - | content/recaps/meet-recap-october-suprise-2026.html; content/recaps/october-suprise-2026-analysis.html |
@@ -191,8 +193,8 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/standards/` | Time Standards | hub | rebuild | `/time-standards` | - |
 | `/times/standards/understanding/` | Understanding Time Standards | page | done | `/time-standards` | - |
 | `/times/standards/check-my-time/` | Check My Time | tool | done | `/check-my-time` | tools/standards/nsea-standards-explorer.html |
-| `/times/standards/compare-by-age-group/` | SCY Comparison by Age Group | tool | done | `/scy---comparison-by-age-group` | tools/standards/NSEA SCY Time Standards Comparison.html |
-| `/times/standards/compare-all-ages/` | SCY Comparison, All Ages | tool | done | `/scy---comparison-all-ages` | tools/standards/NSEA SCY Time Standards - All Ages Ranked.html |
+| `/times/standards/compare-by-age-group/` | Comparison by Age Group | tool | done | `/scy---comparison-by-age-group` | tools/standards/NSEA SCY Time Standards Comparison.html |
+| `/times/standards/compare-all-ages/` | Comparison, All Ages | tool | done | `/scy---comparison-all-ages` | tools/standards/NSEA SCY Time Standards - All Ages Ranked.html |
 | `/times/standards/nc-age-group/` | NC Age Group Championships | tool | done | `/nc-age-group-championships` | tools/standards/ncs-ag-champs-standards-embed.html |
 | `/times/standards/nc-senior/` | NC Senior Championships | tool | done | `/nc-senior-championships` | tools/standards/ncs-senior-standards-embed.html |
 | `/times/standards/national-qualifiers/` | National Meet Qualifiers | page | done | `/national--meet--qualifiers` | - |
