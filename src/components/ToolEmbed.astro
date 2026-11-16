@@ -12,6 +12,11 @@ const first = variants ? variants[keys[0]] : src;
 <iframe class="embed" id="tool-frame" src={first} title={title} style={`height:${height}px;`} loading="lazy"></iframe>
 <script>
   const frame = document.getElementById('tool-frame');
+  // Pass the page's query string to a single same-origin embed (e.g. /times/standards/check-my-time/?std=...&course=LCM from the events calendar).
+  if (frame && !document.querySelector('.toggle') && location.search && frame.getAttribute('src')?.startsWith('/embeds/')) {
+    const base = frame.getAttribute('src');
+    frame.src = base + (base.includes('?') ? '&' : '?') + location.search.slice(1);
+  }
   document.querySelectorAll('.toggle button').forEach((b) => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.toggle button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
