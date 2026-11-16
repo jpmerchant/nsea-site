@@ -1,6 +1,7 @@
 // Turning outside material (heat sheet PDFs, photos, live results pages, Meet Mobile screenshots) into
 // proposed changes the coach confirms. Pure functions; the app does the file reading / OCR / fetching.
 import { parseHeatSheet, parseHeatSheetText, teamEntries, parseResults, extractByName, parseEventTitle, parseLaneLine, sameSwimmer, toCs, lineHasSwimmer, ocrTime } from './parse.mjs';
+import { heatInfoOf } from './model.mjs';
 
 const teamRe = (pkg) => { const re = new RegExp(pkg.teamMatch || 'nsea', 'i'); return { test: (t) => re.test(String(t || '')) || re.test(String(t || '').replace(/[\s.\-]+/g, '')) }; };
 
@@ -32,7 +33,7 @@ export function heatSheetRows(pkg, model, parsed, session, mode = 'replace') {
     return { event: x.event, round: roundFor(pkg, session, x.event, x.round), swimmerId: s ? s.id : null, name: x.name, age: x.age, sex: ev.sex, heat: x.heat, heats: x.heats, lane: x.lane, seed: x.seed, start: x.start, isNew: !s };
   });
   const events = [...new Set(parsed.events.map((e) => e.num))];
-  return { session, mode, rows, events, newEvents: parsed.events.filter((e) => !pkg.events[e.num]).map(({ heats, ...m }) => m), source: `heat sheet: ${parsed.session || 'unnamed'}` };
+  return { session, mode, rows, events, heatInfo: heatInfoOf(parsed), newEvents: parsed.events.filter((e) => !pkg.events[e.num]).map(({ heats, ...m }) => m), source: `heat sheet: ${parsed.session || 'unnamed'}` };
 }
 
 // OCR text of a photographed heat sheet (usually one re-seeded event) -> 'entries' op data (mode merge).

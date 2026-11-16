@@ -5,7 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime, parseMmNotify } from '../public/admin/meet/lib/parse.mjs';
 import { flagsFor } from '../public/admin/meet/lib/flags.mjs';
 import { buildRefs } from '../public/admin/meet/lib/refs.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent } from '../public/admin/meet/lib/model.mjs';
+import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow } from '../public/admin/meet/lib/model.mjs';
 import { heatSheetRows, resultsFromText, screenshotResults, photoHeatRows, guessSession, htmlToText, resultLinks } from '../public/admin/meet/lib/ingest.mjs';
 import { handleMeetdayAdmin, blockedHost, handleMeetdayNotify } from '../worker/meetday.mjs';
 let DatabaseSync;
@@ -338,4 +338,35 @@ test('worker: notify endpoint needs the meet key and dedupes re-posts', { skip: 
   const got = (await r.json()).ops.filter((o) => o.type === 'mmnotify');
   assert.equal(got.length, 2); // plain + JSON-with-title differ; the exact repeat is dropped
   assert.equal(got[0].by, 'Meet Mobile');
+});
+
+test('session flow: our swims grouped by heat, events with no swimmers kept with heats and rough times', () => {
+  const P = pkg();
+  P.sessions[1].finish = '06:50 PM';
+  P.sessions[1].events.push({ num: 13, round: 'Finals' });
+  P.events[13] = { num: 13, sex: 'F', dist: 200, stroke: 'Free', title: 'Girls 13 & Over 200 Freestyle' };
+  const sheet = [...SHEET, 'Event 13 Girls 13 & Over 200 Yard Freestyle', 'Heat 1 of 3 Finals Starts at 06:33 PM', '4 Other, Person 16 RSA-NC 2:01.00',
+    'Heat 2 of 3 Finals Starts at 06:37 PM', '4 Other, Two 16 RSA-NC 2:00.00', 'Heat 3 of 3 Finals Starts at 06:41 PM', '4 Other, Three 16 RSA-NC 1:59.00'];
+  let M = derive(P, []);
+  const ops = [{ id: 'op1xxxxxxx', at: '2026-11-14T20:00:00.000Z', by: 'Coach', type: 'entries', data: heatSheetRows(P, M, parseHeatSheet(sheet), 4) }];
+  M = derive(P, ops);
+  const S4 = M.sessions.find((s) => s.n === 4);
+  const flow = sessionFlow(P, S4, M.rows.filter((r) => r.session === 4));
+  assert.deepEqual(flow.map((x) => x.num), [11, 12, 13]);
+  const ev11 = flow[0];
+  assert.equal(ev11.heats, 2); assert.equal(ev11.heatGroups.length, 2);
+  assert.deepEqual(ev11.heatGroups.map((h) => [h.heat, h.of, h.rows.map((r) => r.lane)]), [[1, 2, [3]], [2, 2, [5]]]);
+  assert.equal(ev11.start, '06:24 PM'); assert.equal(ev11.end, '06:30 PM');
+  const ev13 = flow[2];
+  assert.equal(ev13.rows.length, 0); assert.equal(ev13.heats, 3);
+  assert.equal(ev13.start, '06:33 PM'); assert.equal(ev13.end, '06:50 PM'); assert.equal(ev13.minutes, 17);
+  // a later session time change moves the empty event too
+  ops.push({ id: 'op2xxxxxxx', at: '2026-11-14T21:00:00.000Z', by: 'Coach', type: 'times', data: { session: 4, start: '06:50 PM', shift: 30 } });
+  M = derive(P, ops);
+  assert.equal(sessionFlow(P, M.sessions.find((s) => s.n === 4), []).find((x) => x.num === 13).start, '07:03 PM');
+  // prelims (no sheet uploaded for it): event 12 occurs in two sessions, so the package-wide heat count is not borrowed
+  P.events[12].heatCount = 4;
+  const pre = sessionFlow(P, M.sessions.find((s) => s.n === 2), M.rows.filter((r) => r.session === 2));
+  assert.equal(pre.find((x) => x.num === 12).heats, null);
+  assert.equal(pre.find((x) => x.num === 11).heatGroups.map((h) => h.heat).join(), '3,5');
 });

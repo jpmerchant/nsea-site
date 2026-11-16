@@ -17,7 +17,7 @@ export function derive(pkg, ops, settings = {}) {
   for (const o of sorted) {
     if (undone.has(o.id) || o.type === 'undo') continue;
     const d = o.data || {};
-    if (o.type === 'entries') applyEntries(entries, swimmers, d);
+    if (o.type === 'entries') { applyEntries(entries, swimmers, d); applyHeatInfo(sessions, d); }
     else if (o.type === 'result') results.set(d.entry, { ...d, by: o.by, at: o.at, op: o.id });
     else if (o.type === 'note') (notes.get(d.entry) || notes.set(d.entry, []).get(d.entry)).push({ ...d, by: o.by, at: o.at, op: o.id });
     else if (o.type === 'scratch') scratch.set(d.entry, !!d.on);
@@ -64,7 +64,10 @@ export function applyTimes(sessions, entries, d, o = {}) {
   const m = Math.round(+d.shift || 0);
   if (m) {
     s.finish = shiftClock(s.finish, m);
-    for (const e of s.events || []) if (e.start) e.start = shiftClock(e.start, m);
+    for (const e of s.events || []) {
+      if (e.start) e.start = shiftClock(e.start, m);
+      if (Array.isArray(e.heatStarts)) e.heatStarts = e.heatStarts.map((t) => (t ? shiftClock(t, m) : t));
+    }
     if (s.warmup && !d.warmup) s.warmup.time = shiftText(s.warmup.time, m);
     if (s.warmup && !d.sprints && s.warmup.sprints) s.warmup.sprints = shiftText(s.warmup.sprints, m);
     for (const e of entries.values()) if (e.session === d.session && e.start) e.start = shiftClock(e.start, m);
@@ -99,6 +102,62 @@ export function applyEntries(entries, swimmers, d) {
     keep.add(old ? old.id : id);
   }
   if (d.mode === 'replace') for (const [id, e] of entries) if (touched.has(`${e.event}|${e.round}`) && e.session === d.session && !keep.has(id)) entries.delete(id);
+}
+
+// Heat counts / heat start times for every event on an uploaded heat sheet (ours or not), so events we
+// have no swimmers in still show how many heats and roughly when. data.heatInfo: [{ num, heats, starts }]
+export function applyHeatInfo(sessions, d) {
+  const s = sessions.find((x) => x.n === d.session);
+  if (!s || !Array.isArray(d.heatInfo)) return;
+  for (const h of d.heatInfo) {
+    let e = s.events.find((x) => x.num === h.num);
+    if (!e) { e = { num: h.num, round: h.round || 'Finals', start: null, added: true }; s.events.push(e); }
+    e.heats = h.heats || null;
+    e.heatStarts = Array.isArray(h.starts) ? h.starts : [];
+  }
+  if (s.events.some((e) => e.added)) {
+    const t = (e) => clockMin((e.heatStarts && e.heatStarts[0]) || e.start || '');
+    s.events.sort((a, b) => (t(a) ?? 9e3) - (t(b) ?? 9e3) || a.num - b.num);
+  }
+}
+export const heatInfoOf = (parsed) => parsed.events.map((e) => ({ num: e.num, round: e.heats[0]?.round || null, heats: e.heats.length, starts: e.heats.map((h) => h.start || null) }));
+
+// ---------- session event flow ----------
+// Every event in the session, in order, with our swims grouped by heat. Events with none of our swimmers
+// are kept (rows: []), with the heat count and an approximate start / end where known.
+export function sessionFlow(pkg, session, rows) {
+  const once = (num) => (pkg.sessions || []).filter((x) => (x.events || []).some((e) => e.num === num)).length <= 1;
+  const items = [];
+  const used = new Set();
+  const mk = (num, round, se) => {
+    const mine = rows.filter((r) => r.event === num && (r.round || 'Finals') === (round || 'Finals'));
+    mine.forEach((r) => used.add(r.id));
+    const ev = pkg.events[num] || {};
+    const fb = once(num) ? ev : {};
+    const heatStarts = (se && se.heatStarts && se.heatStarts.length ? se.heatStarts : fb.heatStarts) || [];
+    const heats = (se && se.heats) || Math.max(0, ...mine.map((r) => r.heats || 0)) || fb.heatCount || heatStarts.length || null;
+    const rowStart = mine.map((r) => r.startMin).filter((x) => x != null).sort((a, b) => a - b)[0];
+    const startMin = clockMin(heatStarts[0] || '') ?? clockMin((se && se.start) || '') ?? rowStart ?? null;
+    const byHeat = new Map();
+    for (const r of mine) { const k = r.heat ?? 0; (byHeat.get(k) || byHeat.set(k, []).get(k)).push(r); }
+    const heatGroups = [...byHeat.entries()].sort((a, b) => (a[0] || 999) - (b[0] || 999)).map(([h, rs]) => {
+      rs.sort((a, b) => (a.lane ?? 99) - (b.lane ?? 99));
+      const st = (h && heatStarts[h - 1]) || rs.map((r) => r.start).find(Boolean) || null;
+      return { heat: h || null, of: heats || rs.find((r) => r.heats)?.heats || null, start: st, rows: rs };
+    });
+    return { num, round: round || 'Finals', ev, rows: mine, heats, heatStarts, startMin, heatGroups };
+  };
+  for (const se of session.events || []) items.push(mk(se.num, se.round, se));
+  for (const r of rows) if (!used.has(r.id)) items.push(mk(r.event, r.round, null));
+  const fin = clockMin(session.finish || '');
+  items.forEach((it, i) => {
+    const next = items.slice(i + 1).map((x) => x.startMin).find((x) => x != null && it.startMin != null && x >= it.startMin);
+    it.endMin = it.startMin == null ? null : next ?? (fin != null && fin > it.startMin ? fin : null);
+    it.start = it.startMin != null ? minClock(it.startMin) : null;
+    it.end = it.endMin != null ? minClock(it.endMin) : null;
+    it.minutes = it.endMin != null ? it.endMin - it.startMin : null;
+  });
+  return items;
 }
 
 // ---------- session summary ----------
