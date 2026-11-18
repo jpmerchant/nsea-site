@@ -36,23 +36,36 @@ test('hub: not connected answers 503', async () => {
   assert.equal((await get({}, '/meta')).status, 503);
 });
 
-test('hub: rankings by scope, performers vs performances', { skip: !DatabaseSync }, async () => {
+test('hub: rankings are NSEA only, performers vs performances', { skip: !DatabaseSync }, async () => {
   const env = hub();
   const ev = '/rank?course=Y&distance=50&stroke=1&sex=F';
   const nsea = (await get(env, ev)).json.results;
   assert.deepEqual(nsea.map((r) => [r.last, r.time_cs]), [['Able', 2850]]);   // NSEA only, best swim per swimmer
-  const all = (await get(env, ev + '&scope=all')).json.results;
-  assert.deepEqual(all.map((r) => r.last), ['Best', 'Able']);
+  const all = (await get(env, ev + '&scope=all')).json.results;   // old links with scope=all still get NSEA only
+  assert.deepEqual(all.map((r) => r.last), ['Able']);
   const perf = (await get(env, ev + '&mode=performances')).json.results;
   assert.deepEqual(perf.map((r) => r.time_cs), [2850, 2900]);
-  const champ = (await get(env, ev + '&scope=all&series=NC_SC_AG')).json.results;
-  assert.deepEqual(champ.map((r) => r.time_cs), [2800, 2900]);
+  const champ = (await get(env, ev + '&series=NC_SC_AG')).json.results;
+  assert.deepEqual(champ.map((r) => r.time_cs), [2900]);
   assert.equal((await get(env, '/rank?course=X&distance=50&stroke=1')).status, 400);
+});
+
+test('hub: every event at once, tied ranks, find below the cut, HS and lead-off filters', { skip: !DatabaseSync }, async () => {
+  const env = hub();
+  const all = (await get(env, '/rank?course=Y&limit=1')).json.results;   // no event = every event; women and men
+  assert.deepEqual(all.map((r) => [r.last, r.rk, r.of_n]), [['Cole', 1, 2]]);   // one event (50 Free), limit 1 per event
+  const found = (await get(env, '/rank?course=Y&limit=1&find=able')).json.results;
+  assert.deepEqual(found.map((r) => [r.last, r.rk]), [['Cole', 1], ['Able', 2]]);   // Able ranks 2nd, below the cut, still returned
+  assert.equal((await get(env, '/rank?course=Y&distance=50')).status, 400);   // distance without stroke
+  const ev = '/rank?course=Y&distance=50&stroke=1&sex=F&mode=performances';
+  assert.equal((await get(env, ev + '&hs=0')).json.results.length, 2);   // both of Able's swims count for records
+  assert.equal((await get(env, ev + '&leadoffs=0')).json.results.length, 2);
 });
 
 test('hub: swimmer search, profile, splits, benchmarks, cutoffs, meets', { skip: !DatabaseSync }, async () => {
   const env = hub();
   assert.deepEqual((await get(env, '/swimmers?q=ab')).json.swimmers.map((s) => s.last), ['Able']);
+  assert.deepEqual((await get(env, '/swimmers?q=be')).json.swimmers, []);   // non-NSEA swimmers are not listed
   assert.deepEqual((await get(env, '/swimmers?q=ava ab')).json.swimmers.map((s) => s.id), [1]);
   assert.equal((await get(env, '/swimmers?q=a')).status, 400);
   const p = (await get(env, '/swimmer/1')).json;
@@ -65,7 +78,7 @@ test('hub: swimmer search, profile, splits, benchmarks, cutoffs, meets', { skip:
   const cut = (await get(env, '/cutoffs?course=Y&distance=50&stroke=1&sex=F&series=NC_SC_AG')).json;
   assert.deepEqual(cut.cutoffs.map((c) => c.rank), [1, 8]); assert.equal(cut.age_groups[0].age_group, '11-12');
   assert.equal((await get(env, '/meets?champ=1')).json.meets.length, 1);
-  const m = (await get(env, '/meet/1?scope=all')).json; assert.equal(m.swims.length, 3);
+  const m = (await get(env, '/meet/1?scope=all')).json; assert.equal(m.swims.length, 2);
   assert.equal((await get(env, '/meet/1')).json.swims.length, 2);
   const meta = (await get(env, '/meta')).json; assert.equal(meta.series[0].series, 'NC_SC_AG'); assert.equal(meta.series[0].champ, 1);
 });

@@ -52,10 +52,28 @@ tr.me td{background:#FDECE9;font-weight:600}
 .ladder td.pos{font-family:"Space Mono",monospace;color:var(--coral);font-weight:700}
 svg{max-width:100%}
 .hide{display:none}
+.presets{margin:4px 0 10px}.presets button{font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:5px 11px;background:var(--panel);color:var(--teal-dark)}
+.opts{gap:18px;margin:10px 0 4px;font-size:13px;color:var(--gray)}.opts label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.block h3 .cnt{float:right;font-family:"Space Mono",monospace;font-size:10px;font-weight:400;opacity:.85;letter-spacing:.06em;text-transform:uppercase;padding-top:3px}
+.block h3 a.evlink{color:#fff;cursor:pointer;text-decoration:none}.block h3 a.evlink:hover{text-decoration:underline}
+tr.gap td{text-align:center;color:var(--gray-light);letter-spacing:.3em;padding:2px}
+.hl{background:#FDECE9;border-left:4px solid var(--coral);border-radius:6px;padding:8px 12px;margin:0 0 12px;font-size:13px}
+.sumcard{border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:8px;padding:10px 14px;margin:6px 0 14px;font-size:13.5px}
+.sumcard .big{font-family:Oswald,sans-serif;font-weight:600;font-size:19px;color:var(--teal-dark);margin-bottom:3px}.sumcard .big.none{color:var(--gray)}
+.bar{height:8px;border-radius:99px;background:var(--line);margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--teal)}
+tr.got td{background:#EEF7F5}tr.got td:first-child{color:var(--teal-dark);font-weight:600}
+tr.foc td:first-child{box-shadow:inset 4px 0 0 var(--coral)}tr.avg td{font-style:italic;color:var(--teal-dark)}tr.avgrow td{background:var(--hi);font-weight:600}
+.focusbar{border:1px solid var(--line);border-left:4px solid var(--coral);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.focusbar label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.cols{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:0;min-width:900px}
+.col{border-right:1px solid var(--line);padding:6px 8px}.col:last-child{border-right:0}.col.mine{background:var(--panel)}
+.col h4{margin:0 0 6px;font-family:Oswald,sans-serif;font-weight:600;font-size:14px;color:var(--teal-dark)}.col.mine h4{color:var(--coral)}
+.crow{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 4px;border-bottom:1px solid var(--line)}.crow b{font-family:"Space Mono",monospace;white-space:nowrap}
+.crow.got{background:#EEF7F5;color:var(--teal-dark)}.crow.foc{box-shadow:inset 3px 0 0 var(--coral)}
 @media print{.noprint{display:none}.block{overflow:visible}}
 </style></head><body>
 <div class="wrap">
-<div class="sub"><span><b>NSEA</b> Data Hub · look up, list and compare</span><span id="built"></span></div>
+<div class="sub"><span><b>NSEA</b> Data Hub · NSEA swimmers and swims · look up, list and compare</span><span id="built"></span></div>
 <div class="pills tabs noprint" id="tabs" role="tablist">
   <button data-tab="lookup" aria-pressed="true">Look up</button>
   <button data-tab="list" aria-pressed="false">List</button>
@@ -66,7 +84,6 @@ svg{max-width:100%}
   <h1>Look up a <span>swimmer</span></h1>
   <div class="row noprint">
     <div><div class="lbl">Name</div><input class="big" id="q" type="text" placeholder="e.g. Witmer or Gentry Wit" autocomplete="off"></div>
-    <div><div class="lbl">Who</div><div class="pills" id="qscope"><button data-v="1" aria-pressed="true">NSEA</button><button data-v="0" aria-pressed="false">Everyone</button></div></div>
   </div>
   <div id="qres" class="cards"></div>
   <div id="profile"></div>
@@ -74,22 +91,30 @@ svg{max-width:100%}
 
 <section id="list" class="hide">
   <h1>Top <span>times</span></h1>
+  <div class="note noprint">Build any top-times list from every NSEA swim on file, or start from one of these:</div>
+  <div class="pills presets noprint" id="l-presets"></div>
   <div class="row noprint">
     <div><div class="lbl">Course</div><div class="pills" id="l-course"></div></div>
     <div><div class="lbl">Event</div><select id="l-event"></select></div>
     <div><div class="lbl">Women / men</div><div class="pills" id="l-sex"></div></div>
     <div><div class="lbl">Age at the swim</div><select id="l-age"></select></div>
+    <div id="l-agecustom" class="hide"><div class="lbl">Ages</div><input type="number" id="l-alo" min="5" max="40" placeholder="from" style="width:70px"> <input type="number" id="l-ahi" min="5" max="40" placeholder="to" style="width:70px"></div>
   </div>
   <div class="row noprint">
-    <div><div class="lbl">Swims from</div><div class="pills" id="l-scope"></div></div>
     <div><div class="lbl">Show</div><div class="pills" id="l-mode"></div></div>
     <div><div class="lbl">When</div><select id="l-when"></select></div>
     <div id="l-range" class="hide"><div class="lbl">From – to</div><input type="date" id="l-from"> <input type="date" id="l-to"></div>
     <div><div class="lbl">Meet</div><select id="l-series"></select></div>
-    <div><div class="lbl">How many</div><select id="l-limit"><option>10</option><option selected>25</option><option>50</option><option>100</option><option>250</option></select></div>
-    <div><div class="lbl">Find</div><input type="text" id="l-find" placeholder="name" style="width:130px"></div>
+    <div><div class="lbl">How many</div><select id="l-limit"></select></div>
+    <div><div class="lbl">Find a swimmer</div><input type="text" id="l-find" placeholder="name" style="width:150px"></div>
+  </div>
+  <div class="row noprint opts">
+    <label><input type="checkbox" id="l-lead" checked> Relay lead-offs</label>
+    <label><input type="checkbox" id="l-hs" checked> Unattached high-school swims</label>
+    <label><input type="checkbox" id="l-active"> Current swimmers only</label>
   </div>
   <div class="note" id="l-note"></div>
+  <div id="l-hl"></div>
   <div id="l-out"></div>
   <div class="noprint"><button class="btn" id="l-csv">Download CSV</button> <button class="btn" id="l-link">Copy link</button> <button class="btn" onclick="print()">Print</button></div>
 </section>
@@ -101,13 +126,18 @@ svg{max-width:100%}
     <div><div class="lbl">Event</div><select id="c-event"></select></div>
     <div><div class="lbl">Women / men</div><div class="pills" id="c-sex"></div></div>
     <div><div class="lbl">Age</div><input type="number" id="c-age" min="6" max="40" value="12" style="width:70px"></div>
-    <div><div class="lbl">A time</div><input type="text" class="time" id="c-time" placeholder="1:05.32"></div>
+    <div><div class="lbl">A time</div><input type="text" class="time" id="c-time" placeholder="1:05.32" inputmode="decimal"></div>
   </div>
   <div class="row noprint">
+    <div><div class="lbl">View</div><div class="pills" id="c-view"></div></div>
     <div><div class="lbl">Championship</div><select id="c-series"></select></div>
-    <div><div class="lbl">Event age group</div><select id="c-ag"></select></div>
+    <div id="c-agbox"><div class="lbl">Event age group</div><select id="c-ag"></select></div>
+    <div id="c-avgbox" class="opts"><label><input type="checkbox" id="c-avg" checked> 3-year averages in the ladder</label></div>
   </div>
+  <div id="c-focus"></div>
+  <div id="c-sum"></div>
   <div id="c-out"></div>
+  <div class="note">Standards: USA Swimming Motivational (B–AAAA), NC Age Group and NC Senior Championship cuts, ESSZ Sectional cuts, national meet cuts (Futures, Road to Indy, Winter Juniors, Junior Nationals, U.S. Open, Nationals), the pool qualifying times for Open Water Nationals and, in long course, Olympic Trials. A national or sectional cut for an age range (e.g. 18 &amp; under) shows for every age in it. "Bonus" cuts are bonus-entry standards. Meet entry rules, qualifying periods and age-up dates apply: always confirm against the meet's published qualifying information.</div>
 </section>
 <div class="err" id="err"></div>
 </div>
@@ -147,17 +177,16 @@ const pv = (el) => (el.querySelector('[aria-pressed=true]') || {}).dataset?.v;
 
 // tabs
 $('tabs').onclick = (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.tab); };
-function show(tab) { if (tab === 'list' && LR.length) history.replaceState(null, '', '#list&' + listQuery().toString()); for (const t of ['lookup', 'list', 'compare']) $(t).classList.toggle('hide', t !== tab); [...$('tabs').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === tab)); }
+function show(tab) { if (tab === 'list') history.replaceState(null, '', '#list&' + listHash()); if (tab === 'compare') history.replaceState(null, '', '#compare&' + compareHash()); for (const t of ['lookup', 'list', 'compare']) $(t).classList.toggle('hide', t !== tab); [...$('tabs').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.tab === tab)); }
 
 // ---------- Look up ----------
 let qTimer = null;
-pills($('qscope'), [['1', 'NSEA'], ['0', 'Everyone']], '1', () => search());
 $('q').oninput = () => { clearTimeout(qTimer); qTimer = setTimeout(search, 250); };
 async function search() {
   const q = $('q').value.trim();
   if (q.length < 2) { $('qres').innerHTML = ''; return; }
-  const j = await api(`/swimmers?q=${encodeURIComponent(q)}${pv($('qscope')) === '1' ? '&nsea=1' : ''}`);
-  $('qres').innerHTML = j.swimmers.length ? j.swimmers.map((s) => `<div class="card" data-id="${s.id}"><b>${esc(s.first)} ${esc(s.last)}</b>${s.nsea ? '<span class="tag">NSEA</span>' : ''}${s.active ? '<span class="tag c">active</span>' : ''}<div>${esc(s.team || '')} · last swim ${esc(s.last_swim || '')}</div></div>`).join('') : '<div class="note">No swimmers found.</div>';
+  const j = await api(`/swimmers?q=${encodeURIComponent(q)}`);
+  $('qres').innerHTML = j.swimmers.length ? j.swimmers.map((s) => `<div class="card" data-id="${s.id}"><b>${esc(s.first)} ${esc(s.last)}</b>${s.active ? '<span class="tag c">active</span>' : ''}<div>${esc(s.team || '')} · last swim ${esc(s.last_swim || '')}</div></div>`).join('') : '<div class="note">No swimmers found.</div>';
 }
 $('qres').onclick = (e) => { const c = e.target.closest('.card'); if (c) profile(+c.dataset.id); };
 let P = null;
@@ -206,16 +235,6 @@ async function eventDetail(k) {
   };
   $('p-event').scrollIntoView({ behavior: 'smooth' });
 }
-function ladder(bm, mine, label) {
-  const rows = bm.slice().sort((a, b) => a.time_cs - b.time_cs); let placed = mine == null;
-  let h = '<table><tr><th>Standard / record</th><th>Age</th><th class="tm">Time</th><th>Holder</th></tr>';
-  for (const b of rows) {
-    if (!placed && mine <= b.time_cs) { h += `<tr class="me"><td>${esc(label)}</td><td></td><td class="tm">${fmt(mine)}</td><td></td></tr>`; placed = true; }
-    h += `<tr><td>${esc(b.label)}${b.family === 'record' ? '<span class="tag c">record</span>' : ''}</td><td class="mut">${esc(b.age_group)}</td><td class="tm">${esc(b.time_text || fmt(b.time_cs))}</td><td class="mut">${esc(b.holder || '')}${b.swim_date ? ' · ' + esc(b.swim_date.slice(0, 4)) : ''}</td></tr>`;
-  }
-  if (!placed) h += `<tr class="me"><td>${esc(label)}</td><td></td><td class="tm">${fmt(mine)}</td><td></td></tr>`;
-  return h + '</table>';
-}
 function chart(list) {
   if (list.length < 2) return '';
   const W = 900, H = 170, pad = 34;
@@ -230,86 +249,257 @@ function chart(list) {
 }
 
 // ---------- List ----------
-const AGES = [['', 'All ages'], ['0-8', '8 & under'], ['0-10', '10 & under'], ['11-12', '11-12'], ['13-14', '13-14'], ['15-16', '15-16'], ['17-18', '17-18'], ['0-14', '14 & under'], ['0-18', '18 & under'], ['15-18', '15-18'], ['19-99', '19 & over'],
-  ...Array.from({ length: 13 }, (_, i) => [`${i + 6}-${i + 6}`, `Age ${i + 6}`])];
-const L = { course: 'Y', sex: 'F', scope: 'nsea', mode: 'performers' };
-function evOptions(sel, course, keep) { const v = keep || sel.value; sel.innerHTML = EVENTS[course].map((k) => `<option value="${k}">${evName(...k.split(' ').map(Number))}</option>`).join(''); if (EVENTS[course].includes(v)) sel.value = v; else sel.value = EVENTS[course][1]; }
+const AGES = [['', 'All ages'], ['0-8', '8 & under'], ['9-10', '9-10'], ['0-10', '10 & under'], ['11-12', '11-12'], ['13-14', '13-14'], ['15-16', '15-16'], ['17-18', '17-18'], ['0-14', '14 & under'], ['0-18', '18 & under'], ['15-18', '15-18'], ['19-99', '19 & over'],
+  ...Array.from({ length: 14 }, (_, i) => [`${i + 6}-${i + 6}`, `Age ${i + 6}`]), ['custom', 'Custom range…']];
+const LIMITS = ['3', '5', '8', '10', '16', '20', '25', '30', '50', '100', 'all'];
+const LDEF = { course: 'Y', event: '50 1', sex: 'F', age: '', alo: '', ahi: '', when: '', from: '', to: '', series: '', mode: 'performers', limit: '25', find: '', lead: true, hs: true, active: false };
+let L = { ...LDEF };
+const PRESETS = [
+  ['Team Top 10, every event', { event: 'all', limit: '10' }],
+  ['This season, every event', { event: 'all', when: 'season', limit: '10' }],
+  ['Top 8 · 10 & under girls 50 Free · 2020–21', { course: 'Y', event: '50 1', sex: 'F', age: '0-10', when: 's2020-21', limit: '8' }],
+  ['Top 30 all-time · 100 Back', { course: 'Y', event: '100 2', limit: '30' }],
+  ['Top 10 all-time · 200 Fly · women and men', { course: 'Y', event: '200 4', sex: '', limit: '10' }],
+  ['25 fastest 50 Free swims ever', { course: 'Y', event: '50 1', sex: '', mode: 'performances', limit: '25' }],
+];
+function evOptions(sel, course, keep, withAll) {
+  const v = keep || sel.value;
+  let h = withAll ? '<option value="all">All events</option>' : '';
+  for (const st of [1, 2, 3, 4, 5]) { const ks = EVENTS[course].filter((k) => k.endsWith(' ' + st)); if (ks.length) h += `<optgroup label="${STK[st]}">` + ks.map((k) => `<option value="${k}">${evName(...k.split(' ').map(Number))}</option>`).join('') + '</optgroup>'; }
+  sel.innerHTML = h;
+  sel.value = (withAll && v === 'all') || EVENTS[course].includes(v) ? v : EVENTS[course][1];
+  return sel.value;
+}
 function seasonStart() { const d = new Date(); const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-09-01`; }
+const seasonLabel = (y) => `${y}–${String(y + 1).slice(2)}`;
+function seasonRange(w) {
+  const ss = seasonStart(), y0 = +ss.slice(0, 4);
+  if (w === 'season') return [ss, `${y0 + 1}-08-31`];
+  if (w === 'last') return [`${y0 - 1}-09-01`, `${y0}-08-31`];
+  const m = /^s(\d{4})/.exec(w || ''); if (m) return [`${m[1]}-09-01`, `${+m[1] + 1}-08-31`];
+  return null;
+}
 function initList() {
-  pills($('l-course'), [['Y', 'SCY'], ['L', 'LCM']], L.course, (v) => { L.course = v; evOptions($('l-event'), v); runList(); });
+  $('l-presets').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}" aria-pressed="false">${esc(p[0])}</button>`).join('');
+  $('l-presets').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; L = { ...LDEF, course: L.course, sex: L.sex, lead: L.lead, hs: L.hs, active: L.active, ...PRESETS[b.dataset.i][1] }; syncList(); runList(); };
+  pills($('l-course'), [['Y', 'SCY'], ['L', 'LCM']], L.course, (v) => { L.course = v; L.event = evOptions($('l-event'), v, L.event, true); runList(); });
   pills($('l-sex'), [['F', 'Women'], ['M', 'Men'], ['', 'Both']], L.sex, (v) => { L.sex = v; runList(); });
-  pills($('l-scope'), [['nsea', 'NSEA'], ['all', 'Everyone']], L.scope, (v) => { L.scope = v; runList(); });
   pills($('l-mode'), [['performers', 'Swimmers'], ['performances', 'Swims']], L.mode, (v) => { L.mode = v; runList(); });
-  evOptions($('l-event'), L.course, '50 1');
   $('l-age').innerHTML = AGES.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
-  $('l-when').innerHTML = '<option value="">All-time</option><option value="season">This season</option><option value="last">Last season</option><option value="range">Date range…</option>';
+  const seasons = [...new Set((META?.seasons || []).map((s) => +String(s).slice(0, 4)).filter(Boolean))].sort((a, b) => b - a);
+  $('l-when').innerHTML = '<option value="">All-time</option><option value="season">This season</option><option value="last">Last season</option>'
+    + (seasons.length ? '<optgroup label="Season (Sep 1 – Aug 31)">' + seasons.map((y) => `<option value="s${y}-${String(y + 1).slice(2)}">${seasonLabel(y)}</option>`).join('') + '</optgroup>' : '')
+    + '<option value="range">Date range…</option>';
   $('l-series').innerHTML = '<option value="">Any meet</option>' + (META?.series || []).map((s) => `<option value="${esc(s.series)}">${esc(sname(s.series))} (${s.first_year}–${s.last_year})</option>`).join('');
-  for (const id of ['l-event', 'l-age', 'l-series', 'l-limit', 'l-from', 'l-to']) $(id).onchange = runList;
-  $('l-when').onchange = () => { $('l-range').classList.toggle('hide', $('l-when').value !== 'range'); runList(); };
-  $('l-find').oninput = () => drawList();
-  $('l-csv').onclick = csv; $('l-link').onclick = () => { navigator.clipboard?.writeText(location.href); $('l-link').textContent = 'Link copied'; setTimeout(() => ($('l-link').textContent = 'Copy link'), 1500); };
+  $('l-limit').innerHTML = LIMITS.map((n) => `<option value="${n}">${n === 'all' ? 'Everyone' : 'Top ' + n}</option>`).join('');
+  const on = (id, key, ev = 'change') => { $(id).addEventListener(ev, () => { const el = $(id); L[key] = el.type === 'checkbox' ? el.checked : el.value; syncList(); clearTimeout(qTimer); qTimer = setTimeout(runList, ev === 'input' ? 300 : 0); }); };
+  on('l-event', 'event'); on('l-age', 'age'); on('l-alo', 'alo', 'input'); on('l-ahi', 'ahi', 'input'); on('l-when', 'when'); on('l-from', 'from'); on('l-to', 'to');
+  on('l-series', 'series'); on('l-limit', 'limit'); on('l-find', 'find', 'input'); on('l-lead', 'lead'); on('l-hs', 'hs'); on('l-active', 'active');
+  $('l-csv').onclick = csv;
+  $('l-link').onclick = () => { const u = location.href.split('#')[0] + '#list&' + listHash(); navigator.clipboard?.writeText(u); $('l-link').textContent = 'Link copied'; setTimeout(() => ($('l-link').textContent = 'Copy link'), 1500); };
+}
+function syncList() {
+  const set = (el, v) => [...el.children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === v));
+  set($('l-course'), L.course); set($('l-sex'), L.sex); set($('l-mode'), L.mode);
+  L.event = evOptions($('l-event'), L.course, L.event, true);
+  for (const [id, k] of [['l-age', 'age'], ['l-alo', 'alo'], ['l-ahi', 'ahi'], ['l-when', 'when'], ['l-from', 'from'], ['l-to', 'to'], ['l-series', 'series'], ['l-limit', 'limit']]) { $(id).value = L[k]; if ($(id).value !== String(L[k])) L[k] = $(id).value; }
+  if (document.activeElement !== $('l-find')) $('l-find').value = L.find;
+  $('l-lead').checked = L.lead; $('l-hs').checked = L.hs; $('l-active').checked = L.active;
+  $('l-agecustom').classList.toggle('hide', L.age !== 'custom'); $('l-range').classList.toggle('hide', L.when !== 'range');
+}
+function listHash() {
+  const p = new URLSearchParams();
+  for (const k of Object.keys(LDEF)) { const v = L[k]; if (v === LDEF[k]) continue; p.set(k, typeof v === 'boolean' ? (v ? '1' : '0') : v); }
+  if (L.sex === '') p.set('sex', 'both');
+  return p.toString();
+}
+function readListHash(p) {
+  L = { ...LDEF };
+  for (const k of Object.keys(LDEF)) if (p.has(k)) L[k] = typeof LDEF[k] === 'boolean' ? p.get(k) === '1' : p.get(k);
+  if (p.get('sex') === 'both') L.sex = '';
+  // links made before the merge: distance + stroke, age_lo/age_hi, from/to, no sex = both
+  if (p.get('distance') && p.get('stroke')) { L.event = p.get('distance') + ' ' + p.get('stroke'); if (!p.has('sex')) L.sex = ''; }
+  if (p.get('age_lo')) L.age = p.get('age_lo') + '-' + p.get('age_hi');
+  if ((p.get('from') || p.get('to')) && !p.has('when')) L.when = 'range';
+  if (!['Y', 'L'].includes(L.course)) L.course = 'Y';
+  if (!['F', 'M', ''].includes(L.sex)) L.sex = 'F';
+  if (!['performers', 'performances'].includes(L.mode)) L.mode = 'performers';
 }
 let LR = [];
 function listQuery() {
-  const [d, s] = $('l-event').value.split(' ');
-  const p = new URLSearchParams({ course: L.course, distance: d, stroke: s, scope: L.scope, mode: L.mode, limit: $('l-limit').value });
+  const p = new URLSearchParams({ course: L.course, mode: L.mode });
+  if (L.event !== 'all') { const [d, s] = L.event.split(' '); p.set('distance', d); p.set('stroke', s); }
+  p.set('limit', L.limit === 'all' ? (L.event === 'all' ? '100' : '2000') : L.limit);
   if (L.sex) p.set('sex', L.sex);
-  const a = $('l-age').value; if (a) { const [lo, hi] = a.split('-'); p.set('age_lo', lo); p.set('age_hi', hi); }
-  const w = $('l-when').value, ss = seasonStart();
-  if (w === 'season') p.set('from', ss);
-  if (w === 'last') { const y = +ss.slice(0, 4); p.set('from', `${y - 1}-09-01`); p.set('to', `${y}-08-31`); }
-  if (w === 'range') { if ($('l-from').value) p.set('from', $('l-from').value); if ($('l-to').value) p.set('to', $('l-to').value); }
-  if ($('l-series').value) p.set('series', $('l-series').value);
+  if (L.age === 'custom') { if (L.alo !== '') p.set('age_lo', L.alo); if (L.ahi !== '') p.set('age_hi', L.ahi); }
+  else if (L.age) { const [lo, hi] = L.age.split('-'); p.set('age_lo', lo); p.set('age_hi', hi); }
+  const r = seasonRange(L.when);
+  if (r) { p.set('from', r[0]); p.set('to', r[1]); }
+  if (L.when === 'range') { if (L.from) p.set('from', L.from); if (L.to) p.set('to', L.to); }
+  if (L.series) p.set('series', L.series);
+  if (!L.lead) p.set('leadoffs', '0');
+  if (!L.hs) p.set('hs', '0');
+  if (L.active) p.set('active', '1');
+  if (L.find.trim().length >= 2) p.set('find', L.find.trim());
   return p;
 }
 async function runList() {
-  const p = listQuery(); if (!$('list').classList.contains('hide')) history.replaceState(null, '', '#list&' + p.toString());
-  LR = (await api('/rank?' + p.toString())).results; drawList();
+  if (!$('list').classList.contains('hide')) history.replaceState(null, '', '#list&' + listHash());
+  LR = (await api('/rank?' + listQuery().toString())).results; drawList();
+}
+function listTitle() {
+  const age = L.age === 'custom' ? `Ages ${L.alo || 'any'}–${L.ahi || 'any'}` : $('l-age').selectedOptions[0]?.text || 'All ages';
+  const when = L.when === 'range' ? `${L.from || 'start'} – ${L.to || 'today'}` : $('l-when').selectedOptions[0]?.text || 'All-time';
+  const n = L.limit === 'all' ? 'Everyone' : 'Top ' + L.limit;
+  return `${n} · ${L.event === 'all' ? 'every event' : evName(...L.event.split(' ').map(Number))} · ${CNAME[L.course]} · ${L.sex ? (L.sex === 'F' ? 'Women' : 'Men') : 'Women and men'} · ${age} · ${when}${L.series ? ' · ' + sname(L.series) : ''}`;
 }
 function drawList() {
-  const p = listQuery(), find = $('l-find').value.trim().toLowerCase();
-  const title = `${evName(+p.get('distance'), +p.get('stroke'))} · ${CNAME[L.course]} · ${L.sex ? (L.sex === 'F' ? 'Women' : 'Men') : 'Women and men'} · ${$('l-age').selectedOptions[0].text}`;
-  $('l-note').textContent = (L.scope === 'nsea' ? 'NSEA swims only (the same swims as the team boards).' : 'Every swim in the database, all teams.') + (L.mode === 'performers' ? ' One line per swimmer, their best time.' : ' Every swim; a swimmer can appear more than once.') + ' r = relay lead-off.';
-  $('l-out').innerHTML = `<div class="block list"><h3>${esc(title)}</h3><table><tr><th class="n">#</th><th>Name</th><th class="tm">Time</th><th class="n">Age</th><th>Date</th><th>Meet</th>${L.scope === 'all' ? '<th>Team</th>' : ''}</tr>
-    ${LR.map((r, i) => `<tr${find && (r.first + ' ' + r.last).toLowerCase().includes(find) ? ' class="me"' : ''}><td class="n">${i + 1}</td><td><a data-id="${r.swimmer_id}">${esc(r.first)} ${esc(r.last)}</a></td><td class="tm">${fmt(r.time_cs)}${r.kind === 'L' ? ' r' : ''}</td><td class="n">${r.age ?? ''}</td><td class="mut">${esc(r.swim_date)}</td><td class="mut">${esc(r.meet)}</td>${L.scope === 'all' ? `<td class="mut">${esc(r.team || '')}</td>` : ''}</tr>`).join('') || '<tr><td colspan="7" class="mut">No swims match.</td></tr>'}
-    </table></div>`;
-  $('l-out').onclick = (e) => { const a = e.target.closest('a[data-id]'); if (a) { show('lookup'); profile(+a.dataset.id); } };
+  const find = L.find.trim().toLowerCase(), isMe = (r) => find.length >= 2 && (r.first + ' ' + r.last).toLowerCase().includes(find);
+  const cut = L.limit === 'all' ? Infinity : +L.limit, unit = L.mode === 'performers' ? 'swimmers' : 'swims';
+  $('l-note').innerHTML = 'NSEA swims only, the same rules as the team boards. Age is the swimmer\'s age on the day of the swim; seasons run September 1 – August 31. '
+    + (L.mode === 'performers' ? 'One line per swimmer, their best time.' : 'Every swim; a swimmer can appear more than once.')
+    + ' Tags: <span class="tag">R</span> relay lead-off, <span class="tag">HS</span> Unattached high-school swim, <span class="tag">P</span> prelims, <span class="tag">SO</span> swim-off.'
+    + (L.limit === 'all' && L.event === 'all' ? ' With every event, "Everyone" shows the top 100 per event.' : '');
+  const byEv = new Map();
+  for (const r of LR) { const k = r.distance + ' ' + r.stroke; if (!byEv.has(k)) byEv.set(k, []); byEv.get(k).push(r); }
+  const order = EVENTS[L.course].filter((k) => byEv.has(k));
+  const notes = [];
+  const row = (r) => {
+    const tags = (L.sex === '' ? `<span class="tag">${r.sex === 'F' ? 'W' : 'M'}</span>` : '') + (r.kind === 'L' ? '<span class="tag" title="Relay lead-off">R</span>' : '') + (r.nsea_rec === 0 ? '<span class="tag" title="Unattached high-school swim">HS</span>' : '') + (r.round === 'P' ? '<span class="tag" title="Prelims">P</span>' : r.round === 'S' ? '<span class="tag" title="Swim-off">SO</span>' : '');
+    return `<tr${isMe(r) ? ' class="me"' : ''}><td class="n">${r.rk}</td><td class="tm">${fmt(r.time_cs)}</td><td><a data-id="${r.swimmer_id}">${esc(r.first)} ${esc(r.last)}</a>${tags}</td><td class="n">${r.age ?? ''}</td><td class="mut">${esc(r.swim_date)}</td><td class="mut">${esc(r.meet)}</td></tr>`;
+  };
+  let html = '';
+  for (const k of order) {
+    const list = byEv.get(k), top = list.filter((r) => r.rk <= cut), below = list.filter((r) => r.rk > cut);
+    const name = evName(...k.split(' ').map(Number)), of = list[0].of_n;
+    const mine = list.find(isMe); if (mine) notes.push(`<b>${esc(mine.first)} ${esc(mine.last)}</b> · ${name}: #${mine.rk} of ${of} ${unit} (${fmt(mine.time_cs)})`);
+    html += `<div class="block list"><h3>${L.event === 'all' ? `<a class="evlink" data-ev="${k}" title="Open this event">${name}</a>` : esc(listTitle())}<span class="cnt">${of} ${unit}</span></h3>
+      <table><tr><th class="n">#</th><th class="tm">Time</th><th>Name</th><th class="n">Age</th><th>Date</th><th>Meet</th></tr>
+      ${top.map(row).join('')}${below.length ? '<tr class="gap"><td colspan="6">· · ·</td></tr>' + below.map(row).join('') : ''}</table></div>`;
+  }
+  if (find.length >= 2 && !notes.length) notes.push(`No swims for “${esc(L.find)}” match these filters.`);
+  $('l-hl').innerHTML = notes.length ? `<div class="hl">${notes.join('<br>')}</div>` : '';
+  $('l-out').innerHTML = (L.event === 'all' ? `<h2>${esc(listTitle())}</h2>` : '') + (html || '<div class="block"><table><tr><td class="mut">No swims match these filters. Try widening the age group or the time window.</td></tr></table></div>');
+  $('l-out').onclick = (e) => {
+    const ev = e.target.closest('a[data-ev]'); if (ev) { L.event = ev.dataset.ev; syncList(); runList(); scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    const a = e.target.closest('a[data-id]'); if (a) { show('lookup'); profile(+a.dataset.id); }
+  };
 }
 function csv() {
-  const head = ['rank', 'first', 'last', 'time', 'age', 'date', 'meet', 'team'];
+  const head = ['event', 'rank', 'time', 'first', 'last', 'sex', 'age', 'date', 'meet', 'relay lead-off', 'HS unattached', 'round'];
   const q = (v) => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-  const body = LR.map((r, i) => [i + 1, r.first, r.last, fmt(r.time_cs) + (r.kind === 'L' ? ' r' : ''), r.age, r.swim_date, r.meet, r.team].map(q).join(','));
+  const body = LR.map((r) => [evName(r.distance, r.stroke), r.rk, fmt(r.time_cs), r.first, r.last, r.sex, r.age, r.swim_date, r.meet, r.kind === 'L' ? 'Y' : '', r.nsea_rec === 0 ? 'Y' : '', r.round].map(q).join(','));
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([[head.join(','), ...body].join('\n')], { type: 'text/csv' })); a.download = 'nsea-top-times.csv'; a.click();
 }
 
 // ---------- Compare ----------
-const C = { course: 'Y', sex: 'F' };
+// Meet-specific standards: the events calendar links here with ?std=Name|Name (names as the standards are labelled; "Motivational" = B–AAAA).
+const FOCUS = new Set((new URLSearchParams(location.search).get('std') || '').split('|').map((x) => x.trim()).filter(Boolean));
+const isFocus = (b) => b.family === 'standard' && (FOCUS.has(b.label) || (b.level === 'motivational' && [...FOCUS].some((x) => /^motivational/i.test(x))));
+const CDEF = { course: 'Y', event: '100 1', sex: 'F', age: '12', time: '', view: 'check', series: null, ag: '', avg: true, only: false };
+let C = { ...CDEF };
+const AGE_COLS = [['10 & under', 10], ['11-12', 12], ['13-14', 14], ['15-16', 16], ['17-18', 18], ['19 & over / Open', 19]];
+const ORD = (r) => (r === 1 ? 'winner' : r === 3 ? '3rd' : r + 'th');
 function initCompare() {
-  pills($('c-course'), [['Y', 'SCY'], ['L', 'LCM']], C.course, (v) => { C.course = v; evOptions($('c-event'), v); seriesOptions(); runCompare(); });
+  pills($('c-course'), [['Y', 'SCY'], ['L', 'LCM']], C.course, (v) => { C.course = v; if (C.series) C.series = C.series.replace(v === 'L' ? '_SC_' : '_LC_', v === 'L' ? '_LC_' : '_SC_'); C.event = evOptions($('c-event'), v, C.event); seriesOptions(); runCompare(); });
   pills($('c-sex'), [['F', 'Women'], ['M', 'Men']], C.sex, (v) => { C.sex = v; runCompare(); });
-  evOptions($('c-event'), C.course, '100 1'); seriesOptions();
-  for (const id of ['c-event', 'c-age', 'c-series']) $(id).onchange = () => { if (id !== 'c-age') $('c-ag').dataset.keep = ''; runCompare(); };
-  $('c-ag').onchange = () => { $('c-ag').dataset.keep = $('c-ag').value; runCompare(); };
-  $('c-time').oninput = () => { clearTimeout(qTimer); qTimer = setTimeout(runCompare, 300); };
+  pills($('c-view'), [['check', 'Check a time'], ['ages', 'By age group']], C.view, (v) => { C.view = v; runCompare(); });
+  $('c-event').onchange = () => { C.event = $('c-event').value; C.ag = ''; runCompare(); };
+  $('c-series').onchange = () => { C.series = $('c-series').value; C.ag = ''; runCompare(); };
+  $('c-age').onchange = () => { C.age = $('c-age').value; C.ag = ''; runCompare(); };
+  $('c-ag').onchange = () => { C.ag = $('c-ag').value; runCompare(); };
+  $('c-avg').onchange = () => { C.avg = $('c-avg').checked; runCompare(); };
+  $('c-time').oninput = () => { C.time = $('c-time').value; clearTimeout(qTimer); qTimer = setTimeout(runCompare, 300); };
+  $('c-focus').onchange = (e) => { if (e.target.id === 'c-only') { C.only = e.target.checked; runCompare(); } };
 }
+function syncCompare() {
+  const set = (el, v) => [...el.children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === v));
+  set($('c-course'), C.course); set($('c-sex'), C.sex); set($('c-view'), C.view);
+  C.event = evOptions($('c-event'), C.course, C.event); seriesOptions();
+  $('c-age').value = C.age; if (document.activeElement !== $('c-time')) $('c-time').value = C.time; $('c-avg').checked = C.avg;
+}
+// C.series: null = not chosen yet (default to the NC Age Group meet for the course), '' = none.
 function seriesOptions() {
   const want = C.course === 'Y' ? /(_SC_|SC_|WINTER|US_OPEN|YMCA)/ : /(_LC_|FUTURES|JUNIOR|SOUTHERN|US_OPEN)/;
   const list = (META?.series || []).filter((s) => s.champ && want.test(s.series));
-  const v = $('c-series').value;
   $('c-series').innerHTML = '<option value="">None</option>' + list.map((s) => `<option value="${esc(s.series)}">${esc(sname(s.series))}</option>`).join('');
+  const v = C.series ?? (list.find((s) => /NC_.C_AG/.test(s.series))?.series || '');
   $('c-series').value = list.some((s) => s.series === v) ? v : (list.find((s) => /NC_.C_AG/.test(s.series))?.series || '');
+  if (C.series === '') $('c-series').value = '';
+}
+function compareHash() {
+  const p = new URLSearchParams();
+  for (const k of ['course', 'event', 'sex', 'age', 'time', 'view', 'ag']) if (C[k] !== CDEF[k] && C[k] !== '') p.set(k, C[k]);
+  if (C.series !== null) p.set('series', C.series);
+  if (!C.avg) p.set('avg', '0');
+  return p.toString();
+}
+function readCompare(p) {
+  for (const k of ['event', 'sex', 'age', 'time', 'view', 'ag']) if (p.get(k)) C[k] = p.get(k);
+  const c = (p.get('course') || '').toUpperCase(); if (c) C.course = c === 'LCM' || c === 'L' ? 'L' : 'Y';
+  if (p.has('series')) C.series = p.get('series');
+  if (p.get('avg') === '0') C.avg = false;
+  if (!['F', 'M'].includes(C.sex)) C.sex = 'F';
+  if (!['check', 'ages'].includes(C.view)) C.view = 'check';
+}
+function summary(stds, mine) {
+  if (mine == null || !stds.length) return '';
+  const sorted = stds.slice().sort((a, b) => a.time_cs - b.time_cs);
+  const met = sorted.find((b) => mine <= b.time_cs), next = sorted.filter((b) => b.time_cs < mine).pop();
+  const slow = sorted[sorted.length - 1].time_cs, fast = sorted[0].time_cs;
+  const pct = Math.max(0, Math.min(100, ((slow - mine) / Math.max(1, slow - fast)) * 100));
+  const drop = next ? (mine - next.time_cs) / 100 : 0;
+  return `<div class="sumcard"><div class="big${met ? '' : ' none'}">${met ? `You've reached: ${esc(met.label)} (${esc(met.time_text || fmt(met.time_cs))})` : 'Not yet at the first standard'}</div>
+    <div>${next ? `Next up: <b>${esc(next.label)} ${esc(next.time_text || fmt(next.time_cs))}</b> — drop ${drop.toFixed(2)} s (${((drop * 100 / mine) * 100).toFixed(1)}%)` : 'That is faster than every standard listed for this event and age.'}</div>
+    <div class="bar"><i style="width:${pct.toFixed(1)}%"></i></div></div>`;
+}
+function ladder(bm, mine, label) {
+  const rows = bm.slice().sort((a, b) => a.time_cs - b.time_cs); let placed = mine == null;
+  let h = '<table><tr><th>Standard / record</th><th>Age</th><th class="tm">Time</th><th>Holder</th></tr>';
+  const me = () => `<tr class="me"><td>▶ ${esc(label)}</td><td></td><td class="tm">${fmt(mine)}</td><td></td></tr>`;
+  for (const b of rows) {
+    if (!placed && mine <= b.time_cs) { h += me(); placed = true; }
+    const got = mine != null && mine <= b.time_cs && b.family === 'standard';
+    const cls = [got ? 'got' : '', FOCUS.size && isFocus(b) ? 'foc' : '', b.family === 'cutoff' ? 'avg' : ''].filter(Boolean).join(' ');
+    h += `<tr${cls ? ` class="${cls}"` : ''}><td>${esc(b.label)}${b.family === 'record' ? '<span class="tag c">record</span>' : b.family === 'cutoff' ? '<span class="tag">meet avg</span>' : ''}</td><td class="mut">${esc(b.age_group)}</td><td class="tm">${esc(b.time_text || fmt(b.time_cs))}</td><td class="mut">${esc(b.holder || '')}${b.swim_date ? ' · ' + esc(b.swim_date.slice(0, 4)) : ''}</td></tr>`;
+  }
+  if (!placed) h += me();
+  return h + '</table>';
+}
+function focusBar() {
+  if (!FOCUS.size) return '';
+  return `<div class="focusbar">${C.only ? 'Showing only the standards for the meet you picked' : 'Standards for the meet you picked are marked with a red edge'}: <b>${esc([...FOCUS].join(', '))}</b>
+    <label><input type="checkbox" id="c-only"${C.only ? ' checked' : ''}> Only these standards</label></div>`;
 }
 async function runCompare() {
-  const [d, s] = $('c-event').value.split(' '), age = +$('c-age').value, mine = parse($('c-time').value);
+  if (!$('compare').classList.contains('hide')) history.replaceState(null, '', '#compare&' + compareHash());
+  const [d, s] = C.event.split(' '), age = +C.age || 12, mine = parse(C.time);
   const base = `course=${C.course}&distance=${d}&stroke=${s}&sex=${C.sex}`;
-  const bm = (await api(`/benchmarks?${base}&age=${age}`)).benchmarks;
+  $('c-focus').innerHTML = focusBar();
+  const keep = (b) => !(FOCUS.size && C.only) || isFocus(b);
+  const ages = C.view === 'ages', series = ages ? '' : $('c-series').value;
+  $('c-agbox').classList.toggle('hide', !series); $('c-avgbox').classList.toggle('hide', !series);
+  $('c-series').parentElement.classList.toggle('hide', ages);
+  if (ages) {
+    const all = (await api(`/benchmarks?${base}`)).benchmarks.filter((b) => b.family === 'standard' && keep(b));
+    $('c-sum').innerHTML = summary(all.filter((b) => age >= b.age_lo && age <= b.age_hi), mine);
+    // Standards with no age limit (U.S. Open, Sectionals, NC Senior...) go in the Open column only; 18 & under cuts show in every column up to 18.
+    const open = (b) => b.age_lo <= 10 && b.age_hi >= 99;
+    const col = (a) => all.filter((b) => a >= b.age_lo && a <= b.age_hi && (a === 19 || !open(b))).sort((x, y) => x.time_cs - y.time_cs);
+    const here = AGE_COLS.find(([, a], i) => age <= a || i === AGE_COLS.length - 1)[1];
+    $('c-out').innerHTML = `<div class="block"><h3>${C.sex === 'F' ? 'Girls / Women' : 'Boys / Men'} · ${evName(+d, +s)} ${CNAME[C.course]} · standards by age group</h3><div class="cols">
+      ${AGE_COLS.map(([t, a]) => `<div class="col${a === here ? ' mine' : ''}"><h4>${t}</h4>${col(a).map((b) => `<div class="crow${mine != null && mine <= b.time_cs ? ' got' : ''}${FOCUS.size && isFocus(b) ? ' foc' : ''}"><span>${esc(b.label)}</span><b>${esc(b.time_text || fmt(b.time_cs))}</b></div>`).join('') || '<div class="mut">not offered</div>'}</div>`).join('')}
+      </div></div>${mine != null ? `<div class="note">Green rows are standards a ${fmt(mine)} meets in that age group.</div>` : ''}`;
+    return;
+  }
+  const bm = (await api(`/benchmarks?${base}&age=${age}`)).benchmarks.filter(keep);
+  $('c-sum').innerHTML = summary(bm.filter((b) => b.family === 'standard'), mine);
   let html = `<div class="row" style="align-items:flex-start">`;
-  const series = $('c-series').value;
+  const extra = [];
   if (series) {
     const first = await api(`/cutoffs?${base}&series=${series}`);
     const ags = first.age_groups;
-    const keep = $('c-ag').dataset.keep;
-    const pick = ags.find((a) => `${a.age_lo}-${a.age_hi}` === keep) || ags.find((a) => age >= a.age_lo && age <= a.age_hi) || ags[0];
+    const pick = ags.find((a) => `${a.age_lo}-${a.age_hi}` === C.ag) || ags.find((a) => age >= a.age_lo && age <= a.age_hi) || ags[0];
     $('c-ag').innerHTML = ags.map((a) => `<option value="${a.age_lo}-${a.age_hi}">${esc(a.age_group)}</option>`).join('');
     if (pick) $('c-ag').value = `${pick.age_lo}-${pick.age_hi}`;
     const cut = pick ? first.cutoffs.filter((c) => c.age_lo === pick.age_lo && c.age_hi === pick.age_hi) : [];
@@ -317,37 +507,44 @@ async function runCompare() {
     const golden = /^NC_(SC|LC)_AG$/.test(series);
     const RANKS = golden ? [1, 3, 5, 8, 16, 24, 32] : [1, 3, 8, 16, 24, 32];
     const at = (y, r) => cut.find((c) => c.date === y && c.rank === r);
-    const place = (y) => { if (mine == null) return ''; const c = cut.filter((x) => x.date === y && x.rank > 1).sort((a, b) => a.rank - b.rank); let p = null; for (const x of c) if (mine <= x.time_cs) { p = x.rank; break; } return p ? `top ${p}${p <= 5 && golden ? ' ★' : ''}` : `outside top ${c.length ? c[c.length - 1].rank : '?'}`; };
+    const last3 = years.slice(0, 3);
+    const avg = {}; for (const r of RANKS) { const v = last3.map((y) => at(y, r)?.time_cs).filter((x) => x != null); if (v.length >= 2) avg[r] = Math.round(v.reduce((a, b) => a + b, 0) / v.length); }
+    const span = last3.length ? `${last3[last3.length - 1].slice(0, 4)}–${last3[0].slice(2, 4)}` : '';
+    const place = (get) => { if (mine == null) return ''; const ranks = RANKS.filter((r) => r > 1 && get(r) != null); let p = null; for (const r of ranks) if (mine <= get(r)) { p = r; break; } return p ? `top ${p}${p <= 5 && golden ? ' ★' : ''}` : `outside top ${ranks.length ? ranks[ranks.length - 1] : '?'}`; };
+    if (C.avg && pick) for (const r of RANKS) if (avg[r] != null && r > 1) extra.push({ label: `${sname(series)} ${ORD(r)} (avg ${span})`, family: 'cutoff', age_group: pick.age_group, time_cs: avg[r] });
     html += `<div class="block" style="flex:1 1 560px"><h3>${esc(sname(series))} · ${pick ? esc(pick.age_group) : ''} · ${evName(+d, +s)}</h3>
-      <div class="note" style="padding:0 10px">Winner and 3rd${golden ? ' and 5th' : ''} are places in the final. 8th, 16th, 24th and 32nd are the times needed to make the A, B and C finals, from prelims when the event had prelims (otherwise from the final).${golden ? ' <b>5th ★</b> earns a Golden Ticket to NC Select Camp.' : ''}</div>
-      <table><tr><th>Year</th><th class="tm">Winner</th>${RANKS.slice(1).map((r) => `<th class="tm"${r === 5 ? ' title="Golden Ticket to NC Select Camp"' : ''}>${r === 3 ? '3rd' : r + 'th'}${r === 5 ? ' ★' : ''}</th>`).join('')}${mine != null ? '<th>' + fmt(mine) + '</th>' : ''}</tr>
-      ${years.map((y) => `<tr><td>${esc(y.slice(0, 4))}</td>${RANKS.map((r) => { const c = at(y, r); return `<td class="tm">${c ? esc(c.time_text) : ''}</td>`; }).join('')}${mine != null ? `<td class="mut">${place(y)}</td>` : ''}</tr>`).join('') || '<tr><td colspan="8" class="mut">No results for this event at this meet.</td></tr>'}
+      <div class="note" style="padding:0 10px">Winner and 3rd${golden ? ' and 5th' : ''} are places in the final. 8th, 16th, 24th and 32nd are the times needed to make the A, B and C finals, from prelims when the event had prelims (otherwise from the final).${golden ? ' <b>5th ★</b> earns a Golden Ticket to NC Select Camp.' : ''} The average is of the last three meets on file.</div>
+      <table><tr><th>Year</th><th class="tm">Winner</th>${RANKS.slice(1).map((r) => `<th class="tm"${r === 5 ? ' title="Golden Ticket to NC Select Camp"' : ''}>${ORD(r)}${r === 5 ? ' ★' : ''}</th>`).join('')}${mine != null ? '<th>' + fmt(mine) + '</th>' : ''}</tr>
+      ${Object.keys(avg).length ? `<tr class="avgrow"><td>3-yr avg<br><span class="mut">${span}</span></td>${RANKS.map((r) => `<td class="tm">${avg[r] != null ? fmt(avg[r]) : ''}</td>`).join('')}${mine != null ? `<td class="mut">${place((r) => avg[r])}</td>` : ''}</tr>` : ''}
+      ${years.map((y) => `<tr><td>${esc(y.slice(0, 4))}</td>${RANKS.map((r) => { const c = at(y, r); return `<td class="tm">${c ? esc(c.time_text) : ''}</td>`; }).join('')}${mine != null ? `<td class="mut">${place((r) => at(y, r)?.time_cs)}</td>` : ''}</tr>`).join('') || '<tr><td colspan="8" class="mut">No results for this event at this meet.</td></tr>'}
       </table></div>`;
   }
-  html += `<div class="block ladder" style="flex:1 1 380px"><h3>Standards and records · age ${age}</h3>${ladder(bm, mine, 'Your time')}</div></div>`;
+  html += `<div class="block ladder" style="flex:1 1 380px"><h3>Standards and records · age ${age}</h3>${ladder(bm.concat(extra), mine, 'Your time')}</div></div>`;
   $('c-out').innerHTML = html;
 }
 
+// Presets come in on the query string (a site page embedding the hub, e.g. ?tab=compare&series=NC_SC_SR&age=16,
+// or the events calendar's ?std=...&course=LCM) or on the hash (shared links). The hash wins.
+function route() {
+  const qs = new URLSearchParams(location.search), h = location.hash.slice(1);
+  let tab = qs.get('tab') || 'lookup';
+  C = { ...CDEF }; readCompare(qs);
+  if (h.startsWith('swimmer=')) tab = 'swimmer';
+  else if (h.startsWith('list')) { tab = 'list'; readListHash(new URLSearchParams(h.slice(5))); }
+  else if (h.startsWith('compare')) { tab = 'compare'; readCompare(new URLSearchParams(h.slice(8))); }
+  else if (tab === 'list') readListHash(qs);
+  syncList(); syncCompare();
+  if (tab === 'swimmer') { show('lookup'); profile(+h.slice(8)); } else show(['list', 'compare'].includes(tab) ? tab : 'lookup');
+  runList().catch(() => {});
+  runCompare().catch(() => {});
+}
 // ---------- start ----------
 (async function start() {
-  try { META = await api('/meta'); $('built').textContent = 'Data through ' + (META.meta.latest_swim || '') ; } catch { return; }
+  try { META = await api('/meta'); $('built').textContent = 'Data through ' + (META.meta.latest_swim || ''); } catch { return; }
   initList(); initCompare();
-  const h = location.hash.slice(1);
-  if (h.startsWith('swimmer=')) { show('lookup'); profile(+h.slice(8)); }
-  else if (h.startsWith('list')) {
-    const p = new URLSearchParams(h.slice(5));
-    show('list');
-    if (p.get('course')) { L.course = p.get('course'); pills($('l-course'), [['Y', 'SCY'], ['L', 'LCM']], L.course, (v) => { L.course = v; evOptions($('l-event'), v); runList(); }); evOptions($('l-event'), L.course); }
-    if (p.get('distance')) $('l-event').value = p.get('distance') + ' ' + p.get('stroke');
-    for (const [k, el] of [['sex', 'l-sex'], ['scope', 'l-scope'], ['mode', 'l-mode']]) if (p.has(k)) { L[k] = p.get(k); [...$(el).children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === L[k])); }
-    if (!p.has('sex')) { L.sex = ''; [...$('l-sex').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === '')); }
-    if (p.get('age_lo')) $('l-age').value = p.get('age_lo') + '-' + p.get('age_hi');
-    if (p.get('series')) $('l-series').value = p.get('series');
-    if (p.get('limit')) $('l-limit').value = p.get('limit');
-    if (p.get('from') || p.get('to')) { $('l-when').value = 'range'; $('l-range').classList.remove('hide'); $('l-from').value = p.get('from') || ''; $('l-to').value = p.get('to') || ''; }
-    runList();
-  } else runList().catch(() => {});
-  runCompare().catch(() => {});
+  route();
+  // A link to another hub view opened in the same page (or the back button) changes only the hash.
+  addEventListener('hashchange', route);
 })();
 </script>
 </body></html>
