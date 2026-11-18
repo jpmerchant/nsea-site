@@ -23,6 +23,11 @@
       "database_name": "nsea-carpool",
       "database_id": "e9529275-14ce-4778-9c80-f612ed0f33e1",
       "migrations_dir": "migrations"
+    },
+    {
+      "binding": "HUB",
+      "database_name": "nsea-hub",
+      "database_id": "7e588f12-1378-4b33-94d6-992786ca22c8"
     }
   ]
 }

@@ -211,7 +211,7 @@ The data comes from the results database: nsea-results-db `export_hub.py` writes
 Load it by hand from this folder, where wrangler is installed and signed in:
 
 ```
-npx wrangler d1 create nsea-hub          # once; copy the database_id into wrangler.jsonc (binding HUB)
+npx wrangler d1 create nsea-hub          # done Nov 18 2026: database_id 7e588f12-1378-4b33-94d6-992786ca22c8 (binding HUB in wrangler.jsonc)
 npx wrangler d1 execute nsea-hub --remote --yes --file="<NSEA Swim>/results-db/hub/hub.sql"   # after each export
 ```
 `hub.sql` drops and recreates its tables, so reloading replaces everything. The edge cache holds answers for up to an hour.
