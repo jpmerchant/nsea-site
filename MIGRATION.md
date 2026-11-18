@@ -11,8 +11,8 @@ Counts: rebuild 16 · done 69 · ready 14 · new 2
 | Live page (nseaswimteam.com) | New path | Status |
 |---|---|---|
 | `/top-10-swims---scy` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
-| `/records-set-in-2025---26` | `/times/top-times/new-additions/` | done |
-| `/2025---26-updates` | `/times/top-times/new-additions/` | done |
+| `/records-set-in-2025---26` | `/times/achievements/2025-26/` | done |
+| `/2025---26-updates` | `/times/achievements/2025-26/` | done |
 | `/top-10-swims--lcm` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
 | `/offerings` | `/programs/clinics/` + `/programs/clinics/high-school-prep/` + `/programs/clinics/high-school-skills/` + `/programs/clinics/summer-league-prep/` + `/programs/clinics/summer-league-skills/` | done |
 | `/check-my-time` | `/times/data-hub/` | done |
@@ -204,13 +204,13 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/top-times/swimmers/` | Top 10 Swimmers | tool | ready | `/top-times`, `/top-times---lcm` | tools/boards/top10-performers-*.html |
 | `/times/top-times/swims/` | Top 10 Swims | tool | ready | `/top-10-swims---scy`, `/top-10-swims--lcm` | tools/boards/top10-performances-*.html |
 | `/times/top-times/relays/` | Top 5 Relays | tool | ready | `/top-5-relays---scy`, `/top-5-relays---lcm` | tools/boards/top5-relays-*.html |
-| `/times/top-times/new-additions/` | New Board Additions | tool | done | `/2025---26-updates`, `/records-set-in-2025---26` | tools/standards/NSEA New Board Additions - Site Embed.html |
+| `/times/top-times/new-additions/` | New Board Additions | tool | done | - | - |
 | `/times/records/` | Team Records | hub | rebuild | - | - |
 | `/times/records/holders/` | Record Holders | tool | ready | `/team-record-holders` | tools/boards/records.html |
 | `/times/records/individual/` | Individual Records | tool | ready | `/team-records---scy`, `/team-records---lcm` | tools/boards/records-traditional-*.html |
 | `/times/records/relays/` | Relay Records | tool | ready | `/scy---relay-team-records`, `/lcm---relay-team-records` | tools/boards/records-relays-*.html |
 | `/times/achievements/` | Achievements by Season | hub | rebuild | - | - |
-| `/times/achievements/2025-26/` | 2025 – 2026 | page | done | `/2025---2026` | - |
+| `/times/achievements/2025-26/` | 2025 – 2026 | page | done | `/2025---2026`, `/2025---26-updates`, `/records-set-in-2025---26` | public/embeds/new-additions.html (2025–26 version, rebuilt from the results database Nov 2026) |
 | `/times/achievements/2024-25/` | 2024 – 2025 | page | done | `/2024---2025` | - |
 | `/times/achievements/2023-24/` | 2023 – 2024 | tool | done | `/2023---2024` | - |
 | `/times/achievements/2022-23/` | 2022 – 2023 | tool | done | `/2022---23-achievements` | - |
