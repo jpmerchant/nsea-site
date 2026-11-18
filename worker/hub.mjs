@@ -41,14 +41,13 @@ async function swimmers(env, q) {
   const text = String(q.get('q') || '').replace(/[%_]/g, '').trim().slice(0, 40);
   if (text.length < 2) return fail(400, 'Type at least 2 letters');
   const parts = text.split(/\s+/);
-  const nseaOnly = q.get('nsea') === '1' ? 'AND s.nsea = 1' : '';
   let where, binds;
   if (parts.length > 1) { where = '(s.first LIKE ? AND s.last LIKE ?) OR (s.last LIKE ? AND s.first LIKE ?)'; binds = [parts[0] + '%', parts.slice(1).join(' ') + '%', parts[0] + '%', parts.slice(1).join(' ') + '%']; }
   else { where = 's.last LIKE ? OR s.first LIKE ?'; binds = [text + '%', text + '%']; }
   const list = await rows(env.HUB.prepare(`SELECT s.id, s.first, s.last, s.sex, s.nsea, s.active,
       (SELECT t.name FROM hub_swim x JOIN hub_team t ON t.id = x.team_id WHERE x.swimmer_id = s.id ORDER BY x.swim_date DESC LIMIT 1) AS team,
       (SELECT MAX(x.swim_date) FROM hub_swim x WHERE x.swimmer_id = s.id) AS last_swim
-    FROM hub_swimmer s WHERE (${where}) ${nseaOnly} ORDER BY s.nsea DESC, s.last, s.first LIMIT 30`).bind(...binds));
+    FROM hub_swimmer s WHERE (${where}) AND s.nsea = 1 ORDER BY s.last, s.first LIMIT 30`).bind(...binds));
   return ok({ swimmers: list });
 }
 
@@ -68,7 +67,7 @@ async function splits(env, id) {
   return ok({ splits: list });
 }
 
-// Rankings: performers (best swim per swimmer) or performances (every swim).
+// Rankings: performers (best swim per swimmer) or performances (every swim), NSEA swims only.
 async function rank(env, q) {
   const f = eventFilter(q);
   if (f.error) return fail(400, f.error);
@@ -79,7 +78,9 @@ async function rank(env, q) {
   const from = date(q.get('from')), to = date(q.get('to'));
   if (from) { where.push('x.swim_date >= ?'); b.push(from); }
   if (to) { where.push('x.swim_date <= ?'); b.push(to); }
-  if (q.get('scope') !== 'all') where.push(q.get('records') === '1' ? 'x.nsea_rec = 1' : 'x.nsea = 1');
+  // NSEA swims only: the database holds other teams' swims only from the meets that were imported (mostly NC Swimming), so an
+  // "everyone" list would not really be everyone. Championship fields are still used, through the cutoff benchmarks.
+  where.push(q.get('records') === '1' ? 'x.nsea_rec = 1' : 'x.nsea = 1');
   if (q.get('active') === '1') where.push('s.active = 1');
   if (q.get('leadoffs') === '0') where.push("x.kind = 'I'");
   const series = word(q.get('series'));
@@ -151,11 +152,10 @@ async function meets(env, q) {
 async function meet(env, id, q) {
   const m = await env.HUB.prepare('SELECT * FROM hub_meet WHERE id = ?').bind(id).first();
   if (!m) return fail(404, 'Meet not found');
-  const nsea = q.get('scope') === 'all' ? '' : 'AND x.nsea = 1';
   const swims = await rows(env.HUB.prepare(`SELECT x.id, x.swimmer_id, s.first, s.last, s.sex, x.distance, x.stroke, x.course, x.round, x.kind,
       x.time_cs, x.place, x.age, x.event_age, x.event_sex, x.nsea, t.name AS team
     FROM hub_swim x JOIN hub_swimmer s ON s.id = x.swimmer_id LEFT JOIN hub_team t ON t.id = x.team_id
-    WHERE x.meet_id = ? ${nsea} ORDER BY x.distance, x.stroke, s.sex, x.round, x.time_cs LIMIT 8000`).bind(id));
+    WHERE x.meet_id = ? AND x.nsea = 1 ORDER BY x.distance, x.stroke, s.sex, x.round, x.time_cs LIMIT 8000`).bind(id));
   return ok({ meet: m, swims });
 }
 

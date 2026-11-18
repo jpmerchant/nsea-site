@@ -55,7 +55,7 @@ svg{max-width:100%}
 @media print{.noprint{display:none}.block{overflow:visible}}
 </style></head><body>
 <div class="wrap">
-<div class="sub"><span><b>NSEA</b> Data Hub · look up, list and compare</span><span id="built"></span></div>
+<div class="sub"><span><b>NSEA</b> Data Hub · NSEA swimmers and swims · look up, list and compare</span><span id="built"></span></div>
 <div class="pills tabs noprint" id="tabs" role="tablist">
   <button data-tab="lookup" aria-pressed="true">Look up</button>
   <button data-tab="list" aria-pressed="false">List</button>
@@ -66,7 +66,6 @@ svg{max-width:100%}
   <h1>Look up a <span>swimmer</span></h1>
   <div class="row noprint">
     <div><div class="lbl">Name</div><input class="big" id="q" type="text" placeholder="e.g. Witmer or Gentry Wit" autocomplete="off"></div>
-    <div><div class="lbl">Who</div><div class="pills" id="qscope"><button data-v="1" aria-pressed="true">NSEA</button><button data-v="0" aria-pressed="false">Everyone</button></div></div>
   </div>
   <div id="qres" class="cards"></div>
   <div id="profile"></div>
@@ -81,7 +80,6 @@ svg{max-width:100%}
     <div><div class="lbl">Age at the swim</div><select id="l-age"></select></div>
   </div>
   <div class="row noprint">
-    <div><div class="lbl">Swims from</div><div class="pills" id="l-scope"></div></div>
     <div><div class="lbl">Show</div><div class="pills" id="l-mode"></div></div>
     <div><div class="lbl">When</div><select id="l-when"></select></div>
     <div id="l-range" class="hide"><div class="lbl">From – to</div><input type="date" id="l-from"> <input type="date" id="l-to"></div>
@@ -151,13 +149,12 @@ function show(tab) { if (tab === 'list' && LR.length) history.replaceState(null,
 
 // ---------- Look up ----------
 let qTimer = null;
-pills($('qscope'), [['1', 'NSEA'], ['0', 'Everyone']], '1', () => search());
 $('q').oninput = () => { clearTimeout(qTimer); qTimer = setTimeout(search, 250); };
 async function search() {
   const q = $('q').value.trim();
   if (q.length < 2) { $('qres').innerHTML = ''; return; }
-  const j = await api(`/swimmers?q=${encodeURIComponent(q)}${pv($('qscope')) === '1' ? '&nsea=1' : ''}`);
-  $('qres').innerHTML = j.swimmers.length ? j.swimmers.map((s) => `<div class="card" data-id="${s.id}"><b>${esc(s.first)} ${esc(s.last)}</b>${s.nsea ? '<span class="tag">NSEA</span>' : ''}${s.active ? '<span class="tag c">active</span>' : ''}<div>${esc(s.team || '')} · last swim ${esc(s.last_swim || '')}</div></div>`).join('') : '<div class="note">No swimmers found.</div>';
+  const j = await api(`/swimmers?q=${encodeURIComponent(q)}`);
+  $('qres').innerHTML = j.swimmers.length ? j.swimmers.map((s) => `<div class="card" data-id="${s.id}"><b>${esc(s.first)} ${esc(s.last)}</b>${s.active ? '<span class="tag c">active</span>' : ''}<div>${esc(s.team || '')} · last swim ${esc(s.last_swim || '')}</div></div>`).join('') : '<div class="note">No swimmers found.</div>';
 }
 $('qres').onclick = (e) => { const c = e.target.closest('.card'); if (c) profile(+c.dataset.id); };
 let P = null;
@@ -232,13 +229,12 @@ function chart(list) {
 // ---------- List ----------
 const AGES = [['', 'All ages'], ['0-8', '8 & under'], ['0-10', '10 & under'], ['11-12', '11-12'], ['13-14', '13-14'], ['15-16', '15-16'], ['17-18', '17-18'], ['0-14', '14 & under'], ['0-18', '18 & under'], ['15-18', '15-18'], ['19-99', '19 & over'],
   ...Array.from({ length: 13 }, (_, i) => [`${i + 6}-${i + 6}`, `Age ${i + 6}`])];
-const L = { course: 'Y', sex: 'F', scope: 'nsea', mode: 'performers' };
+const L = { course: 'Y', sex: 'F', mode: 'performers' };
 function evOptions(sel, course, keep) { const v = keep || sel.value; sel.innerHTML = EVENTS[course].map((k) => `<option value="${k}">${evName(...k.split(' ').map(Number))}</option>`).join(''); if (EVENTS[course].includes(v)) sel.value = v; else sel.value = EVENTS[course][1]; }
 function seasonStart() { const d = new Date(); const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; return `${y}-09-01`; }
 function initList() {
   pills($('l-course'), [['Y', 'SCY'], ['L', 'LCM']], L.course, (v) => { L.course = v; evOptions($('l-event'), v); runList(); });
   pills($('l-sex'), [['F', 'Women'], ['M', 'Men'], ['', 'Both']], L.sex, (v) => { L.sex = v; runList(); });
-  pills($('l-scope'), [['nsea', 'NSEA'], ['all', 'Everyone']], L.scope, (v) => { L.scope = v; runList(); });
   pills($('l-mode'), [['performers', 'Swimmers'], ['performances', 'Swims']], L.mode, (v) => { L.mode = v; runList(); });
   evOptions($('l-event'), L.course, '50 1');
   $('l-age').innerHTML = AGES.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
@@ -252,7 +248,7 @@ function initList() {
 let LR = [];
 function listQuery() {
   const [d, s] = $('l-event').value.split(' ');
-  const p = new URLSearchParams({ course: L.course, distance: d, stroke: s, scope: L.scope, mode: L.mode, limit: $('l-limit').value });
+  const p = new URLSearchParams({ course: L.course, distance: d, stroke: s, mode: L.mode, limit: $('l-limit').value });
   if (L.sex) p.set('sex', L.sex);
   const a = $('l-age').value; if (a) { const [lo, hi] = a.split('-'); p.set('age_lo', lo); p.set('age_hi', hi); }
   const w = $('l-when').value, ss = seasonStart();
@@ -269,16 +265,16 @@ async function runList() {
 function drawList() {
   const p = listQuery(), find = $('l-find').value.trim().toLowerCase();
   const title = `${evName(+p.get('distance'), +p.get('stroke'))} · ${CNAME[L.course]} · ${L.sex ? (L.sex === 'F' ? 'Women' : 'Men') : 'Women and men'} · ${$('l-age').selectedOptions[0].text}`;
-  $('l-note').textContent = (L.scope === 'nsea' ? 'NSEA swims only (the same swims as the team boards).' : 'Every swim in the database, all teams.') + (L.mode === 'performers' ? ' One line per swimmer, their best time.' : ' Every swim; a swimmer can appear more than once.') + ' r = relay lead-off.';
-  $('l-out').innerHTML = `<div class="block list"><h3>${esc(title)}</h3><table><tr><th class="n">#</th><th>Name</th><th class="tm">Time</th><th class="n">Age</th><th>Date</th><th>Meet</th>${L.scope === 'all' ? '<th>Team</th>' : ''}</tr>
-    ${LR.map((r, i) => `<tr${find && (r.first + ' ' + r.last).toLowerCase().includes(find) ? ' class="me"' : ''}><td class="n">${i + 1}</td><td><a data-id="${r.swimmer_id}">${esc(r.first)} ${esc(r.last)}</a></td><td class="tm">${fmt(r.time_cs)}${r.kind === 'L' ? ' r' : ''}</td><td class="n">${r.age ?? ''}</td><td class="mut">${esc(r.swim_date)}</td><td class="mut">${esc(r.meet)}</td>${L.scope === 'all' ? `<td class="mut">${esc(r.team || '')}</td>` : ''}</tr>`).join('') || '<tr><td colspan="7" class="mut">No swims match.</td></tr>'}
+  $('l-note').textContent = 'NSEA swims only (the same swims as the team boards).' + (L.mode === 'performers' ? ' One line per swimmer, their best time.' : ' Every swim; a swimmer can appear more than once.') + ' r = relay lead-off.';
+  $('l-out').innerHTML = `<div class="block list"><h3>${esc(title)}</h3><table><tr><th class="n">#</th><th>Name</th><th class="tm">Time</th><th class="n">Age</th><th>Date</th><th>Meet</th></tr>
+    ${LR.map((r, i) => `<tr${find && (r.first + ' ' + r.last).toLowerCase().includes(find) ? ' class="me"' : ''}><td class="n">${i + 1}</td><td><a data-id="${r.swimmer_id}">${esc(r.first)} ${esc(r.last)}</a></td><td class="tm">${fmt(r.time_cs)}${r.kind === 'L' ? ' r' : ''}</td><td class="n">${r.age ?? ''}</td><td class="mut">${esc(r.swim_date)}</td><td class="mut">${esc(r.meet)}</td></tr>`).join('') || '<tr><td colspan="6" class="mut">No swims match.</td></tr>'}
     </table></div>`;
   $('l-out').onclick = (e) => { const a = e.target.closest('a[data-id]'); if (a) { show('lookup'); profile(+a.dataset.id); } };
 }
 function csv() {
-  const head = ['rank', 'first', 'last', 'time', 'age', 'date', 'meet', 'team'];
+  const head = ['rank', 'first', 'last', 'time', 'age', 'date', 'meet'];
   const q = (v) => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-  const body = LR.map((r, i) => [i + 1, r.first, r.last, fmt(r.time_cs) + (r.kind === 'L' ? ' r' : ''), r.age, r.swim_date, r.meet, r.team].map(q).join(','));
+  const body = LR.map((r, i) => [i + 1, r.first, r.last, fmt(r.time_cs) + (r.kind === 'L' ? ' r' : ''), r.age, r.swim_date, r.meet].map(q).join(','));
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([[head.join(','), ...body].join('\n')], { type: 'text/csv' })); a.download = 'nsea-top-times.csv'; a.click();
 }
 
@@ -339,7 +335,7 @@ async function runCompare() {
     show('list');
     if (p.get('course')) { L.course = p.get('course'); pills($('l-course'), [['Y', 'SCY'], ['L', 'LCM']], L.course, (v) => { L.course = v; evOptions($('l-event'), v); runList(); }); evOptions($('l-event'), L.course); }
     if (p.get('distance')) $('l-event').value = p.get('distance') + ' ' + p.get('stroke');
-    for (const [k, el] of [['sex', 'l-sex'], ['scope', 'l-scope'], ['mode', 'l-mode']]) if (p.has(k)) { L[k] = p.get(k); [...$(el).children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === L[k])); }
+    for (const [k, el] of [['sex', 'l-sex'], ['mode', 'l-mode']]) if (p.has(k)) { L[k] = p.get(k); [...$(el).children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === L[k])); }
     if (!p.has('sex')) { L.sex = ''; [...$('l-sex').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === '')); }
     if (p.get('age_lo')) $('l-age').value = p.get('age_lo') + '-' + p.get('age_hi');
     if (p.get('series')) $('l-series').value = p.get('series');
