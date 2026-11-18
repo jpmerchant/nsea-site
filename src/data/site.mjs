@@ -154,7 +154,7 @@ export const pages = [
   { path: '/times/top-times/swimmers/', type: 'tool', title: 'Top 10 Swimmers', desc: 'One entry per swimmer, per event.', status: 'ready', from: ['/top-times', '/top-times---lcm'], variants: { SCY: BOARDS + '/top10-performers-scy.html', LCM: BOARDS + '/top10-performers-lcm.html' }, legacy: ['tools/boards/top10-performers-*.html'], height: 1500 },
   { path: '/times/top-times/swims/', type: 'tool', title: 'Top 10 Swims', desc: 'The fastest swims, repeat swimmers allowed.', status: 'ready', from: ['/top-10-swims---scy', '/top-10-swims--lcm'], variants: { SCY: BOARDS + '/top10-performances-scy.html', LCM: BOARDS + '/top10-performances-lcm.html' }, legacy: ['tools/boards/top10-performances-*.html'], height: 1500 },
   { path: '/times/top-times/relays/', type: 'tool', title: 'Top 5 Relays', desc: '', status: 'ready', from: ['/top-5-relays---scy', '/top-5-relays---lcm'], variants: { SCY: BOARDS + '/top5-relays-scy.html', LCM: BOARDS + '/top5-relays-lcm.html' }, legacy: ['tools/boards/top5-relays-*.html'], height: 1300 },
-  { path: '/times/top-times/new-additions/', type: 'tool', title: 'New Board Additions', desc: 'Swims that just made the boards this season.', embed: '/embeds/new-additions.html', status: 'done', from: ['/2025---26-updates', '/records-set-in-2025---26'], legacy: ['tools/standards/NSEA New Board Additions - Site Embed.html'], height: 1400 },
+  { path: '/times/top-times/new-additions/', type: 'tool', title: 'New Board Additions', desc: 'New team records and Top 10 placements this season, updated after every meet.', embed: '/embeds/new-additions.html', status: 'done', height: 1400 },
 
   { path: '/times/records/', type: 'hub', title: 'Team Records', desc: 'Every NSEA team record, individual and relay.', status: 'rebuild' },
   { path: '/times/records/holders/', type: 'tool', title: 'Record Holders', desc: 'Swimmers ranked by number of records held.', status: 'ready', from: ['/team-record-holders'], embed: BOARDS + '/records.html', legacy: ['tools/boards/records.html'], height: 1400 },
@@ -162,7 +162,7 @@ export const pages = [
   { path: '/times/records/relays/', type: 'tool', title: 'Relay Records', desc: '', status: 'ready', from: ['/scy---relay-team-records', '/lcm---relay-team-records'], variants: { SCY: BOARDS + '/records-relays-scy.html', LCM: BOARDS + '/records-relays-lcm.html' }, legacy: ['tools/boards/records-relays-*.html'], height: 1300 },
 
   { path: '/times/achievements/', type: 'hub', title: 'Achievements by Season', desc: 'The year-by-year story of the team.', status: 'rebuild' },
-  { path: '/times/achievements/2025-26/', type: 'page', title: '2025 – 2026', desc: '', status: 'done', from: ['/2025---2026'] },
+  { path: '/times/achievements/2025-26/', type: 'page', title: '2025 – 2026', desc: 'Championship finishes, new team records and every board addition from the 2025–26 season.', status: 'done', from: ['/2025---2026', '/2025---26-updates', '/records-set-in-2025---26'], embed: '/embeds/board-additions-2025-26.html', legacy: ['public/embeds/new-additions.html (2025–26 version, rebuilt from the results database Nov 2026)'], height: 1600 },
   { path: '/times/achievements/2024-25/', type: 'page', title: '2024 – 2025', desc: '', status: 'done', from: ['/2024---2025'] },
   { path: '/times/achievements/2023-24/', type: 'tool', title: '2023 – 2024', desc: '', embed: '/embeds/achievements-2023-24.html', status: 'done', from: ['/2023---2024'] },
   { path: '/times/achievements/2022-23/', type: 'tool', title: '2022 – 2023', desc: '', embed: '/embeds/achievements-2022-23.html', status: 'done', from: ['/2022---23-achievements'] },
@@ -204,7 +204,7 @@ export const moved = [
   { path: '/times/standards/check-my-time/', to: '/times/data-hub/?tab=compare&series=', title: 'Check My Time', note: 'Check My Time is now part of the Data Hub (Compare tab).', when: '2026-11-18' },
   { path: '/times/standards/nc-age-group/', to: '/times/data-hub/?tab=compare&series=NC_SC_AG&age=12', title: 'NC Age Group Championships', note: 'NC Age Group Championships placings and standards are now in the Data Hub (Compare tab).', when: '2026-11-18' },
   { path: '/times/standards/nc-senior/', to: '/times/data-hub/?tab=compare&series=NC_SC_SR&age=16', title: 'NC Senior Championships', note: 'NC Senior Championships placings and standards are now in the Data Hub (Compare tab).', when: '2026-11-18' },
-  { path: '/times/records/this-season/', to: '/times/top-times/new-additions/#records-scy', title: 'Records Set This Season', note: 'Every record on this page was also on New Board Additions, which now has them.', when: '2026-11-18' },
+  { path: '/times/records/this-season/', to: '/times/achievements/2025-26/', title: 'Records Set This Season', note: 'This page showed the 2025–26 records, which are now on the 2025–26 Achievements page. This season\'s records are on New Board Additions.', when: '2026-11-18' },
 ];
 
 // Pages that are not part of the menu tree
