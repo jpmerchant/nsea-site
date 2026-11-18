@@ -67,5 +67,5 @@ test('hub: swimmer search, profile, splits, benchmarks, cutoffs, meets', { skip:
   assert.equal((await get(env, '/meets?champ=1')).json.meets.length, 1);
   const m = (await get(env, '/meet/1?scope=all')).json; assert.equal(m.swims.length, 3);
   assert.equal((await get(env, '/meet/1')).json.swims.length, 2);
-  assert.equal((await get(env, '/meta')).json.series[0].series, 'NC_SC_AG');
+  const meta = (await get(env, '/meta')).json; assert.equal(meta.series[0].series, 'NC_SC_AG'); assert.equal(meta.series[0].champ, 1);
 });
