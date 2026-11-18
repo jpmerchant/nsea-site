@@ -136,16 +136,14 @@ A subdomain is optional. Use the free `workers.dev` address Cloudflare assigns w
 ▸ Times & Records   /times/
   ▸ Time Standards   /times/standards/
     · Understanding Time Standards   /times/standards/understanding/
-    ⚙ Check My Time   /times/standards/check-my-time/
     ⚙ SCY Comparison by Age Group   /times/standards/compare-by-age-group/
     ⚙ SCY Comparison, All Ages   /times/standards/compare-all-ages/
-    ⚙ NC Age Group Championships   /times/standards/nc-age-group/
-    ⚙ NC Senior Championships   /times/standards/nc-senior/
     · National Meet Qualifiers   /times/standards/national-qualifiers/
     · About Power Points   /times/standards/power-points/
     ▸ IMX / IMR   /times/standards/imx-imr/
       · About IMX / IMR   /times/standards/imx-imr/about/
       ⚙ IMX / IMR Progress Board   /times/standards/imx-imr/progress/
+  ⚙ Data Hub   /times/data-hub/   (also Check My Time and the NC AG / NC Senior championship pages; their old addresses forward here)
   ▸ Top Times   /times/top-times/
     ⚙ Top 10 Swimmers   /times/top-times/swimmers/
     ⚙ Top 10 Swims   /times/top-times/swims/
@@ -155,7 +153,6 @@ A subdomain is optional. Use the free `workers.dev` address Cloudflare assigns w
     ⚙ Record Holders   /times/records/holders/
     ⚙ Individual Records   /times/records/individual/
     ⚙ Relay Records   /times/records/relays/
-    · Records Set This Season   /times/records/this-season/
   ▸ Achievements by Season   /times/achievements/
     · 2025 – 2026   /times/achievements/2025-26/
     · 2024 – 2025   /times/achievements/2024-25/

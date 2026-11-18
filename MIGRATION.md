@@ -1,21 +1,21 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 105 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 101 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 73 · ready 14 · new 2
+Counts: rebuild 16 · done 69 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
 | Live page (nseaswimteam.com) | New path | Status |
 |---|---|---|
 | `/top-10-swims---scy` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
-| `/records-set-in-2025---26` | `/times/records/this-season/` | done |
+| `/records-set-in-2025---26` | `/times/top-times/new-additions/` | done |
 | `/2025---26-updates` | `/times/top-times/new-additions/` | done |
 | `/top-10-swims--lcm` | `/times/top-times/` + `/times/top-times/swims/` | rebuild, ready |
 | `/offerings` | `/programs/clinics/` + `/programs/clinics/high-school-prep/` + `/programs/clinics/high-school-skills/` + `/programs/clinics/summer-league-prep/` + `/programs/clinics/summer-league-skills/` | done |
-| `/check-my-time` | `/times/standards/check-my-time/` | done |
+| `/check-my-time` | `/times/data-hub/` | done |
 | `/2023---2024` | `/times/achievements/2023-24/` | done |
 | `/` | `/` | rebuild |
 | `/top-times---lcm` | `/times/top-times/` + `/times/top-times/swimmers/` | rebuild, ready |
@@ -59,8 +59,8 @@ Counts: rebuild 16 · done 73 · ready 14 · new 2
 | `/current` | `/families/newsletter/` + `/families/newsletter/current/` | rebuild, done |
 | `/lcm---relay-team-records` | `/times/records/relays/` | ready |
 | `/top-5-relays---lcm` | `/times/top-times/` + `/times/top-times/relays/` | rebuild, ready |
-| `/nc-age-group-championships` | `/times/standards/nc-age-group/` | done |
-| `/nc-senior-championships` | `/times/standards/nc-senior/` | done |
+| `/nc-age-group-championships` | `/times/data-hub/` | done |
+| `/nc-senior-championships` | `/times/data-hub/` | done |
 | `/opt-out-of-meets` | `/families/how-to/opt-out-of-meets/` | done |
 | `/opt-in-to-meets` | `/families/how-to/opt-in-to-meets/` | done |
 | `/register-for-an-event` | `/families/how-to/register-for-an-event/` | done |
@@ -192,27 +192,23 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/` | Times & Records | hub | rebuild | - | - |
 | `/times/standards/` | Time Standards | hub | rebuild | `/time-standards` | - |
 | `/times/standards/understanding/` | Understanding Time Standards | page | done | `/time-standards` | - |
-| `/times/standards/check-my-time/` | Check My Time | tool | done | `/check-my-time` | tools/standards/nsea-standards-explorer.html; public/embeds/check-my-time.html (merged into the Data Hub, Nov 2026) |
 | `/times/standards/compare-by-age-group/` | Comparison by Age Group | tool | done | `/scy---comparison-by-age-group` | tools/standards/NSEA SCY Time Standards Comparison.html |
 | `/times/standards/compare-all-ages/` | Comparison, All Ages | tool | done | `/scy---comparison-all-ages` | tools/standards/NSEA SCY Time Standards - All Ages Ranked.html |
-| `/times/standards/nc-age-group/` | NC Age Group Championships | tool | done | `/nc-age-group-championships` | tools/standards/ncs-ag-champs-standards-embed.html; public/embeds/nc-age-group.html (merged into the Data Hub, Nov 2026) |
-| `/times/standards/nc-senior/` | NC Senior Championships | tool | done | `/nc-senior-championships` | tools/standards/ncs-senior-standards-embed.html; public/embeds/nc-senior.html (merged into the Data Hub, Nov 2026) |
 | `/times/standards/national-qualifiers/` | National Meet Qualifiers | page | done | `/national--meet--qualifiers` | - |
 | `/times/standards/power-points/` | About Power Points | page | done | `/power-points-explained` | - |
 | `/times/standards/imx-imr/` | IMX / IMR | hub | rebuild | `/imx-progress`, `/imr-/-imx-progress` | - |
 | `/times/standards/imx-imr/about/` | About IMX / IMR | page | done | `/imx-progress` | - |
 | `/times/standards/imx-imr/progress/` | IMX / IMR Progress Board | tool | ready | `/imr-/-imx-progress` | tools/boards/imx-imr-scy.html |
-| `/times/data-hub/` | Data Hub | tool | done | - | - |
+| `/times/data-hub/` | Data Hub | tool | done | `/check-my-time`, `/nc-age-group-championships`, `/nc-senior-championships` | tools/standards/nsea-standards-explorer.html; tools/standards/ncs-ag-champs-standards-embed.html; tools/standards/ncs-senior-standards-embed.html |
 | `/times/top-times/` | Top Times | hub | rebuild | `/top-times`, `/top-times---lcm`, `/top-10-swims---scy`, `/top-10-swims--lcm`, `/top-5-relays---scy`, `/top-5-relays---lcm` | - |
 | `/times/top-times/swimmers/` | Top 10 Swimmers | tool | ready | `/top-times`, `/top-times---lcm` | tools/boards/top10-performers-*.html |
 | `/times/top-times/swims/` | Top 10 Swims | tool | ready | `/top-10-swims---scy`, `/top-10-swims--lcm` | tools/boards/top10-performances-*.html |
 | `/times/top-times/relays/` | Top 5 Relays | tool | ready | `/top-5-relays---scy`, `/top-5-relays---lcm` | tools/boards/top5-relays-*.html |
-| `/times/top-times/new-additions/` | New Board Additions | tool | done | `/2025---26-updates` | tools/standards/NSEA New Board Additions - Site Embed.html |
+| `/times/top-times/new-additions/` | New Board Additions | tool | done | `/2025---26-updates`, `/records-set-in-2025---26` | tools/standards/NSEA New Board Additions - Site Embed.html |
 | `/times/records/` | Team Records | hub | rebuild | - | - |
 | `/times/records/holders/` | Record Holders | tool | ready | `/team-record-holders` | tools/boards/records.html |
 | `/times/records/individual/` | Individual Records | tool | ready | `/team-records---scy`, `/team-records---lcm` | tools/boards/records-traditional-*.html |
 | `/times/records/relays/` | Relay Records | tool | ready | `/scy---relay-team-records`, `/lcm---relay-team-records` | tools/boards/records-relays-*.html |
-| `/times/records/this-season/` | Records Set This Season | tool | done | `/records-set-in-2025---26` | - |
 | `/times/achievements/` | Achievements by Season | hub | rebuild | - | - |
 | `/times/achievements/2025-26/` | 2025 – 2026 | page | done | `/2025---2026` | - |
 | `/times/achievements/2024-25/` | 2024 – 2025 | page | done | `/2024---2025` | - |

@@ -13,11 +13,14 @@ import Spotlights from '../components/Spotlights.astro';
 import Recognition from '../components/Recognition.astro';
 import AssessmentRequest from '../components/AssessmentRequest.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
+import { moved } from '../data/site.mjs';
+import Moved from '../components/Moved.astro';
 
 export function getStaticPaths() {
   return pages
     .filter((p) => p.type !== 'link')
-    .map((p) => ({ params: { slug: p.path.replace(/^\/|\/$/g, '') }, props: { page: p } }));
+    .map((p) => ({ params: { slug: p.path.replace(/^\/|\/$/g, '') }, props: { page: p } }))
+    .concat(moved.map((m) => ({ params: { slug: m.path.replace(/^\/|\/$/g, '') }, props: { page: { ...m, type: 'moved' } } })));
 }
 
 const p = Astro.props.page;
@@ -31,6 +34,7 @@ const mod = md['/src/content' + p.path.replace(/\/$/, '') + '.md'];
 const Content = mod?.Content;
 const hasEmbed = p.embed || p.variants;
 ---
+{p.type === 'moved' ? <Moved page={p} /> : (
 <Base title={p.title} description={p.desc} path={p.path}>
   <Breadcrumbs path={p.path} />
   <h1 class={p.hideTitle ? 'sr-only' : undefined}>{p.title}</h1>
@@ -79,3 +83,4 @@ const hasEmbed = p.embed || p.variants;
     </>
   )}
 </Base>
+)}

@@ -18,7 +18,7 @@ export const topLevel = pages.filter((p) => parentPath(p.path) === '/' && p.type
 export const tools = pages.filter((p) => p.type === 'tool');
 
 // Dropdown = direct children of a top-level hub (never deeper, so menus stay short)
-// ...plus any deeper page flagged `feature` (e.g. Check My Time), shown first.
+// ...plus any deeper page flagged `feature` (e.g. the Data Hub), shown first (e.g. the Data Hub).
 export const dropdown = (hub) => {
   const kids = children(hub.path);
   const deep = pages.filter((p) => p.feature && p.path.startsWith(hub.path) && !kids.includes(p) && p.type !== 'hub');
