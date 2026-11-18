@@ -125,9 +125,9 @@ const EVENTS = {
 const evName = (d, s) => `${d} ${STK[s]}`;
 const CNAME = { Y: 'SCY', L: 'LCM', S: 'SCM' };
 const SERIES = { NC_SC_AG: 'NC SC Age Group Champs', NC_LC_AG: 'NC LC Age Group Champs', NC_SC_SR: 'NC SC Senior Champs', NC_LC_SR: 'NC LC Senior Champs',
-  NC_SC_TAR_HEEL_STATES: 'Tar Heel States (SC)', NC_LC_TAR_HEEL_STATES: 'Tar Heel States (LC)', NC_WINTER_18U: 'NC Winter 18&U Champs',
+  NC_SC_TAR_HEEL_STATES: 'Tar Heel States (SC)', NC_LC_TAR_HEEL_STATES: 'Tar Heel States (LC)', NC_WINTER_18U: 'NC Winter 18&U Champs (2020)',
   ESSZ_SC_AG: 'ESSZ Age Group Sectionals (SC)', ESSZ_SC_SR: 'ESSZ Senior Sectionals (SC)', ESSZ_LC_SR: 'ESSZ Senior Sectionals (LC)',
-  FUTURES: 'Futures', JUNIOR_NATS: 'Junior Nationals', WINTER_JRS: 'Winter Juniors', US_OPEN: 'U.S. Open', SOUTHERN_ZONE: 'Southern Zone', YMCA_NATS: 'YMCA Nationals' };
+  FUTURES: 'Futures', JUNIOR_NATS: 'Junior Nationals', WINTER_JRS: 'Winter Juniors', US_OPEN: 'U.S. Open', SOUTHERN_ZONE_AG: 'Southern Zone Age Group', SOUTHERN_ZONE_SR: 'Southern Zone Senior', YMCA_NATS: 'YMCA Nationals' };
 const sname = (s) => SERIES[s] || s;
 let META = null;
 async function api(path) {
@@ -292,7 +292,7 @@ function initCompare() {
 }
 function seriesOptions() {
   const want = C.course === 'Y' ? /(_SC_|SC_|WINTER|US_OPEN|YMCA)/ : /(_LC_|FUTURES|JUNIOR|SOUTHERN|US_OPEN)/;
-  const list = (META?.series || []).filter((s) => want.test(s.series));
+  const list = (META?.series || []).filter((s) => s.champ && want.test(s.series));
   const v = $('c-series').value;
   $('c-series').innerHTML = '<option value="">None</option>' + list.map((s) => `<option value="${esc(s.series)}">${esc(sname(s.series))}</option>`).join('');
   $('c-series').value = list.some((s) => s.series === v) ? v : (list.find((s) => /NC_.C_AG/.test(s.series))?.series || '');
@@ -312,12 +312,13 @@ async function runCompare() {
     if (pick) $('c-ag').value = `${pick.age_lo}-${pick.age_hi}`;
     const cut = pick ? first.cutoffs.filter((c) => c.age_lo === pick.age_lo && c.age_hi === pick.age_hi) : [];
     const years = [...new Set(cut.map((c) => c.date))].sort().reverse();
-    const RANKS = [1, 3, 8, 16, 24, 32];
+    const golden = /^NC_(SC|LC)_AG$/.test(series);
+    const RANKS = golden ? [1, 3, 5, 8, 16, 24, 32] : [1, 3, 8, 16, 24, 32];
     const at = (y, r) => cut.find((c) => c.date === y && c.rank === r);
-    const place = (y) => { if (mine == null) return ''; const c = cut.filter((x) => x.date === y && x.rank > 1).sort((a, b) => a.rank - b.rank); let p = null; for (const x of c) if (mine <= x.time_cs) { p = x.rank; break; } return p ? `top ${p}` : `outside top ${c.length ? c[c.length - 1].rank : '?'}`; };
+    const place = (y) => { if (mine == null) return ''; const c = cut.filter((x) => x.date === y && x.rank > 1).sort((a, b) => a.rank - b.rank); let p = null; for (const x of c) if (mine <= x.time_cs) { p = x.rank; break; } return p ? `top ${p}${p <= 5 && golden ? ' ★' : ''}` : `outside top ${c.length ? c[c.length - 1].rank : '?'}`; };
     html += `<div class="block" style="flex:1 1 560px"><h3>${esc(sname(series))} · ${pick ? esc(pick.age_group) : ''} · ${evName(+d, +s)}</h3>
-      <div class="note" style="padding:0 10px">Time needed for each place, from prelims when the event had prelims (8th = A final, 16th = B final), otherwise from the final. Winner = 1st in the final.</div>
-      <table><tr><th>Year</th><th class="tm">Winner</th>${RANKS.slice(1).map((r) => `<th class="tm">${r}th</th>`).join('').replace('3th', '3rd')}${mine != null ? '<th>' + fmt(mine) + '</th>' : ''}</tr>
+      <div class="note" style="padding:0 10px">Winner and 3rd${golden ? ' and 5th' : ''} are places in the final. 8th, 16th, 24th and 32nd are the times needed to make the A, B and C finals, from prelims when the event had prelims (otherwise from the final).${golden ? ' <b>5th ★</b> earns a Golden Ticket to NC Select Camp.' : ''}</div>
+      <table><tr><th>Year</th><th class="tm">Winner</th>${RANKS.slice(1).map((r) => `<th class="tm"${r === 5 ? ' title="Golden Ticket to NC Select Camp"' : ''}>${r === 3 ? '3rd' : r + 'th'}${r === 5 ? ' ★' : ''}</th>`).join('')}${mine != null ? '<th>' + fmt(mine) + '</th>' : ''}</tr>
       ${years.map((y) => `<tr><td>${esc(y.slice(0, 4))}</td>${RANKS.map((r) => { const c = at(y, r); return `<td class="tm">${c ? esc(c.time_text) : ''}</td>`; }).join('')}${mine != null ? `<td class="mut">${place(y)}</td>` : ''}</tr>`).join('') || '<tr><td colspan="8" class="mut">No results for this event at this meet.</td></tr>'}
       </table></div>`;
   }

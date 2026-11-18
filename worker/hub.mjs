@@ -27,8 +27,8 @@ function eventFilter(q) {
 async function meta(env) {
   const [m, series, sets, seasons] = await Promise.all([
     rows(env.HUB.prepare('SELECT key, value FROM hub_meta')),
-    rows(env.HUB.prepare(`SELECT series, champ_level, COUNT(*) AS meets, MIN(substr(start_date,1,4)) AS first_year, MAX(substr(start_date,1,4)) AS last_year
-      FROM hub_meet WHERE series IS NOT NULL AND is_champ = 1 GROUP BY series, champ_level ORDER BY series`)),
+    rows(env.HUB.prepare(`SELECT series, MAX(champ_level) AS champ_level, MAX(is_champ) AS champ, COUNT(*) AS meets, MIN(substr(start_date,1,4)) AS first_year, MAX(substr(start_date,1,4)) AS last_year
+      FROM hub_meet WHERE series IS NOT NULL GROUP BY series ORDER BY series`)),
     rows(env.HUB.prepare(`SELECT id, code, label, family, level, course, edition, as_of FROM hub_benchmark_set WHERE family <> 'cutoff' ORDER BY family, level, label`)),
     rows(env.HUB.prepare('SELECT DISTINCT season FROM hub_meet WHERE season IS NOT NULL ORDER BY season DESC')),
   ]);
