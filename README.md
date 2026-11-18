@@ -199,3 +199,19 @@ Cloudflare's own Git builds deploy every push to `main`. `.github/workflows/depl
 - **On deck.** Each phone keeps the meet in IndexedDB and works with no signal. Times, notes, heat sheet updates and "official" marks are small ops that queue offline and sync between coaches (`/api/admin/meetday/ops`).
 - **Getting results in.** Type a time (`5912` = 59.12), upload a heat sheet / results PDF, photograph a re-seed (OCR in the browser, Tesseract.js from jsDelivr, cached for offline from Tools), screenshot Meet Mobile (it has no public feed), or paste a live results URL (fetched through `/api/admin/meetday/fetch`, polled every minute).
 - **Database:** apply `migrations/0015_meetday.sql` by hand: `npx wrangler d1 migrations apply nsea-carpool --remote`.
+
+## Data hub
+
+`/times/data-hub/` (embed `public/embeds/data-hub.html`) looks up any swimmer, lists top times for any event, age, period and
+championship, and compares a time to championship place cutoffs by year, standards and records (NSEA, NC, NAG, U.S. Open,
+American). It reads the public, read-only API `/api/hub/*` (`worker/hub.mjs`; GET only, edge-cached), which queries the D1
+database `nsea-hub` (binding `HUB`). Until that binding exists the API answers 503 and the page shows the message.
+
+The data comes from the results database: nsea-results-db `export_hub.py` writes `hub.sql` (no birthdates or USA IDs).
+Load it by hand from this folder, where wrangler is installed and signed in:
+
+```
+npx wrangler d1 create nsea-hub          # done Nov 18 2026: database_id 7e588f12-1378-4b33-94d6-992786ca22c8 (binding HUB in wrangler.jsonc)
+npx wrangler d1 execute nsea-hub --remote --yes --file="<NSEA Swim>/results-db/hub/hub.sql"   # after each export
+```
+`hub.sql` drops and recreates its tables, so reloading replaces everything. The edge cache holds answers for up to an hour.

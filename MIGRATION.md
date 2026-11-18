@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 104 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 105 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 72 · ready 14 · new 2
+Counts: rebuild 16 · done 73 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
@@ -202,6 +202,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/standards/imx-imr/` | IMX / IMR | hub | rebuild | `/imx-progress`, `/imr-/-imx-progress` | - |
 | `/times/standards/imx-imr/about/` | About IMX / IMR | page | done | `/imx-progress` | - |
 | `/times/standards/imx-imr/progress/` | IMX / IMR Progress Board | tool | ready | `/imr-/-imx-progress` | tools/boards/imx-imr-scy.html |
+| `/times/data-hub/` | Data Hub | tool | done | - | - |
 | `/times/top-times/` | Top Times | hub | rebuild | `/top-times`, `/top-times---lcm`, `/top-10-swims---scy`, `/top-10-swims--lcm`, `/top-5-relays---scy`, `/top-5-relays---lcm` | - |
 | `/times/top-times/swimmers/` | Top 10 Swimmers | tool | ready | `/top-times`, `/top-times---lcm` | tools/boards/top10-performers-*.html |
 | `/times/top-times/swims/` | Top 10 Swims | tool | ready | `/top-10-swims---scy`, `/top-10-swims--lcm` | tools/boards/top10-performances-*.html |

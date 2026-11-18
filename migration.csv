@@ -74,6 +74,7 @@ new_path,title,type,status,replaces,source_files
 "/times/standards/imx-imr/","IMX / IMR","hub","rebuild","/imx-progress | /imr-/-imx-progress",""
 "/times/standards/imx-imr/about/","About IMX / IMR","page","done","/imx-progress",""
 "/times/standards/imx-imr/progress/","IMX / IMR Progress Board","tool","ready","/imr-/-imx-progress","tools/boards/imx-imr-scy.html"
+"/times/data-hub/","Data Hub","tool","done","",""
 "/times/top-times/","Top Times","hub","rebuild","/top-times | /top-times---lcm | /top-10-swims---scy | /top-10-swims--lcm | /top-5-relays---scy | /top-5-relays---lcm",""
 "/times/top-times/swimmers/","Top 10 Swimmers","tool","ready","/top-times | /top-times---lcm","tools/boards/top10-performers-*.html"
 "/times/top-times/swims/","Top 10 Swims","tool","ready","/top-10-swims---scy | /top-10-swims--lcm","tools/boards/top10-performances-*.html"

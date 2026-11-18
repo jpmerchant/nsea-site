@@ -151,6 +151,8 @@ export const pages = [
   { path: '/times/standards/imx-imr/about/', type: 'page', title: 'About IMX / IMR', desc: '', status: 'done', from: ['/imx-progress'] },
   { path: '/times/standards/imx-imr/progress/', type: 'tool', title: 'IMX / IMR Progress Board', desc: '', status: 'ready', from: ['/imr-/-imx-progress'], embed: BOARDS + '/imx-imr-scy.html', legacy: ['tools/boards/imx-imr-scy.html'], height: 1400 },
 
+  { path: '/times/data-hub/', type: 'tool', title: 'Data Hub', desc: 'Look up any swimmer, list top times for any event, age and meet, and compare a time to championships, standards and records.', embed: '/embeds/data-hub.html', status: 'done', feature: true, height: 1800 },
+
   { path: '/times/top-times/', type: 'hub', title: 'Top Times', desc: 'The fastest swims and swimmers in NSEA history.', status: 'rebuild', from: ['/top-times', '/top-times---lcm', '/top-10-swims---scy', '/top-10-swims--lcm', '/top-5-relays---scy', '/top-5-relays---lcm'] },
   { path: '/times/top-times/swimmers/', type: 'tool', title: 'Top 10 Swimmers', desc: 'One entry per swimmer, per event.', status: 'ready', from: ['/top-times', '/top-times---lcm'], variants: { SCY: BOARDS + '/top10-performers-scy.html', LCM: BOARDS + '/top10-performers-lcm.html' }, legacy: ['tools/boards/top10-performers-*.html'], height: 1500 },
   { path: '/times/top-times/swims/', type: 'tool', title: 'Top 10 Swims', desc: 'The fastest swims, repeat swimmers allowed.', status: 'ready', from: ['/top-10-swims---scy', '/top-10-swims--lcm'], variants: { SCY: BOARDS + '/top10-performances-scy.html', LCM: BOARDS + '/top10-performances-lcm.html' }, legacy: ['tools/boards/top10-performances-*.html'], height: 1500 },
