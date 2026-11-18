@@ -29,5 +29,14 @@
       "database_name": "nsea-hub",
       "database_id": "7e588f12-1378-4b33-94d6-992786ca22c8"
     }
-  ]
+  ],
+  // Preview builds (pull request branches, `npx wrangler preview`): static site + the public data hub only.
+  // No DB (carpool, admin users, alumni) and no Access settings, so preview code can never write production data.
+  "previews": {
+    "vars": { "EVENTS_REPO": "jpmerchant/nsea-events", "EVENTS_BRANCH": "main" },
+    "d1_databases": [
+      { "binding": "HUB", "database_name": "nsea-hub", "database_id": "7e588f12-1378-4b33-94d6-992786ca22c8" }
+    ],
+    "r2_buckets": [{ "binding": "REPORTS", "bucket_name": "nsea-reports" }]
+  }
 }
