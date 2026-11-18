@@ -1,0 +1,21 @@
+---
+// An old address of a page that was folded into another page (see `moved` in src/data/site.mjs).
+// Forwards straight away and keeps the visitor's query string and #part (e.g. the events calendar's ?std=...&course=LCM),
+// so old links, bookmarks and the calendar keep working. The visible link is the fallback when scripts are off.
+import Base from '../layouts/Base.astro';
+const { page } = Astro.props;
+---
+<Base title={page.title} description={page.note} path={page.path} noindex>
+  <h1>{page.title}</h1>
+  <p class="lede">{page.note}</p>
+  <p><a class="btn solid" id="moved-link" href={page.to}>Go there now</a></p>
+  <script is:inline define:vars={{ to: page.to }}>
+    (function () {
+      var u = new URL(to, location.origin);
+      new URLSearchParams(location.search).forEach(function (v, k) { u.searchParams.set(k, v); });
+      if (location.hash) u.hash = location.hash;
+      document.getElementById('moved-link').href = u.pathname + u.search + u.hash;
+      location.replace(u.pathname + u.search + u.hash);
+    })();
+  </script>
+</Base>
