@@ -192,11 +192,11 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/` | Times & Records | hub | rebuild | - | - |
 | `/times/standards/` | Time Standards | hub | rebuild | `/time-standards` | - |
 | `/times/standards/understanding/` | Understanding Time Standards | page | done | `/time-standards` | - |
-| `/times/standards/check-my-time/` | Check My Time | tool | done | `/check-my-time` | tools/standards/nsea-standards-explorer.html |
+| `/times/standards/check-my-time/` | Check My Time | tool | done | `/check-my-time` | tools/standards/nsea-standards-explorer.html; public/embeds/check-my-time.html (merged into the Data Hub, Nov 2026) |
 | `/times/standards/compare-by-age-group/` | Comparison by Age Group | tool | done | `/scy---comparison-by-age-group` | tools/standards/NSEA SCY Time Standards Comparison.html |
 | `/times/standards/compare-all-ages/` | Comparison, All Ages | tool | done | `/scy---comparison-all-ages` | tools/standards/NSEA SCY Time Standards - All Ages Ranked.html |
-| `/times/standards/nc-age-group/` | NC Age Group Championships | tool | done | `/nc-age-group-championships` | tools/standards/ncs-ag-champs-standards-embed.html |
-| `/times/standards/nc-senior/` | NC Senior Championships | tool | done | `/nc-senior-championships` | tools/standards/ncs-senior-standards-embed.html |
+| `/times/standards/nc-age-group/` | NC Age Group Championships | tool | done | `/nc-age-group-championships` | tools/standards/ncs-ag-champs-standards-embed.html; public/embeds/nc-age-group.html (merged into the Data Hub, Nov 2026) |
+| `/times/standards/nc-senior/` | NC Senior Championships | tool | done | `/nc-senior-championships` | tools/standards/ncs-senior-standards-embed.html; public/embeds/nc-senior.html (merged into the Data Hub, Nov 2026) |
 | `/times/standards/national-qualifiers/` | National Meet Qualifiers | page | done | `/national--meet--qualifiers` | - |
 | `/times/standards/power-points/` | About Power Points | page | done | `/power-points-explained` | - |
 | `/times/standards/imx-imr/` | IMX / IMR | hub | rebuild | `/imx-progress`, `/imr-/-imx-progress` | - |

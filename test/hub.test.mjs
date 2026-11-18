@@ -50,6 +50,18 @@ test('hub: rankings are NSEA only, performers vs performances', { skip: !Databas
   assert.equal((await get(env, '/rank?course=X&distance=50&stroke=1')).status, 400);
 });
 
+test('hub: every event at once, tied ranks, find below the cut, HS and lead-off filters', { skip: !DatabaseSync }, async () => {
+  const env = hub();
+  const all = (await get(env, '/rank?course=Y&limit=1')).json.results;   // no event = every event; women and men
+  assert.deepEqual(all.map((r) => [r.last, r.rk, r.of_n]), [['Cole', 1, 2]]);   // one event (50 Free), limit 1 per event
+  const found = (await get(env, '/rank?course=Y&limit=1&find=able')).json.results;
+  assert.deepEqual(found.map((r) => [r.last, r.rk]), [['Cole', 1], ['Able', 2]]);   // Able ranks 2nd, below the cut, still returned
+  assert.equal((await get(env, '/rank?course=Y&distance=50')).status, 400);   // distance without stroke
+  const ev = '/rank?course=Y&distance=50&stroke=1&sex=F&mode=performances';
+  assert.equal((await get(env, ev + '&hs=0')).json.results.length, 2);   // both of Able's swims count for records
+  assert.equal((await get(env, ev + '&leadoffs=0')).json.results.length, 2);
+});
+
 test('hub: swimmer search, profile, splits, benchmarks, cutoffs, meets', { skip: !DatabaseSync }, async () => {
   const env = hub();
   assert.deepEqual((await get(env, '/swimmers?q=ab')).json.swimmers.map((s) => s.last), ['Able']);

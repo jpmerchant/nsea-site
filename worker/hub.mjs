@@ -68,34 +68,46 @@ async function splits(env, id) {
 }
 
 // Rankings: performers (best swim per swimmer) or performances (every swim), NSEA swims only.
+// One event, or every event of the course at once (leave out distance and stroke). Ranks tie on equal times.
+// `limit` is per event; `find` (a name) also returns that swimmer's rows below the cut, so the page can say where they rank.
 async function rank(env, q) {
-  const f = eventFilter(q);
-  if (f.error) return fail(400, f.error);
-  const where = ['x.course = ?', 'x.distance = ?', 'x.stroke = ?']; const b = [f.course, f.distance, f.stroke];
-  if (f.sex) { where.push('s.sex = ?'); b.push(f.sex); }
-  if (f.ageLo !== null) { where.push('x.age >= ?'); b.push(f.ageLo); }
-  if (f.ageHi !== null) { where.push('x.age <= ?'); b.push(f.ageHi); }
+  const course = q.get('course');
+  if (!COURSES.has(course)) return fail(400, 'course is required');
+  const distance = int(q.get('distance'), 25, 1650), stroke = int(q.get('stroke'), 1, 5);
+  if ((distance === null) !== (stroke === null)) return fail(400, 'distance and stroke go together');
+  const where = ['x.course = ?']; const b = [course];
+  if (distance) { where.push('x.distance = ?', 'x.stroke = ?'); b.push(distance, stroke); }
+  const sex = ['F', 'M'].includes(q.get('sex')) ? q.get('sex') : null;
+  if (sex) { where.push('s.sex = ?'); b.push(sex); }
+  const ageLo = int(q.get('age_lo'), 0, 99), ageHi = int(q.get('age_hi'), 0, 99);
+  if (ageLo !== null) { where.push('x.age >= ?'); b.push(ageLo); }
+  if (ageHi !== null) { where.push('x.age <= ?'); b.push(ageHi); }
   const from = date(q.get('from')), to = date(q.get('to'));
   if (from) { where.push('x.swim_date >= ?'); b.push(from); }
   if (to) { where.push('x.swim_date <= ?'); b.push(to); }
   // NSEA swims only: the database holds other teams' swims only from the meets that were imported (mostly NC Swimming), so an
   // "everyone" list would not really be everyone. Championship fields are still used, through the cutoff benchmarks.
-  where.push(q.get('records') === '1' ? 'x.nsea_rec = 1' : 'x.nsea = 1');
+  // hs=0 (or the older records=1) leaves out Unattached high-school swims: nsea_rec is the records rule.
+  where.push(q.get('records') === '1' || q.get('hs') === '0' ? 'x.nsea_rec = 1' : 'x.nsea = 1');
   if (q.get('active') === '1') where.push('s.active = 1');
   if (q.get('leadoffs') === '0') where.push("x.kind = 'I'");
   const series = word(q.get('series'));
   if (series) { where.push('m.series = ?'); b.push(series); }
   const meetId = int(q.get('meet'), 1, 1e9);
   if (meetId) { where.push('x.meet_id = ?'); b.push(meetId); }
-  const limit = int(q.get('limit'), 1, 500, 25);
-  const body = `SELECT x.id, x.swimmer_id, s.first, s.last, s.sex, x.time_cs, x.age, x.swim_date, x.kind, x.round, x.place, x.event_age,
-      m.name AS meet, m.id AS meet_id, t.name AS team
+  const limit = int(q.get('limit'), 1, distance ? 2000 : 100, 25);
+  const find = String(q.get('find') || '').replace(/[%_]/g, '').trim().toLowerCase().slice(0, 40);
+  const body = `SELECT x.id, x.swimmer_id, s.first, s.last, s.sex, s.active, x.distance, x.stroke, x.time_cs, x.age, x.swim_date, x.kind, x.round, x.place,
+      x.event_age, x.nsea_rec, m.name AS meet, m.id AS meet_id, t.name AS team
     FROM hub_swim x JOIN hub_swimmer s ON s.id = x.swimmer_id JOIN hub_meet m ON m.id = x.meet_id LEFT JOIN hub_team t ON t.id = x.team_id
     WHERE ${where.join(' AND ')}`;
-  const sql = q.get('mode') === 'performances'
-    ? `${body} ORDER BY x.time_cs, x.swim_date LIMIT ?`
-    : `SELECT * FROM (SELECT r.*, ROW_NUMBER() OVER (PARTITION BY r.swimmer_id ORDER BY r.time_cs, r.swim_date) AS rn FROM (${body}) r) WHERE rn = 1 ORDER BY time_cs, swim_date LIMIT ?`;
-  const list = await rows(env.HUB.prepare(sql).bind(...b, limit));
+  const pool = q.get('mode') === 'performances' ? body
+    : `SELECT * FROM (SELECT r.*, ROW_NUMBER() OVER (PARTITION BY r.swimmer_id, r.distance, r.stroke ORDER BY r.time_cs, r.swim_date) AS rn FROM (${body}) r) WHERE rn = 1`;
+  const sql = `SELECT * FROM (SELECT p.*, RANK() OVER (PARTITION BY p.distance, p.stroke ORDER BY p.time_cs) AS rk,
+      COUNT(*) OVER (PARTITION BY p.distance, p.stroke) AS of_n FROM (${pool}) p)
+    WHERE rk <= ?${find ? " OR lower(first || ' ' || last) LIKE ?" : ''}
+    ORDER BY stroke, distance, time_cs, swim_date LIMIT 3000`;
+  const list = await rows(env.HUB.prepare(sql).bind(...b, limit, ...(find ? ['%' + find + '%'] : [])));
   return ok({ results: list.map(({ rn, ...r }) => r) });
 }
 
