@@ -14,6 +14,8 @@ const int = (v, lo, hi, dflt = null) => {
 const date = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null);
 const word = (v, max = 40) => (/^[A-Za-z0-9_]+$/.test(v || '') ? String(v).slice(0, max) : null);
 const ok = (data) => json(data, 200, CACHE);
+// /meta carries the data's `built` stamp, which the page adds (as v=) to every other request, so it is only cached briefly.
+const META_CACHE = { 'cache-control': 'public, max-age=0, s-maxage=60' };
 const rows = async (stmt) => (await stmt.all()).results || [];
 
 // Event filter shared by the list and the compare views.
@@ -32,7 +34,7 @@ async function meta(env) {
     rows(env.HUB.prepare(`SELECT id, code, label, family, level, course, edition, as_of FROM hub_benchmark_set WHERE family <> 'cutoff' ORDER BY family, level, label`)),
     rows(env.HUB.prepare('SELECT DISTINCT season FROM hub_meet WHERE season IS NOT NULL ORDER BY season DESC')),
   ]);
-  return ok({ meta: Object.fromEntries(m.map((r) => [r.key, r.value])), series, benchmark_sets: sets, seasons: seasons.map((r) => r.season) });
+  return json({ meta: Object.fromEntries(m.map((r) => [r.key, r.value])), series, benchmark_sets: sets, seasons: seasons.map((r) => r.season) }, 200, META_CACHE);
 }
 
 async function swimmers(env, q) {
@@ -162,7 +164,7 @@ export async function handleHub(req, env, url) {
   if (!env.HUB) return fail(503, 'The data hub database is not connected yet');
   const path = url.pathname.replace(/^\/api\/hub/, '');
   const q = url.searchParams;
-  // Edge cache: the same URL answers the same until a new copy of the data is loaded.
+  // Edge cache: the page adds v=<built stamp> to every request except /meta, so a new copy of the data gets new cache entries.
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   if (cache) { const hit = await cache.match(req); if (hit) return hit; }
   let res;

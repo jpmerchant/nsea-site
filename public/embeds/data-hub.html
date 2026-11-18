@@ -132,7 +132,9 @@ const sname = (s) => SERIES[s] || s;
 let META = null;
 async function api(path) {
   $('err').textContent = '';
-  const r = await fetch(API + path);
+  // Tie every cached answer to the loaded copy of the data: a new load changes META.meta.built, so old cached answers are never reused.
+  const v = path !== '/meta' && META?.meta?.built ? (path.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(META.meta.built) : '';
+  const r = await fetch(API + path + v);
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { $('err').textContent = j.error || 'Something went wrong'; throw new Error(j.error); }
   return j;
