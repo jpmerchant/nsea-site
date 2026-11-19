@@ -63,7 +63,9 @@ export const CHECK = {
   wslGroups: ['Senior'],
   wslSession: 'PM',
   eventsUrl: 'https://events.nseaswimteam.com/events.json',
-  holidaySheet: 'https://docs.google.com/spreadsheets/d/1PnEukw-c0GVkrEFhYK4A-sXXShC2Vg6AnqlF0ztQx6Y/edit?usp=sharing',
+  // Holiday Break Practice Schedules sheet (shared "anyone with the link can view"). The link picks the tab (#gid=...):
+  // copy the address from the browser while the right tab is open. The weekly check imports it as suggestions.
+  holidaySheet: 'https://docs.google.com/spreadsheets/d/1PnEukw-c0GVkrEFhYK4A-sXXShC2Vg6AnqlF0ztQx6Y/edit#gid=2024710413',
   lookaheadDays: 21,
 };
 
