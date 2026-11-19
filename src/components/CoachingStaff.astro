@@ -1,0 +1,45 @@
+---
+// Coaching Staff page. Profiles come from /api/content/staff (Staff Records in the admin console); only fields and
+// items marked "show" (and approved) are sent. Text is inserted as DOM nodes only.
+---
+<div class="prose staff-list"><p class="cp-loading">Loading the coaching staff…</p></div>
+<noscript><p>The coaching staff list needs JavaScript. You can reach the coaches at <a href="mailto:jp@nseaswim.com">jp@nseaswim.com</a>.</p></noscript>
+<script is:inline src="/assets/rich.js"></script>
+<script is:inline>
+(function () {
+  function el(tag, attrs) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) { if (k === 'class') n.className = attrs[k]; else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]); }
+    (function add(list) { for (var i = 0; i < list.length; i++) { var c = list[i]; if (c == null || c === false) continue; if (Array.isArray(c)) add(c); else n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); } })(Array.prototype.slice.call(arguments, 2));
+    return n;
+  }
+  var ORDER = ['position', 'membership', 'certification', 'deck', 'offdeck', 'education', 'season'];
+  function yrs(i) { return i.year ? (i.year_to ? i.year + '–' + i.year_to : (i.kind === 'membership' || i.kind === 'position' ? i.year + '–present' : String(i.year))) : ''; }
+  function item(i, levels) {
+    var bits = [i.org, i.rank, levels[i.level], yrs(i)].filter(Boolean).join(' · ');
+    return el('li', null, el('strong', null, i.title), bits ? ' — ' + bits : '', i.detail ? el('span', { class: 'staff-detail' }, ' ' + i.detail) : null);
+  }
+  document.querySelectorAll('.staff-list').forEach(function (root) {
+    fetch('/api/content/staff').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+      if (!d.coaches || !d.coaches.length) { root.replaceChildren(el('p', { class: 'cp-empty' }, 'Coach profiles are being updated. Please check back soon.')); return; }
+      root.replaceChildren.apply(root, d.coaches.map(function (c) {
+        var contact = [c.email ? el('a', { href: 'mailto:' + c.email }, 'Email') : null, c.phone ? el('a', { href: 'tel:' + c.phone.replace(/[^0-9+]/g, '') }, 'Call') : null].filter(Boolean);
+        var lists = ORDER.map(function (k) {
+          var its = c.items.filter(function (i) { return i.kind === k; });
+          return its.length ? [el('h5', null, d.kinds[k]), el('ul', null, its.map(function (i) { return item(i, d.levels); }))] : null;
+        });
+        return el('div', { class: 'staff', id: 'coach-' + c.id },
+          c.photo ? el('img', { src: c.photo, alt: c.photo_alt || ('Coach ' + c.name), loading: 'lazy' }) : el('div', { class: 'staff-nophoto', 'aria-hidden': 'true' }),
+          el('div', null,
+            el('h4', null, c.name),
+            c.role || c.subtitle ? el('p', null, [c.role, c.subtitle].filter(Boolean).join(' · ')) : null,
+            c.groups && c.groups.length ? el('p', null, el('span', { class: 'staff-label' }, 'Primary groups: '), c.groups.join(' / ')) : null,
+            c.since ? el('p', null, el('span', { class: 'staff-label' }, 'With NSEA since ' + c.since), c.years ? ' (' + c.years + ' year' + (c.years === 1 ? '' : 's') + ')' : '') : null,
+            contact.length ? el('p', null, contact.reduce(function (a, x, i) { if (i) a.push(' · '); a.push(x); return a; }, [])) : null,
+            c.bio ? window.NSEA_rich(c.bio) : null,
+            lists));
+      }));
+    }).catch(function () { root.replaceChildren(el('p', null, 'The coaching staff list could not load. Please refresh, or email ', el('a', { href: 'mailto:jp@nseaswim.com' }, 'jp@nseaswim.com'), '.')); });
+  });
+})();
+</script>

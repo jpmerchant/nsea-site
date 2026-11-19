@@ -98,15 +98,14 @@ export async function handleCoachAdmin(env, me, method, path, body, audit) {
       if (!name) return fail(400, 'Please enter a name.');
       const email = clean(body.email, 120).toLowerCase() || null;
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return fail(400, 'That email does not look right.');
-      const photo = clean(body.photo_url, 300);
-      if (photo && !URL_OK.test(photo)) return fail(400, 'The photo link must start with https:// or /.');
-      const vals = [name, clean(body.role, 60), clean(body.bio, 500), photo, email, body.active === false ? 0 : 1];
+      // Bio, photo and the rest of the profile now live in Staff Records (worker/staff.mjs); this only manages the author link.
+      const vals = [name, clean(body.role, 60), email, body.active === false ? 0 : 1];
       try {
         if (body.id) {
-          await env.DB.prepare(`UPDATE coach_authors SET name=?, role=?, bio=?, photo_url=?, email=?, active=? WHERE id=?`).bind(...vals, Number(body.id)).run();
+          await env.DB.prepare(`UPDATE coach_authors SET name=?, role=?, email=?, active=? WHERE id=?`).bind(...vals, Number(body.id)).run();
           await audit('coach', 'edit author', name);
         } else {
-          await env.DB.prepare(`INSERT INTO coach_authors (name, role, bio, photo_url, email, active) VALUES (?, ?, ?, ?, ?, ?)`).bind(...vals).run();
+          await env.DB.prepare(`INSERT INTO coach_authors (name, role, email, active) VALUES (?, ?, ?, ?)`).bind(...vals).run();
           await audit('coach', 'add author', name);
         }
       } catch (e) { if (/UNIQUE/i.test(String(e))) return fail(400, 'Another author already uses that email.'); throw e; }

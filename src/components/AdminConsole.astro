@@ -9,8 +9,8 @@
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own posts only)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own Coach’s Corner posts, Meet Day)', staff: 'Staff records (every coach’s profile and private details, approves coach changes)' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner', staff: 'Staff Records', profile: 'My Coach Profile' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -54,19 +54,31 @@
   }
 
   // ---------- shell ----------
-  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['schedule', 'Practice Schedule', 'schedule'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'], ['meetday', 'Meet Day', 'meetday'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
-  function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
+  // The console is split: coaching tools first, club administration second. A heading shows only if its section has something you can open.
+  var NAV = [['overview', 'Overview'],
+    ['-', 'Coaching'], ['profile', 'My Coach Profile', 'profile'], ['meetday', 'Meet Day', 'meetday'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'],
+    ['-', 'Admin'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['schedule', 'Practice Schedule', 'schedule'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'],
+    ['staff', 'Staff Records', 'staff'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  function allowed(n) { return n[0] === '-' || !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
+  function navItems() {
+    var out = [], head = null;
+    NAV.forEach(function (n) {
+      if (n[0] === '-') { head = n; return; }
+      if (!allowed(n)) return;
+      if (head) { out.push(el('p', { class: 'ac-nav-h' }, head[1])); head = null; }
+      out.push(el('button', { type: 'button', 'aria-current': view === n[0] ? 'page' : 'false', onclick: function () { go(n[0]); } }, n[1]));
+    });
+    return out;
+  }
   function shell(content) {
     mount(
       el('div', { class: 'ac-top' }, el('p', null, 'Signed in as ', el('strong', null, me.name), ' (' + me.email + ')'),
         me.via === 'link' ? el('button', { class: 'cp-link', type: 'button', onclick: function () { api('POST', '/logout', {}).then(function () { me = null; boot(); }); } }, 'Sign out') : el('span', { class: 'cp-small' }, 'Cloudflare Access')),
       el('div', { class: 'ac-layout' },
-        el('nav', { class: 'ac-nav', 'aria-label': 'Admin sections' }, NAV.filter(allowed).map(function (n) {
-          return el('button', { type: 'button', 'aria-current': view === n[0] ? 'page' : 'false', onclick: function () { go(n[0]); } }, n[1]);
-        })),
+        el('nav', { class: 'ac-nav', 'aria-label': 'Admin sections' }, navItems()),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, staff: vStaff, profile: vProfile, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -81,6 +93,8 @@
         btn('Open Carpool', function () { go('carpool'); }, o.carpool.pending ? '' : 'ghost')));
       if (me.modules.indexOf('events') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Events & Calendar'), el('p', { class: 'cp-small' }, 'Edit the 2026–27 events and venues.'), btn('Open', function () { go('events'); }, 'ghost')));
       if (me.modules.indexOf('schedule') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Practice Schedule'), el('p', null, el('strong', null, String(o.schedule || 0)), ' suggested change' + (o.schedule === 1 ? '' : 's') + ' waiting'), btn('Review', function () { go('schedule'); }, o.schedule ? '' : 'ghost')));
+      if (me.modules.indexOf('profile') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'My Coach Profile'), el('p', { class: 'cp-small' }, 'Your bio, photo, memberships and accomplishments.'), btn('Open', function () { go('profile'); }, 'ghost')));
+      if (o.staff != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Staff Records'), el('p', null, el('strong', null, String(o.staff)), ' coach change' + (o.staff === 1 ? '' : 's') + ' waiting for your OK'), btn('Review', function () { staffTab = o.staff ? 'review' : 'list'; staffSel = null; go('staff'); }, o.staff ? '' : 'ghost')));
       if (o.admins != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Admins'), el('p', null, el('strong', null, String(o.admins)), ' people'), btn('Manage admins', function () { go('admins'); }, 'ghost')));
       box.replaceChildren(el('h2', null, 'Overview'), el('div', { class: 'ac-cards' }, cards),
         o.recent && o.recent.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Recent activity'), o.recent.map(logLine)) : null);
@@ -622,17 +636,17 @@
   function coachAuthors(box, o) {
     var out = el('div', { class: 'cp-out' }), cur = null;
     var f = {};
-    ['name', 'role', 'email', 'photo_url'].forEach(function (k) { f[k] = el('input', { maxlength: k === 'photo_url' ? 300 : 120 }); });
-    f.bio = el('textarea', { rows: 3, maxlength: 500 }); f.active = el('input', { type: 'checkbox' }); f.active.checked = true;
-    function load(a) { cur = a; f.name.value = a ? a.name : ''; f.role.value = a ? a.role : ''; f.email.value = a && a.email ? a.email : ''; f.photo_url.value = a ? a.photo_url : ''; f.bio.value = a ? a.bio : ''; f.active.checked = a ? !!a.active : true; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    ['name', 'role', 'email'].forEach(function (k) { f[k] = el('input', { maxlength: 120 }); });
+    f.active = el('input', { type: 'checkbox' }); f.active.checked = true;
+    function load(a) { cur = a; f.name.value = a ? a.name : ''; f.role.value = a ? a.role : ''; f.email.value = a && a.email ? a.email : ''; f.active.checked = a ? !!a.active : true; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     var form = el('form', { class: 'cp-form', onsubmit: function (e) {
       e.preventDefault();
-      api('POST', '/coach/authors', { id: cur ? cur.id : null, name: f.name.value, role: f.role.value, email: f.email.value, photo_url: f.photo_url.value, bio: f.bio.value, active: f.active.checked })
+      api('POST', '/coach/authors', { id: cur ? cur.id : null, name: f.name.value, role: f.role.value, email: f.email.value, active: f.active.checked })
         .then(function () { flash = 'Author saved.'; vCoach(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
     } },
       el('label', null, 'Name', f.name), el('label', null, 'Role (for example Head Coach)', f.role),
       el('label', null, 'Sign-in email (links a coach’s login to this author; they also need “Coach” access on the Admins page)', f.email),
-      el('label', null, 'Photo link (optional)', f.photo_url), el('label', null, 'Short bio (optional)', f.bio),
+      el('p', { class: 'cp-small' }, 'Bios, photos and the rest of each coach’s profile are kept in Staff Records.'),
       el('label', { class: 'inline' }, f.active, ' Active (can be picked as an author)'), out,
       el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save author'), btn('Clear', function () { load(null); }, 'ghost')));
     box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Authors (' + o.authors.length + ')'),
@@ -645,6 +659,215 @@
       el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault();
         api('POST', '/content/site/coach-topics', { topics: ta.value.split('\n') }).then(function () { flash = 'Topics saved.'; vCoach(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); }); } },
         ta, out, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save topics')))));
+  }
+
+  // ---------- coaching staff records ----------
+  // Staff Records (owner / staff role): every coach, the review queue. My Coach Profile: the signed-in coach's own record.
+  var staffTab = 'list', staffSel = null;
+  var FIELD_LABEL = { photo: 'Photo', role: 'Title', subtitle: 'Second line', groups: 'Primary groups', email: 'Email', phone: 'Phone', years: 'Years with NSEA', bio: 'Bio', dob: 'Date of birth', photo_alt: 'Photo description', publish: 'What shows on the staff page' };
+  function vStaff() {
+    var box = el('div', null, loading());
+    api('GET', '/staff').then(function (o) {
+      var q = o.queue || { changes: [], items: [] }, waiting = q.changes.length + q.items.length;
+      if (staffSel) { shell(el('div', null, el('p', null, el('button', { class: 'cp-link', type: 'button', onclick: function () { staffSel = null; vStaff(); } }, '← All coaches')), box)); staffRecord(box, staffSel, o, vStaff); return; }
+      var tabs = [['list', 'Coaches'], ['review', 'Waiting for OK' + (waiting ? ' (' + waiting + ')' : '')], ['add', 'Add a coach']];
+      shell(el('div', null, el('h2', null, 'Staff Records'),
+        el('p', { class: 'cp-small' }, 'Only owners and people with the Staff records role see this. Each coach sees their own record under My Coach Profile, without your private notes.'),
+        el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': staffTab === t[0] ? 'page' : 'false', onclick: function () { staffTab = t[0]; vStaff(); } }, t[1]); })), box));
+      if (staffTab === 'review') return staffQueue(box, o, q);
+      if (staffTab === 'add') return staffAdd(box, o);
+      var cur = o.coaches.filter(function (c) { return c.active && (!c.ended_on || c.ended_on > o.today); }), past = o.coaches.filter(function (c) { return cur.indexOf(c) < 0; });
+      function row(c) {
+        return el('div', { class: 'cp-row' },
+          el('div', null, el('strong', null, c.name), c.on_staff_page && cur.indexOf(c) >= 0 ? '' : ' ', c.on_staff_page && cur.indexOf(c) >= 0 ? null : el('span', { class: 'chip' }, 'Not on staff page'),
+            el('p', { class: 'cp-small' }, [c.role, c.years != null ? c.years + ' yr' + (c.years === 1 ? '' : 's') + ' with NSEA' : 'start date not set', c.groups.join(' / '), c.items + ' record item' + (c.items === 1 ? '' : 's'), c.email || 'no login linked'].filter(Boolean).join(' · '))),
+          el('div', { class: 'cp-btns' }, btn('Open', function () { staffSel = c.id; vStaff(); })));
+      }
+      box.replaceChildren(el('div', null,
+        waiting ? el('p', { class: 'cp-msg ok' }, waiting + ' coach change' + (waiting === 1 ? ' is' : 's are') + ' waiting for your OK. ', el('button', { class: 'cp-link', type: 'button', onclick: function () { staffTab = 'review'; vStaff(); } }, 'Review')) : null,
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Current staff (' + cur.length + ')'), cur.length ? cur.map(row) : el('p', { class: 'cp-empty' }, 'No coaches yet.')),
+        past.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Former and inactive (' + past.length + ')'), el('p', { class: 'cp-small' }, 'Kept for the record. They do not show on the Coaching Staff page.'), past.map(row)) : null));
+    }).catch(function (e) { shell(el('div', null, el('h2', null, 'Staff Records'), msg('err', e.message))); });
+  }
+  function vProfile() {
+    var box = el('div', null, loading());
+    shell(el('div', null, el('h2', null, 'My Coach Profile'), box));
+    api('GET', '/staff').then(function (o) {
+      if (!o.mineId) { box.replaceChildren(el('div', { class: 'cp-panel' }, el('p', null, 'Your sign-in email is not linked to a coach record yet. Ask JP to link it.'))); return; }
+      staffRecord(box, o.mineId, o, vProfile);
+    }).catch(function (e) { fail(box, e); });
+  }
+  function staffAdd(box, o) {
+    var out = el('div', { class: 'cp-out' }), name = el('input', { required: true, maxlength: 60 }), role = el('input', { maxlength: 60, value: 'Assistant Coach' }), email = el('input', { type: 'email', maxlength: 120 }), start = el('input', { type: 'date' });
+    box.replaceChildren(el('div', { class: 'cp-panel' }, el('h3', null, 'Add a coach'),
+      el('form', { class: 'cp-form', onsubmit: function (e) { e.preventDefault();
+        api('POST', '/staff', { name: name.value, role: role.value, email: email.value, started_on: start.value, on_staff_page: false, active: true }).then(function (r) { flash = 'Coach added. They stay off the public page until you tick “Show on the Coaching Staff page”.'; staffSel = r.id; vStaff(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); }); } },
+        el('label', null, 'Name', name), el('label', null, 'Title', role), el('label', null, 'Sign-in email (their @nseaswim.com address links their login to this record)', email), el('label', null, 'First day with NSEA', start),
+        el('p', { class: 'cp-small' }, 'To let them sign in, also add them on the Admins page with “Coach” access.'), out,
+        el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Add coach')))));
+  }
+  function staffQueue(box, o, q) {
+    function decide(path, ok) { api('POST', path, {}).then(function () { flash = ok; vStaff(); }).catch(function (e) { alert(e.message); }); }
+    var changes = q.changes.map(function (c) {
+      return el('div', { class: 'cp-row' },
+        el('div', null, el('strong', null, c.name + ' — profile change'), el('p', { class: 'cp-small' }, 'Sent by ' + c.submitted_by + ' · ' + date(c.submitted_at) + ' UTC'),
+          Object.keys(c.json).map(function (k) { return el('div', { class: 'st-prop' }, el('span', { class: 'cp-small' }, (FIELD_LABEL[k] || k) + ': '), k === 'bio' ? window.NSEA_rich(c.json[k]) : el('span', null, fmtField(k, c.json[k]))); }),
+          c.has_photo ? el('img', { class: 'st-photo', src: '/api/admin/staff/changes/' + c.id + '/photo', alt: 'Proposed new photo' }) : null),
+        el('div', { class: 'cp-btns' }, btn('Approve', function () { decide('/staff/changes/' + c.id + '/approve', 'Approved. The staff page updates within about a minute.'); }),
+          btn('Decline', function () { if (confirm('Decline this change? The coach’s record stays as it is.')) decide('/staff/changes/' + c.id + '/decline', 'Declined.'); }, 'ghost')));
+    });
+    var items = q.items.map(function (i) {
+      return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, i.name + ' — ' + i.title), el('p', { class: 'cp-small' }, itemMeta(o, i)), i.detail ? el('p', { class: 'cp-small' }, i.detail) : null),
+        el('div', { class: 'cp-btns' }, btn('Publish', function () { decide('/staff/items/' + i.id + '/approve', 'Item approved for the staff page.'); }), btn('Keep private', function () { decide('/staff/items/' + i.id + '/decline', 'Kept on the record, not published.'); }, 'ghost')));
+    });
+    box.replaceChildren(el('div', null, el('div', { class: 'cp-panel' }, el('h3', null, 'Profile changes (' + changes.length + ')'), changes.length ? changes : el('p', { class: 'cp-empty' }, 'Nothing waiting.')),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Items a coach wants on the staff page (' + items.length + ')'), items.length ? items : el('p', { class: 'cp-empty' }, 'Nothing waiting.'))));
+  }
+  function fmtField(k, v) {
+    if (Array.isArray(v)) return v.length ? v.join(', ') : '(none)';
+    if (k === 'publish') return String(v || '').split(',').filter(Boolean).map(function (f) { return FIELD_LABEL[f] || f; }).join(', ') || '(nothing)';
+    if (k === 'groups') return String(v || '').split(',').join(' / ') || '(none)';
+    return v == null || v === '' ? '(blank)' : String(v);
+  }
+  function itemMeta(o, i) {
+    var yrs = i.year ? (i.year_to ? i.year + '–' + i.year_to : (['membership', 'position'].indexOf(i.kind) >= 0 ? i.year + '–present' : String(i.year))) : '';
+    return [o.kinds[i.kind], i.org, i.rank, o.levels[i.level], yrs, i.expires_on ? 'expires ' + i.expires_on : ''].filter(Boolean).join(' · ');
+  }
+  // Resize in the browser so uploads stay small (longest side 900px, JPEG).
+  function shrinkPhoto(file) {
+    return new Promise(function (ok, bad) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var k = Math.min(1, 900 / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url); ok(cv.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = function () { bad(new Error('That file could not be read as a photo.')); };
+      img.src = url;
+    });
+  }
+  function staffRecord(box, id, list, back) {
+    api('GET', '/staff/' + id).then(function (r) {
+      var c = r.coach, mgr = r.manager, out = el('div', { class: 'cp-out' });
+      var f = {}, pub = {}, grp = {};
+      function inp(k, attrs) { f[k] = el('input', Object.assign({ maxlength: 120 }, attrs || {})); f[k].value = c[k] == null ? '' : c[k]; return f[k]; }
+      var bio = el('textarea', { rows: 10, maxlength: 6000 }, c.bio || ''), notes = mgr ? el('textarea', { rows: 4, maxlength: 4000 }, c.notes || '') : null;
+      var groups = el('div', { class: 'ac-roles' }, list.groups.map(function (g) { grp[g] = el('input', { type: 'checkbox' }); grp[g].checked = c.groups.indexOf(g) >= 0; return el('label', { class: 'inline' }, grp[g], ' ' + g); }));
+      var pubs = el('div', { class: 'ac-roles' }, list.pubFields.map(function (p) { pub[p] = el('input', { type: 'checkbox' }); pub[p].checked = c.publish.indexOf(p) >= 0; return el('label', { class: 'inline' }, pub[p], ' ' + FIELD_LABEL[p]); }));
+      var flags = {};
+      if (mgr) ['active', 'on_staff_page'].forEach(function (k) { flags[k] = el('input', { type: 'checkbox' }); flags[k].checked = !!c[k]; });
+      function save(e) {
+        e.preventDefault();
+        var b = { subtitle: f.subtitle.value, phone: f.phone.value, dob: f.dob.value, photo_alt: f.photo_alt.value, bio: bio.value,
+          groups: list.groups.filter(function (g) { return grp[g].checked; }), publish: list.pubFields.filter(function (p) { return pub[p].checked; }) };
+        if (mgr) { ['name', 'role', 'email', 'started_on', 'ended_on', 'sort'].forEach(function (k) { b[k] = f[k].value; }); b.notes = notes.value; b.active = flags.active.checked; b.on_staff_page = flags.on_staff_page.checked; }
+        api('POST', '/staff/' + id, b).then(function (x) {
+          flash = x.unchanged ? 'No changes to save.' : x.queued ? 'Saved. Changes to what shows on the public page are waiting for JP’s OK; private details are saved now.' : 'Saved.'; back();
+        }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+      }
+      var ro = function (label, v) { return el('p', null, el('span', { class: 'cp-small' }, label + ': '), v || '—'); };
+      var profile = el('form', { class: 'cp-form', onsubmit: save },
+        mgr ? [el('label', null, 'Name', inp('name', { required: true, maxlength: 60 })), el('label', null, 'Title (for example Head Coach)', inp('role', { maxlength: 60 })),
+          el('label', null, 'Sign-in email (links their login to this record and to Coach’s Corner)', inp('email', { type: 'email' }))]
+          : [ro('Name', c.name), ro('Title', c.role), ro('Sign-in email', c.email)],
+        el('label', null, 'Second line (for example Founding Coach)', inp('subtitle', { maxlength: 80 })),
+        el('fieldset', null, el('legend', null, 'Primary groups'), groups),
+        el('label', null, 'Phone', inp('phone', { maxlength: 30, type: 'tel' })),
+        el('label', null, 'Date of birth (private: never shown on the site)', inp('dob', { type: 'date' })),
+        mgr ? el('div', { class: 'st-two' }, el('label', null, 'First day with NSEA', inp('started_on', { type: 'date' })), el('label', null, 'Last day (leave blank while on staff)', inp('ended_on', { type: 'date' })))
+          : ro('With NSEA since', c.started_on ? c.started_on + (c.years != null ? ' (' + c.years + ' yr' + (c.years === 1 ? '' : 's') + ')' : '') : ''),
+        el('label', null, 'Bio', bio),
+        el('p', { class: 'cp-small' }, 'A blank line starts a new paragraph. Use **bold**, *italic* and [link text](https://address).'),
+        el('fieldset', null, el('legend', null, 'Show on the Coaching Staff page'), pubs,
+          el('p', { class: 'cp-small' }, 'Date of birth' + (mgr ? ' and private notes are' : ' is') + ' never shown. Accomplishments and memberships each have their own “show” box below.')),
+        mgr ? [el('label', { class: 'inline' }, flags.on_staff_page, ' Show this coach on the Coaching Staff page'), el('label', { class: 'inline' }, flags.active, ' Active (can sign in to Coach’s Corner and be picked as an author)'),
+          el('label', null, 'Order on the staff page (lower comes first)', inp('sort', { type: 'number', min: 0, max: 999 })),
+          el('label', null, 'Private notes (owners and Staff records only; the coach does not see these)', notes)] : null,
+        !mgr ? el('p', { class: 'cp-small' }, 'Changes to anything shown on the public page wait for JP’s OK. Private details save straight away.') : null,
+        out, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Save profile')));
+
+      // photo
+      var pOut = el('div', { class: 'cp-out' }), file = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp' });
+      var photoSrc = c.photo_url && c.photo_url.indexOf('/api/content/staff/photo/') === 0 ? '/api/admin/staff/' + id + '/photo' : c.photo_url;
+      var photo = el('div', { class: 'cp-panel' }, el('h3', null, 'Photo'),
+        photoSrc ? el('img', { class: 'st-photo', src: photoSrc, alt: c.photo_alt || ('Coach ' + c.name) }) : el('p', { class: 'cp-empty' }, 'No photo yet.'),
+        el('div', { class: 'cp-form' }, el('label', null, 'Photo description for screen readers (for example “Coach Rachel on the pool deck”)', inp('photo_alt', { maxlength: 160 })),
+        el('label', null, 'Upload a new photo (JPG, PNG or WebP; it is resized automatically)', file), pOut,
+        el('div', { class: 'cp-btns' }, btn('Upload photo', function () {
+          if (!file.files[0]) { pOut.replaceChildren(msg('err', 'Choose a photo first.')); return; }
+          pOut.replaceChildren(msg('ok', 'Uploading…'));
+          shrinkPhoto(file.files[0]).then(function (data) { return api('POST', '/staff/' + id + '/photo', { data: data }); })
+            .then(function (x) { flash = x.queued ? 'Photo sent to JP for approval.' : 'Photo updated.'; back(); })
+            .catch(function (err) { pOut.replaceChildren(msg('err', err.message)); });
+        })),
+        el('p', { class: 'cp-small' }, 'The description is saved when you press Save profile.')));
+
+      // record items
+      var editing = null, iOut = el('div', { class: 'cp-out' }), fi = {};
+      fi.kind = el('select', null, Object.keys(list.kinds).map(function (k) { return el('option', { value: k }, list.kinds[k]); }));
+      fi.level = el('select', null, el('option', { value: '' }, '—'), Object.keys(list.levels).map(function (k) { return el('option', { value: k }, list.levels[k]); }));
+      ['title', 'org', 'rank'].forEach(function (k) { fi[k] = el('input', { maxlength: k === 'title' ? 160 : 120 }); });
+      fi.year = el('input', { type: 'number', min: 1950, max: 2100, placeholder: 'e.g. 2026' }); fi.year_to = el('input', { type: 'number', min: 1950, max: 2100, placeholder: 'blank = current' });
+      fi.expires_on = el('input', { type: 'date' }); fi.detail = el('textarea', { rows: 3, maxlength: 1500 }); fi.publish = el('input', { type: 'checkbox' });
+      fi.title.required = true;
+      function loadItem(i) {
+        editing = i; ['kind', 'title', 'org', 'rank', 'level', 'year', 'year_to', 'expires_on', 'detail'].forEach(function (k) { fi[k].value = i && i[k] != null ? i[k] : (k === 'kind' ? 'deck' : ''); });
+        fi.publish.checked = !!(i && i.publish); itemBtn.textContent = i ? 'Save item' : 'Add item'; itemForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      var itemBtn = el('button', { class: 'btn', type: 'submit' }, 'Add item');
+      var itemForm = el('form', { class: 'cp-form', onsubmit: function (e) {
+        e.preventDefault();
+        var b = { item_id: editing ? editing.id : null, publish: fi.publish.checked };
+        ['kind', 'title', 'org', 'rank', 'level', 'year', 'year_to', 'expires_on', 'detail'].forEach(function (k) { b[k] = fi[k].value; });
+        api('POST', '/staff/' + id + '/items', b).then(function (x) { flash = x.waiting ? 'Saved. It shows on the staff page once JP approves it.' : 'Item saved.'; back(); }).catch(function (err) { iOut.replaceChildren(msg('err', err.message)); });
+      } },
+        el('label', null, 'Kind', fi.kind), el('label', null, 'Title (for example “NC Swimming Age Group Coach of the Year nominee”, “ASCA member”, “Age Group Chair”)', fi.title),
+        el('label', null, 'Organization (ASCA, NC Swimming, USA Swimming, a school…)', fi.org), el('label', null, 'Rank or level held (for example ASCA Level 3)', fi.rank),
+        el('label', null, 'Level', fi.level),
+        el('div', { class: 'st-two' }, el('label', null, 'Year (for a season, the fall year: 2026 = 2026–27)', fi.year), el('label', null, 'Through (memberships and positions)', fi.year_to)),
+        el('label', null, 'Expires (certifications and memberships, optional)', fi.expires_on), el('label', null, 'Details (optional)', fi.detail),
+        el('label', { class: 'inline' }, fi.publish, ' Show on the Coaching Staff page' + (mgr ? '' : ' (JP approves first)')), iOut,
+        el('div', { class: 'cp-btns' }, itemBtn, btn('Clear', function () { loadItem(null); }, 'ghost')));
+      var byKind = Object.keys(list.kinds).map(function (k) {
+        var its = r.items.filter(function (i) { return i.kind === k; });
+        if (!its.length) return null;
+        return el('div', null, el('h4', null, list.kinds[k] + ' (' + its.length + ')'), its.map(function (i) {
+          var chip = !i.publish ? el('span', { class: 'chip' }, 'Private') : i.approved ? el('span', { class: 'chip done' }, 'On staff page') : el('span', { class: 'chip new' }, 'Waiting for OK');
+          var expired = i.expires_on && i.expires_on < list.today;
+          return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, i.title), ' ', chip, expired ? el('span', { class: 'chip new' }, 'Expired') : null,
+            el('p', { class: 'cp-small' }, itemMeta(list, i)), i.detail ? el('p', { class: 'cp-small' }, i.detail) : null),
+            el('div', { class: 'cp-btns' }, btn('Edit', function () { loadItem(i); }),
+              btn('Remove', function () { if (confirm('Remove “' + i.title + '”? It stays in the history' + (mgr ? ' and can be restored.' : '.'))) api('POST', '/staff/' + id + '/items/' + i.id + '/remove', {}).then(function () { flash = 'Removed.'; back(); }).catch(function (e) { alert(e.message); }); }, 'ghost')));
+        }));
+      });
+      var record = el('div', { class: 'cp-panel' }, el('h3', null, 'Accomplishments, memberships and positions'),
+        el('p', { class: 'cp-small' }, 'Add one item per accomplishment, membership, position or season, with its year, so the record builds up over time. Removing an item keeps it in the history.'),
+        r.items.length ? byKind : el('p', { class: 'cp-empty' }, 'Nothing on the record yet.'),
+        el('h4', null, 'Add or edit an item'), itemForm,
+        mgr && r.removed.length ? el('details', null, el('summary', null, 'Removed items (' + r.removed.length + ')'), r.removed.map(function (i) {
+          return el('div', { class: 'cp-row' }, el('div', null, i.title, el('p', { class: 'cp-small' }, (list.kinds[i.kind] || i.kind) + (i.year ? ' · ' + i.year : '') + ' · removed ' + date(i.removed_at) + ' by ' + i.removed_by)),
+            el('div', { class: 'cp-btns' }, btn('Restore', function () { api('POST', '/staff/' + id + '/items/' + i.id + '/restore', {}).then(function () { flash = 'Restored.'; back(); }).catch(function (e) { alert(e.message); }); }, 'ghost')));
+        })) : null);
+
+      var history = el('details', { class: 'cp-panel' }, el('summary', null, 'History (' + r.history.length + (r.history.length === 150 ? '+' : '') + ' changes)'),
+        r.history.map(function (h) { return el('p', { class: 'cp-small' }, date(h.at) + ' UTC · ' + h.by_email + ' · ' + h.action + histDetail(h.detail)); }));
+      var pend = r.pending ? el('div', { class: 'cp-msg ok' }, (r.self && !mgr ? 'Your changes are waiting for JP’s OK: ' : 'Waiting for your OK (sent by ' + r.pending.submitted_by + '): ') +
+        Object.keys(r.pending.json).map(function (k) { return FIELD_LABEL[k] || k; }).concat(r.pending.has_photo ? ['new photo'] : []).join(', ') + '.',
+        mgr ? [' ', el('button', { class: 'cp-link', type: 'button', onclick: function () { staffSel = null; staffTab = 'review'; vStaff(); } }, 'Review it')] : null) : null;
+      box.replaceChildren(el('div', null,
+        el('h2', null, c.name), el('p', { class: 'cp-small' }, [c.role, c.subtitle, c.years != null ? c.years + ' yr' + (c.years === 1 ? '' : 's') + ' with NSEA' : null, c.on_staff_page ? 'on the staff page' : 'not on the staff page'].filter(Boolean).join(' · ')),
+        pend, el('div', { class: 'cp-panel' }, el('h3', null, 'Profile'), profile), photo, record, history));
+    }).catch(function (e) { fail(box, e); });
+  }
+  function histDetail(d) {
+    if (!d || typeof d !== 'object') return '';
+    var src = d.after || d.proposed || (d.item && typeof d.item === 'object' ? { title: d.item.title } : null) || (d.title ? { title: d.title } : null);
+    if (!src) return '';
+    var keys = Object.keys(src).filter(function (k) { return k !== 'bio' && k !== 'notes' && src[k] !== undefined; });
+    var s = keys.slice(0, 6).map(function (k) { return (FIELD_LABEL[k] || k.replace('_', ' ')) + ': ' + fmtField(k, src[k]); }).join('; ');
+    if (src.bio !== undefined) s += (s ? '; ' : '') + 'bio edited';
+    if (src.notes !== undefined) s += (s ? '; ' : '') + 'notes edited';
+    return s ? ' — ' + s.slice(0, 300) : '';
   }
 
   // ---------- assessments: skill library and group checklists ----------

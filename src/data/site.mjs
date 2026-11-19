@@ -68,7 +68,7 @@ export const pages = [
   // ---------------------------------------------------------------- ABOUT ----
   { path: '/about/', type: 'hub', title: 'About', desc: 'Who we are, who coaches, and where we train.', status: 'rebuild', from: ['/about-us'] },
   { path: '/about/who-we-are/', type: 'page', title: 'Who We Are', desc: 'Our mission, vision and values, and how the club is run.', status: 'done', from: ['/about-us'] },
-  { path: '/about/coaching-staff/', type: 'page', title: 'Coaching Staff', desc: 'Meet the NSEA coaches.', status: 'done', from: ['/coaching-staff'] },
+  { path: '/about/coaching-staff/', type: 'page', title: 'Coaching Staff', desc: 'Meet the NSEA coaches.', staff: true, status: 'done', from: ['/coaching-staff'] },
   { path: '/about/practice-locations/', type: 'page', title: 'Practice Locations', desc: 'Where and when we practice.', status: 'done', from: ['/practice-locations'] },
   { path: '/about/practice-locations/parking/', type: 'page', title: 'Parking at Earl Jackson Pool', desc: 'Where to park for practice and meets.', status: 'done', from: ['/ejp-parking'], legacy: ['assets: 2025_26_TEAM_PARKING.png'] },
   { path: '/about/alumni/', type: 'page', title: 'Alumni', desc: 'Where NSEA swimmers go next.', status: 'done', from: ['/alumni'] },
