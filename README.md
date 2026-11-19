@@ -225,12 +225,15 @@ The base schedule for each season plus dated changes on top of it. One source fe
 | Meet over Sat + Sun | Monday off for those groups (maybe) |
 | Home meet | Meet in place of practice (maybe) |
 | Team event for some groups | Replaces practice (maybe), or added on a day with no practice |
-| Holiday practice plan (`schedule` events) | Reminder to enter the times from the Holiday Break sheet; school-day checks are skipped inside it |
+| Holiday Break Practice Schedules sheet | Every Normal / Off / time that differs from the base becomes a suggestion (likely). Also importable all at once with **Import the Holiday Break sheet** |
+| Holiday practice plan (`schedule` events) | FYI pointing at the sheet's suggestions; school-day checks are skipped inside it |
 | School holiday / teacher workday | AM practices only: move the time? (holiday likely, workday maybe). Early release ignored |
 | HS meet night | Only schools with NSEA swimmers count; 3+ swimming that night and Surge/Senior have a PM practice → shift? An NSEA event that night is flagged |
 | WSL meet (summer) | Senior PM shift, once the WSL teams with Senior swimmers are set; April/May reminder to set them |
 
-Nothing reaches families until it is approved. Rejected suggestions are never suggested again. Changes added by hand (taper, coach out, pool closure) are approved straight away. Each approved change has a "Posted in Captyn" tick.
+Nothing reaches families until it is approved. Rejected suggestions are never suggested again. Changes added by hand (taper, coach out, pool closure) are approved straight away. A practice has one approved change: approving a newer one retires the older one.
+
+**Holiday sheet format.** Blocks of: a title row ("Thanksgiving Break"), optional "Week N | …" rows, a weekday row, a date row (M/D/YY), then one row per group (Splash … Senior or SR). Column B may say AM or PM; a group with a single row describes its whole day. Cells: Normal, Off, or a time. Unlabelled times go to the session the group usually swims that day, otherwise by start hour (5–10 = AM). The sheet must be shared "anyone with the link can view"; the link in Settings picks the tab (`#gid=`). Each approved change has a "Posted in Captyn" tick.
 
 **One-time setup**
 

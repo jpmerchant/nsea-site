@@ -108,6 +108,119 @@ function counted(schools, list) {
 }
 const isSwimMeet = (ev) => !ev.allDay && /meet|champ|invitational|relays/i.test(ev.summary);
 
+// ---------- Holiday Break Practice Schedules sheet ----------
+// The sheet is a series of blocks: a title row ("Thanksgiving Break"), optional "Week N | ..." rows, a weekday row,
+// a date row (M/D/YY in columns C..I), then one row per group (column B may say AM or PM). Cells say Normal, Off
+// or a time ("6:30 – 8:30am"). A group with one row describes its whole day; a group with AM and PM rows describes
+// each session. Unlabelled times go to the session the group usually practises that day, else by start hour.
+export function parseCSV(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  const s = String(text || '').replace(/\r\n?/g, '\n');
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (q) { if (ch === '"') { if (s[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; continue; }
+    if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+export function sheetCsvUrl(link) {
+  const id = (String(link || '').match(/\/spreadsheets\/d\/([\w-]{20,})/) || [])[1];
+  if (!id) return '';
+  const gid = (String(link).match(/[#?&]gid=(\d+)/) || [])[1];
+  return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${gid ? '&gid=' + gid : ''}`;
+}
+const GROUP_ALIAS = { sr: 'Senior', senior: 'Senior', 'senior surge': 'Senior' };
+function sheetGroup(v) {
+  const k = String(v || '').trim().toLowerCase();
+  if (!k) return '';
+  return GROUP_ALIAS[k] || SCHED_GROUPS.find((g) => g.toLowerCase() === k) || null;
+}
+function sheetDate(v) {
+  const m = String(v || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (!m) return null;
+  const y = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+  return `${y}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
+}
+export function cleanTime(v) {
+  return String(v || '').replace(/[–—]/g, '-').replace(/\s*(a\.?m\.?|p\.?m\.?)\s*$/i, '').replace(/\s*-\s*/g, ' - ').replace(/\s+/g, ' ').trim();
+}
+const ampm = (v) => (/a\.?m\.?\s*$/i.test(v) ? 'AM' : /p\.?m\.?\s*$/i.test(v) ? 'PM' : '');
+function guessSession(cfg, d, g, v) {
+  const on = SESSIONS.filter((s) => practices(baseTime(cfg, d, g, s)));
+  if (on.length === 1) return on[0];
+  const h = parseInt(cleanTime(v), 10);
+  return h >= 5 && h <= 10 ? 'AM' : 'PM';
+}
+// Returns the differences from the base schedule: [{ section, date, group, session, kind, value }].
+export function parseHolidaySheet(rows, cfg) {
+  const out = [];
+  let section = '', dates = null, block = [];
+  const flush = () => {
+    if (!dates || !block.length) { block = []; return; }
+    const byGroup = new Map();
+    for (const b of block) { const l = byGroup.get(b.group) || []; l.push(b); byGroup.set(b.group, l); }
+    for (const [g, list] of byGroup) {
+      const whole = list.length === 1;
+      dates.forEach((d, i) => {
+        if (!d) return;
+        const want = {}; // session -> 'Off' | time ; missing = no change
+        for (const r of list) {
+          const raw = String(r.cells[i] || '').trim();
+          if (!raw || /^normal$/i.test(raw)) continue;
+          if (/^off$/i.test(raw) || /^no practice$/i.test(raw)) {
+            if (whole) SESSIONS.forEach((s) => { want[s] = 'Off'; }); else want[r.session || 'PM'] = 'Off';
+            continue;
+          }
+          const s = ampm(raw) || r.session || guessSession(cfg, d, g, raw);
+          want[s] = cleanTime(raw);
+          if (whole) SESSIONS.forEach((x) => { if (x !== s && !want[x]) want[x] = 'Off'; });
+        }
+        for (const s of SESSIONS) {
+          if (!(s in want)) continue;
+          const base = baseTime(cfg, d, g, s);
+          const cur = base || 'Off';
+          if (want[s] === cur || (base === null && want[s] === 'Off')) continue;
+          out.push({ section, date: d, group: g, session: s, kind: want[s] === 'Off' ? 'cancel' : 'time', value: want[s] === 'Off' ? '' : want[s] });
+        }
+      });
+    }
+    block = [];
+  };
+  let lastGroup = '';
+  for (const r of rows) {
+    const a = String(r[0] || '').trim(), rest = r.slice(1).map((x) => String(x || '').trim());
+    const ds = r.slice(2, 9).map(sheetDate);
+    if (ds.filter(Boolean).length >= 3) { flush(); dates = ds; lastGroup = ''; continue; }
+    const g = sheetGroup(a);
+    if (g || (!a && lastGroup && /^(AM|PM)$/i.test(rest[0] || ''))) {
+      if (!dates) continue;
+      const group = g || lastGroup;
+      lastGroup = group;
+      block.push({ group, session: /^(AM|PM)$/i.test(rest[0] || '') ? rest[0].toUpperCase() : '', cells: r.slice(2, 9) });
+      continue;
+    }
+    if (a && rest.every((x) => !x)) {
+      flush(); dates = null; lastGroup = '';
+      if (!/^week\b/i.test(a) && !/subject to change/i.test(a)) section = a;
+      continue;
+    }
+    if (rest.slice(1).some((x) => /day$/i.test(x))) { flush(); dates = null; }
+  }
+  flush();
+  return out;
+}
+const slug = (s) => String(s || 'holiday').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'holiday';
+export function sheetSuggestions(cfg, rows, from, to) {
+  return parseHolidaySheet(rows, cfg).filter((x) => x.date >= from && x.date <= to).map((x) => ({
+    source_ref: `sheet:${slug(x.section)}:${x.date}:${x.group}:${x.session}`, date: x.date, group_name: x.group, session: x.session,
+    kind: x.kind, value: x.value, note: x.section, reason: `${x.section || 'Holiday schedule'} (Holiday Break sheet)`, source: 'sheet', confidence: 'likely',
+  }));
+}
+
 // ---------- the rules ----------
 // inputs: { events: [events.json events], schools: [{ name, events }], hs: [ics events], wsl: [ics events] }
 // Returns suggestions: { source_ref, date, group_name, session, kind, value, reason, source, confidence }.
@@ -127,7 +240,7 @@ export function suggest(cfg, from, to, inputs, today = from) {
     if (e.type === 'schedule') {
       if (days.length > 1) days.forEach((d) => planned.add(d));
       push({ source_ref: `holiday:${e.id}`, date: e.start, group_name: 'All', session: 'PM', kind: 'info', value: '',
-        reason: days.length > 1 ? `${e.title} (${short(e.start)} – ${short(end)}). Enter the times from the Holiday Break Practice Schedules sheet as changes.` : `${e.title}.`,
+        reason: days.length > 1 ? `${e.title} (${short(e.start)} – ${short(end)}). The times come from the Holiday Break sheet (suggestions marked “Holiday sheet”); add anything it doesn’t cover.` : `${e.title}.`,
         source: 'holiday', confidence: 'fyi' });
       continue;
     }
@@ -286,7 +399,7 @@ async function getText(url, fetchImpl) {
 }
 export async function gather(cfg, fetchImpl = fetch) {
   const c = cfg.check, problems = [];
-  const inputs = { events: [], schools: [], hs: [], wsl: [] };
+  const inputs = { events: [], schools: [], hs: [], wsl: [], sheet: null };
   try { inputs.events = (JSON.parse(await getText(c.eventsUrl, fetchImpl)).events) || []; } catch (e) { problems.push(`Events calendar: ${e.message}`); }
   for (const s of c.schools || []) {
     if (!s.on || !s.url) continue;
@@ -298,10 +411,35 @@ export async function gather(cfg, fetchImpl = fetch) {
       if (c.hsSchoolDays) inputs.schools.push({ name: c.hsSchoolDays, events: inputs.hs.filter((e) => e.allDay) });
     } catch (e) { problems.push(`High school meets: ${e.message}`); }
   } else problems.push('High school meets calendar link not set (Settings).');
+  const csv = sheetCsvUrl(c.holidaySheet);
+  if (csv) { try { inputs.sheet = parseCSV(await getText(csv, fetchImpl)); if (!inputs.sheet.length || /<html/i.test(inputs.sheet[0].join(''))) throw new Error('not a sheet (is it shared "anyone with the link"?)'); } catch (e) { inputs.sheet = null; problems.push(`Holiday Break sheet: ${e.message}`); } }
   if ((c.wslTeams || []).length) {
     if (c.wslUrl) { try { inputs.wsl = parseICS(await getText(c.wslUrl, fetchImpl)); } catch (e) { problems.push(`WSL meets: ${e.message}`); } } else problems.push('WSL meets calendar link not set (Settings).');
   }
   return { inputs, problems };
+}
+
+// Saves suggestions: new ones are added; an undecided one whose details changed is updated; one that is already
+// decided is left alone; and nothing is suggested when an approved or rejected change already says the same thing.
+export async function saveSuggestions(env, list) {
+  let added = 0, updated = 0, same = 0;
+  for (const s of list) {
+    const ex = await env.DB.prepare(`SELECT id, status, kind, value, reason FROM sched_changes WHERE source_ref = ?`).bind(s.source_ref).first();
+    if (ex) {
+      if (ex.status === 'suggested' && (ex.kind !== s.kind || ex.value !== s.value || ex.reason !== s.reason)) {
+        await env.DB.prepare(`UPDATE sched_changes SET kind = ?, value = ?, reason = ?, note = ? WHERE id = ?`).bind(s.kind, s.value, s.reason, s.note || '', ex.id).run();
+        updated++;
+      }
+      continue;
+    }
+    const dup = await env.DB.prepare(`SELECT 1 x FROM sched_changes WHERE status != 'suggested' AND date = ? AND group_name = ? AND session = ? AND kind = ? AND value = ?`)
+      .bind(s.date, s.group_name, s.session, s.kind, s.value).first();
+    if (dup) { same++; continue; }
+    await env.DB.prepare(`INSERT INTO sched_changes (source_ref, date, group_name, session, kind, value, note, reason, source, confidence, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'suggested', 'weekly check')`).bind(s.source_ref, s.date, s.group_name, s.session, s.kind, s.value, s.note || '', s.reason, s.source, s.confidence).run();
+    added++;
+  }
+  return { added, updated, same };
 }
 
 // Adds new suggestions (never re-adding one already decided), drops undecided ones that no longer apply.
@@ -311,18 +449,16 @@ export async function runCheck(env, by = 'cron', fetchImpl = fetch, now = new Da
   const from = addDays(today, 1), to = addDays(today, cfg.check.lookaheadDays || 21);
   const { inputs, problems } = await gather(cfg, fetchImpl);
   const list = suggest(cfg, from, to, inputs, today);
-  let added = 0, removed = 0;
-  for (const s of list) {
-    const r = await env.DB.prepare(`INSERT OR IGNORE INTO sched_changes (source_ref, date, group_name, session, kind, value, reason, source, confidence, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'suggested', 'weekly check')`).bind(s.source_ref, s.date, s.group_name, s.session, s.kind, s.value, s.reason, s.source, s.confidence).run();
-    added += (r.meta && r.meta.changes) || 0;
-  }
+  if (inputs.sheet) list.push(...sheetSuggestions(cfg, inputs.sheet, from, to));
+  const { added } = await saveSuggestions(env, list);
+  let removed = 0;
   // Only clear stale suggestions from sources that were actually read this time.
   const okSources = new Set(['reminder']);
   if (!problems.some((p) => p.startsWith('Events calendar'))) ['meet', 'team-event', 'holiday'].forEach((x) => okSources.add(x));
   if (inputs.schools.length) okSources.add('school');
   if (cfg.check.hsUrl && !problems.some((p) => p.startsWith('High school'))) okSources.add('hs');
   if (inputs.wsl.length) okSources.add('wsl');
+  if (inputs.sheet) okSources.add('sheet');
   const keep = new Set(list.map((s) => s.source_ref));
   const { results } = await env.DB.prepare(`SELECT id, source_ref, source FROM sched_changes WHERE status = 'suggested' AND source_ref IS NOT NULL AND date >= ? AND date <= ?`).bind(from, to).all();
   for (const r of results) {
@@ -376,9 +512,16 @@ function parseSettings(b, cur) {
     hsGroups: list(k.hsGroups, 6).filter((g) => SCHED_GROUPS.includes(g)), hsSession: SESSIONS.includes(k.hsSession) ? k.hsSession : 'PM',
     wslUrl: url(k.wslUrl), wslTeams: list(k.wslTeams, 30),
     wslGroups: list(k.wslGroups, 6).filter((g) => SCHED_GROUPS.includes(g)), wslSession: SESSIONS.includes(k.wslSession) ? k.wslSession : 'PM',
+    holidaySheet: /^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test(clean(k.holidaySheet, 500)) ? clean(k.holidaySheet, 500) : '',
     lookaheadDays: Math.max(7, Math.min(60, parseInt(k.lookaheadDays, 10) || 21)),
   };
   return { data: { seasons, check } };
+}
+
+// One practice (date + group + session) has one approved change: approving a new one retires the older one.
+async function replaceOlder(env, id, c) {
+  await env.DB.prepare(`UPDATE sched_changes SET status = 'rejected', reason = reason || ' (replaced by a newer change)' WHERE id != ? AND status = 'approved' AND kind != 'info' AND date = ? AND group_name = ? AND session = ?`)
+    .bind(id, c.date, c.group_name, c.session).run();
 }
 
 // Returns a Response, or null if the path is not a schedule path.
@@ -401,6 +544,20 @@ export async function handleScheduleAdmin(env, me, method, path, body, audit, fe
     await audit('schedule', 'run check', `${r.added} new, ${r.removed} cleared`);
     return json({ ok: true, ...r });
   }
+  if (method === 'POST' && path === '/schedule/holiday-import') {
+    const cfg = await loadConfig(env);
+    const csv = sheetCsvUrl(cfg.check.holidaySheet);
+    if (!csv) return fail(400, 'Add the Holiday Break sheet link in Settings first.');
+    let rows;
+    try { rows = parseCSV(await getText(csv, fetchImpl)); } catch (e) { return fail(502, `Could not read the sheet (${e.message}). Is it shared “anyone with the link can view”?`); }
+    if (!rows.length || /<html/i.test(rows[0].join(''))) return fail(502, 'That link did not return a sheet. Check it is shared “anyone with the link can view”.');
+    const today = etToday();
+    const list = sheetSuggestions(cfg, rows, addDays(today, 1), addDays(today, 400));
+    const r = await saveSuggestions(env, list);
+    const sections = [...new Set(list.map((x) => x.note).filter(Boolean))];
+    await audit('schedule', 'import holiday sheet', `${r.added} new, ${r.updated} updated`);
+    return json({ ok: true, ...r, found: list.length, sections });
+  }
   if (method === 'POST' && path === '/schedule/settings') {
     const cur = await loadConfig(env);
     const r = parseSettings(body, cur);
@@ -421,12 +578,13 @@ export async function handleScheduleAdmin(env, me, method, path, body, audit, fe
     const r = await env.DB.prepare(`INSERT INTO sched_changes (date, group_name, session, kind, value, note, reason, source, confidence, status, created_by, decided_by, decided_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', 'likely', 'approved', ?, ?, datetime('now'))`)
       .bind(c.date, c.group_name, c.session, c.kind, c.value, c.note, c.reason, me.email, me.email).run();
+    await replaceOlder(env, r.meta.last_row_id, c);
     await audit('schedule', 'add change', `${c.date} ${c.group_name} ${c.session} ${c.kind} ${c.value}`);
     return json({ ok: true, id: r.meta.last_row_id });
   }
   if (method === 'POST' && path === '/schedule/approve-likely') {
     const r = await env.DB.prepare(`UPDATE sched_changes SET status = 'approved', decided_by = ?, decided_at = datetime('now')
-      WHERE status = 'suggested' AND confidence = 'likely' AND kind IN ('cancel', 'add', 'replace') AND value IS NOT NULL AND date >= ?`).bind(me.email, etToday()).run();
+      WHERE status = 'suggested' AND confidence = 'likely' AND (kind IN ('cancel', 'add', 'replace') OR (kind = 'time' AND value != '')) AND date >= ?`).bind(me.email, etToday()).run();
     await audit('schedule', 'approve all likely', `${r.meta.changes} changes`);
     return json({ ok: true, approved: r.meta.changes });
   }
@@ -442,6 +600,7 @@ export async function handleScheduleAdmin(env, me, method, path, body, audit, fe
       const v = c.error ? cur : c;
       await env.DB.prepare(`UPDATE sched_changes SET date = ?, group_name = ?, session = ?, kind = ?, value = ?, note = ?, status = ?, decided_by = ?, decided_at = datetime('now') WHERE id = ?`)
         .bind(v.date, v.group_name, v.session, v.kind, v.value, v.note || '', act === 'approve' ? 'approved' : (cur.status === 'suggested' ? 'suggested' : cur.status), me.email, id).run();
+      if (act === 'approve' && v.kind !== 'info') await replaceOlder(env, id, v);
       await audit('schedule', act === 'approve' ? 'approve change' : 'edit change', label);
       return json({ ok: true });
     }

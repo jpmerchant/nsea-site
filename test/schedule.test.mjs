@@ -135,7 +135,7 @@ const admin = async (env, method, path, body = {}) => { const r = await handleSc
 
 test('weekly check -> queue -> approve -> public week', { skip: !DatabaseSync }, async () => {
   const env = d1();
-  const s = scheduleDefaults(); s.check.hsUrl = 'https://example.test/hs.ics';
+  const s = scheduleDefaults(); s.check.hsUrl = 'https://example.test/hs.ics'; s.check.holidaySheet = '';
   assert.equal((await admin(env, 'POST', '/schedule/settings', s)).status, 200);
   const r1 = await runCheck(env, 'test', fakeFetch, new Date('2026-12-10T02:00:00Z')); // Wed 12/9, 9 PM ET
   assert.equal(r1.from, '2026-12-10');
@@ -187,4 +187,64 @@ test('settings: bad season dates and bad links are refused', { skip: !DatabaseSy
   const t = scheduleDefaults(); t.check.hsUrl = 'javascript:alert(1)';
   assert.equal((await admin(env, 'POST', '/schedule/settings', t)).status, 200);
   assert.equal((await admin(env, 'GET', '/schedule')).json.config.check.hsUrl, '');
+});
+
+// ---------- Holiday Break sheet ----------
+import { parseCSV, parseHolidaySheet, sheetCsvUrl, cleanTime } from '../worker/schedule.mjs';
+const SHEET = fx('holiday-sheet-2026.csv');
+const hol = parseHolidaySheet(parseCSV(SHEET), cfg);
+const at = (d, g, s) => hol.find((x) => x.date === d && x.group === g && x.session === s);
+
+test('sheet link -> CSV export address for that tab', () => {
+  assert.equal(sheetCsvUrl('https://docs.google.com/spreadsheets/d/1PnEukw-c0GVkrEFhYK4A-sXXShC2Vg6AnqlF0ztQx6Y/edit#gid=2024710413'),
+    'https://docs.google.com/spreadsheets/d/1PnEukw-c0GVkrEFhYK4A-sXXShC2Vg6AnqlF0ztQx6Y/export?format=csv&gid=2024710413');
+  assert.equal(sheetCsvUrl('https://example.com/x'), '');
+  assert.equal(cleanTime('6:30 – 8:30am'), '6:30 - 8:30');
+});
+
+test('Thanksgiving block: Off cancels the whole day, "am" times go to AM, unlabelled mornings go to AM', () => {
+  assert.deepEqual(at('2026-11-25', 'Breakers', 'AM'), { section: 'Thanksgiving Break', date: '2026-11-25', group: 'Breakers', session: 'AM', kind: 'time', value: '6:30 - 8:30' });
+  assert.equal(at('2026-11-25', 'Breakers', 'PM').kind, 'cancel');           // a one-row group lists its whole day
+  assert.equal(at('2026-11-26', 'Senior', 'AM').kind, 'cancel');
+  assert.equal(at('2026-11-28', 'Surge', 'AM'), undefined);                   // 6:30 - 8:30 = the usual Saturday
+  assert.equal(at('2026-11-29', 'Senior', 'AM').value, '6:30 - 8:30');        // new Sunday morning
+  assert.equal(at('2026-11-23', 'Splash', 'PM'), undefined);                  // Normal
+  assert.equal(hol.filter((x) => x.section === 'Thanksgiving Break').length, 25); // same 25 as the hand-made import
+});
+
+test('Christmas blocks: AM/PM rows, a one-row group with a PM label, Week rows keep the section name', () => {
+  assert.ok(hol.filter((x) => x.date >= '2026-12-14').every((x) => x.section === 'Christmas / New Year'));
+  assert.equal(at('2026-12-21', 'Breakers', 'PM').value, '4:00 - 5:30');
+  assert.equal(at('2026-12-26', 'Breakers', 'AM').kind, 'cancel');           // one row, "Off" = whole day
+  assert.equal(at('2026-12-23', 'Surge', 'PM').value, '5:30 - 7:00');
+  assert.equal(at('2026-12-30', 'Senior', 'PM'), undefined);                  // 4:15 – 6:15 is the usual Wednesday
+  assert.equal(at('2026-12-18', 'Surge', 'AM').value, '6:30 - 8:30');        // unlabelled, Surge only swims AM on Fridays
+  assert.equal(at('2026-12-28', 'Splash', 'PM').value, '4:30 - 5:15');       // Splash normally off Mondays
+  assert.equal(at('2027-01-01', 'Senior', 'AM').kind, 'cancel');
+});
+
+test('sheet import: suggestions, re-import updates only undecided ones, approved twins are not re-suggested, newer approval replaces older', { skip: !DatabaseSync }, async () => {
+  const env = d1();
+  const f = async (u) => (String(u).includes('/export?format=csv') ? new Response(SHEET) : fakeFetch(u));
+  const call = async (method, path, body = {}) => { const r = await handleScheduleAdmin(env, me, method, path, body, audit, f); return { status: r.status, json: await r.json() }; };
+  // a Thanksgiving change already approved by hand (as in thanksgiving-2026.sql)
+  await env.DB.prepare(`INSERT INTO sched_changes (source_ref, date, group_name, session, kind, value, source, status) VALUES ('sheet:thanksgiving-2026:2026-11-25:Breakers:AM', '2026-11-25', 'Breakers', 'AM', 'time', '6:30 - 8:30', 'holiday', 'approved')`).run();
+  // pretend today is Friday 11/20/2026
+  const RealDate = global.Date;
+  global.Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : ['2026-11-20T15:00:00Z'])); } static now() { return new RealDate('2026-11-20T15:00:00Z').getTime(); } };
+  try {
+    const r = await call('POST', '/schedule/holiday-import');
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.json.sections, ['Thanksgiving Break', 'Christmas / New Year']);
+    assert.equal(r.json.same, 1);
+    assert.equal(r.json.added, hol.length - 1);
+    assert.equal((await call('POST', '/schedule/holiday-import')).json.added, 0);
+    // approve-likely now includes time changes that have a time
+    const al = await call('POST', '/schedule/approve-likely');
+    assert.equal(al.json.approved, hol.length - 1);
+    // a newer approved change for the same practice replaces the older one
+    await call('POST', '/schedule/changes', { date: '2026-11-25', group_name: 'Breakers', session: 'AM', kind: 'time', value: '7:00 - 9:00' });
+    const live = (await env.DB.prepare(`SELECT value FROM sched_changes WHERE status = 'approved' AND date = '2026-11-25' AND group_name = 'Breakers' AND session = 'AM'`).all()).results;
+    assert.deepEqual(live.map((x) => x.value), ['7:00 - 9:00']);
+  } finally { global.Date = RealDate; }
 });

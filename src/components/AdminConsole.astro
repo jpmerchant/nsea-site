@@ -115,7 +115,7 @@
   // ---------- practice schedule ----------
   var stab = 'queue';
   var KIND_LABEL = { cancel: 'No practice', time: 'Time change', replace: 'Replaced by', add: 'Added', info: 'FYI' };
-  var SRC_LABEL = { meet: 'Meet', 'team-event': 'Team event', holiday: 'Holiday plan', school: 'School day', hs: 'HS meets', wsl: 'WSL', reminder: 'Reminder', manual: 'Added by hand' };
+  var SRC_LABEL = { meet: 'Meet', 'team-event': 'Team event', holiday: 'Holiday plan', sheet: 'Holiday sheet', school: 'School day', hs: 'HS meets', wsl: 'WSL', reminder: 'Reminder', manual: 'Added by hand' };
   var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   function sday(d) { var t = new Date(d + 'T12:00:00Z'); return DOW[t.getUTCDay()] + ' ' + (+d.slice(5, 7)) + '/' + (+d.slice(8, 10)); }
   function vSchedule() {
@@ -127,7 +127,7 @@
     api('GET', '/schedule').then(function (o) { ({ queue: sQueue, week: sWeek, settings: sSettings })[stab](box, o); }).catch(function (e) { fail(box, e); });
   }
   function sPost(path, body, okMsg) {
-    return api('POST', path, body || {}).then(function (r) { flash = typeof okMsg === 'function' ? okMsg(r) : okMsg; vSchedule(); }).catch(function (e) { alert(e.message); });
+    return api('POST', path, body || {}).then(function (r) { flash = typeof okMsg === 'function' ? okMsg(r) : okMsg; vSchedule(); }).catch(function (e) { alert(e.message); vSchedule(); });
   }
   function groupSelect(groups, val, all) {
     return el('select', { name: 'group_name' }, (all ? ['All'] : []).concat(groups).map(function (g) { return el('option', { value: g, selected: g === val }, g); }));
@@ -153,7 +153,7 @@
   function sQueue(box, o) {
     var last = o.runs[0];
     var nextMon = o.weeks[1].start;
-    var likely = o.queue.filter(function (q) { return q.confidence === 'likely' && ['cancel', 'add', 'replace'].indexOf(q.kind) >= 0; }).length;
+    var likely = o.queue.filter(function (q) { return q.confidence === 'likely' && (['cancel', 'add', 'replace'].indexOf(q.kind) >= 0 || (q.kind === 'time' && q.value)); }).length;
     var byDate = {};
     o.queue.forEach(function (q) { (byDate[q.date] = byDate[q.date] || []).push(q); });
     var list = Object.keys(byDate).sort().map(function (d) {
@@ -179,8 +179,12 @@
       el('div', { class: 'cp-panel' },
         el('p', null, last ? 'Last check: ' + date(last.at) + ' UTC (' + (last.by === 'cron' ? 'Wednesday night' : last.by) + ') · ' + last.added + ' new · covers ' + sday(last.window_start) + ' – ' + sday(last.window_end) : 'The check has not run yet. It runs every Wednesday night.'),
         last && last.problems ? el('div', { class: 'cp-msg err' }, last.problems.split('\n').map(function (p) { return el('p', { class: 'cp-small' }, p); })) : null,
-        el('div', { class: 'cp-btns' }, btn('Run the check now', function (e) { e.target.disabled = true; e.target.textContent = 'Checking…'; sPost('/schedule/run', {}, function (r) { return 'Check done: ' + r.added + ' new suggestion(s)' + (r.removed ? ', ' + r.removed + ' no longer needed' : '') + '.'; }); }, 'ghost'),
-          likely ? btn('Approve all ' + likely + ' “likely” cancellations & replacements', function () { if (confirm('Approve all ' + likely + '? Time changes still need a time and stay in the list.')) sPost('/schedule/approve-likely', {}, function (r) { return r.approved + ' approved. Remember to post them in Captyn.'; }); }) : null)),
+        el('div', { class: 'cp-btns' }, btn('Import the Holiday Break sheet', function (e) {
+            e.target.disabled = true; e.target.textContent = 'Reading the sheet…';
+            sPost('/schedule/holiday-import', {}, function (r) { return 'Holiday Break sheet: ' + r.added + ' new suggestion(s)' + (r.updated ? ', ' + r.updated + ' updated' : '') + (r.same ? ', ' + r.same + ' already approved' : '') + (r.sections.length ? ' (' + r.sections.join(', ') + ')' : '') + '. Review them below.'; });
+          }, 'ghost'),
+          btn('Run the check now', function (e) { e.target.disabled = true; e.target.textContent = 'Checking…'; sPost('/schedule/run', {}, function (r) { return 'Check done: ' + r.added + ' new suggestion(s)' + (r.removed ? ', ' + r.removed + ' no longer needed' : '') + '.'; }); }, 'ghost'),
+          likely ? btn('Approve all ' + likely + ' “likely”', function () { if (confirm('Approve all ' + likely + ' “likely” changes? Time changes without a time stay in the list.')) sPost('/schedule/approve-likely', {}, function (r) { return r.approved + ' approved. Remember to post them in Captyn.'; }); }) : null)),
       el('div', { class: 'cp-panel' }, el('h3', null, 'Anything else for the week of ' + sday(nextMon) + '?'),
         el('p', { class: 'cp-small' }, 'Taper, coach out, pool closure, anything the calendars don’t show. Changes added here are approved straight away.'), addForm(o)),
       o.queue.length ? el('div', null, el('h3', null, 'Suggested (' + o.queue.length + ')'), list) : el('p', { class: 'cp-empty' }, 'Nothing waiting. The next check runs Wednesday night.'),
@@ -261,6 +265,8 @@
           field('WSL Meets calendar link', 'wslUrl', { size: 60 }, 'Same “Secret address in iCal format” step.'),
           field('WSL teams with Senior swimmers (comma separated)', 'wslTeams', { size: 60 }, 'Usually known in April or May. Until then WSL meets are not checked.'),
           field('Groups affected', 'wslGroups', { size: 30 }))),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Holiday Break Practice Schedules sheet'),
+        el('div', { class: 'cp-form' }, field('Sheet link (open the right tab, then copy the address)', 'holidaySheet', { size: 70 }, 'The sheet must be shared “anyone with the link can view”. Each Wednesday the check imports the next few weeks from it as suggestions; “Import the Holiday Break sheet” on Pending changes brings in every future date at once. Cells: Normal, Off or a time (add am/pm, or an AM/PM label in column B, when it could be either).'))),
       el('div', { class: 'cp-panel' }, el('div', { class: 'cp-form' }, field('Days ahead the check looks', 'lookaheadDays', { type: 'number', min: 7, max: 60 }))),
       out,
       el('div', { class: 'cp-btns' },
