@@ -8,8 +8,9 @@ import { handleAssessmentAdmin } from './assessment.mjs';
 import { handleReportsAdmin } from './reports.mjs';
 import { handleMeetdayAdmin, canMeetday } from './meetday.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
+import { handleScheduleAdmin } from './schedule.mjs';
 
-export const MODULES = ['carpool', 'events', 'content', 'assessment', 'reports', 'meetday'];
+export const MODULES = ['carpool', 'events', 'schedule', 'content', 'assessment', 'reports', 'meetday'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach'];
 
 // ---------- Cloudflare Access JWT ----------
@@ -115,8 +116,9 @@ export async function handleAdmin(req, env, url) {
         q(`SELECT COUNT(*) n FROM posts WHERE status = 'open' AND expires_at > datetime('now')`),
         q(`SELECT COUNT(*) n FROM connections WHERE status = 'accepted'`), q(`SELECT COUNT(*) n FROM admin_users`),
       ]);
+      const sched = can(me, 'schedule') ? await env.DB.prepare(`SELECT COUNT(*) n FROM sched_changes WHERE status = 'suggested' AND date >= date('now', '-1 day')`).first().catch(() => ({ n: 0 })) : null;
       const recent = isOwner(me) ? (await env.DB.prepare(`SELECT at, admin_email, module, action, detail FROM audit_log ORDER BY id DESC LIMIT 8`).all()).results : [];
-      return json({ carpool: can(me, 'carpool') ? { pending: pending.n, members: members.n, openPosts: posts.n, matches: conns.n } : null, admins: isOwner(me) ? admins.n : null, recent });
+      return json({ carpool: can(me, 'carpool') ? { pending: pending.n, members: members.n, openPosts: posts.n, matches: conns.n } : null, schedule: sched ? sched.n : null, admins: isOwner(me) ? admins.n : null, recent });
     }
 
     // ----- carpool module -----
@@ -181,6 +183,13 @@ export async function handleAdmin(req, env, url) {
         if (method === 'PATCH') { try { b = await req.json(); } catch { b = {}; } }
         return eventsProxy(env, me, method, (g[1] || '') + url.search, b, (m, a, d) => audit(env, me, m, a, d));
       }
+    }
+
+    // ----- practice schedule -----
+    if (path.startsWith('/schedule')) {
+      if (!can(me, 'schedule')) return fail(403, 'You do not have access to the Practice Schedule module.');
+      const r = await handleScheduleAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d));
+      if (r) return r;
     }
 
     // ----- coach reports (private; role: reports) -----

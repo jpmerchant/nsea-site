@@ -1,0 +1,969 @@
+{
+"events": [
+{
+"id": "senior-surge-start",
+"title": "Senior Surge Begins Practice",
+"start": "2026-08-24",
+"end": "2026-08-24",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"home"
+]
+},
+{
+"id": "new-family-orientation",
+"title": "New Family Orientation",
+"start": "2026-08-25",
+"end": "2026-08-26",
+"precision": "day",
+"type": "team-event",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"home",
+"new-families"
+]
+},
+{
+"id": "welcome-picnic",
+"title": "Welcome Picnic",
+"start": "2026-08-31",
+"end": "2026-08-31",
+"precision": "day",
+"type": "team-event",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"home",
+"social"
+]
+},
+{
+"id": "bac-kickoff-classic",
+"title": "NSEA v BAC Kick Off Classic",
+"start": "2026-09-18",
+"end": "2026-09-19",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"dual",
+"home"
+]
+},
+{
+"id": "intersquad-oct",
+"title": "Team Intersquad",
+"start": "2026-10-09",
+"end": "2026-10-09",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"intersquad",
+"home"
+]
+},
+{
+"id": "bac-halloween-bash",
+"title": "BAC Halloween Bash",
+"start": "2026-10-30",
+"end": "2026-11-01",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "BCC",
+"tags": [
+"invitational",
+"travel"
+]
+},
+{
+"id": "nsea-swim-saturday-community-lessons",
+"title": "NSEA Swim Saturday Community Lessons",
+"start": "2026-11-07",
+"end": "2026-11-07",
+"precision": "day",
+"type": "volunteer-opportunity",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": []
+},
+{
+"id": "game-turkey-invitational",
+"title": "GAME Turkey Invitational",
+"start": "2026-11-13",
+"end": "2026-11-15",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "USC",
+"tags": [
+"invitational",
+"travel",
+"overnight"
+]
+},
+{
+"id": "nsea-swim-saturday-community-lessons-2",
+"title": "NSEA Swim Saturday Community Lessons #2",
+"start": "2026-11-14",
+"end": "2026-11-14",
+"precision": "day",
+"type": "volunteer-opportunity",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": []
+},
+{
+"id": "crossfire-wilmington",
+"title": "Crossfire Wilmington",
+"start": "2026-11-20",
+"end": "2026-11-20",
+"precision": "day",
+"type": "team-event",
+"groups": [
+"Splash",
+"Tidepool",
+"Riptide"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "Crossfire",
+"tags": [
+"social"
+]
+},
+{
+"id": "nsea-swim-saturday-community-lessons-3",
+"title": "NSEA Swim Saturday Community Lessons #3",
+"start": "2026-11-21",
+"end": "2026-11-21",
+"precision": "day",
+"type": "volunteer-opportunity",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "EJP",
+"tags": []
+},
+{
+"id": "wilmington-rock-gym-day",
+"title": "Wilmington Rock Gym Day",
+"start": "2026-11-22",
+"end": "2026-11-22",
+"precision": "day",
+"type": "team-event",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "Rock-Gym",
+"tags": [
+"social"
+]
+},
+{
+"id": "thanksgiving-practice",
+"title": "Thanksgiving Practice Schedule",
+"start": "2026-11-25",
+"end": "2026-11-29",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"holiday"
+]
+},
+{
+"id": "us-open",
+"title": "Toyota US Open Championships",
+"start": "2026-12-02",
+"end": "2026-12-05",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": true,
+"venue": "UT-Austin",
+"tags": [
+"lcm",
+"national",
+"travel",
+"overnight",
+"qualifier"
+]
+},
+{
+"id": "winter-juniors-east",
+"title": "Speedo Winter Junior Championships - East",
+"start": "2026-12-09",
+"end": "2026-12-12",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": true,
+"venue": "Indy",
+"tags": [
+"national",
+"travel",
+"overnight",
+"qualifier"
+]
+},
+{
+"id": "star-triad-tropic",
+"title": "STAR Triad Tropic",
+"start": "2026-12-11",
+"end": "2026-12-13",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "GAC",
+"tags": [
+"invitational",
+"travel",
+"overnight"
+]
+},
+{
+"id": "winter-break",
+"title": "Christmas / New Year's Practice Schedule & Break",
+"start": "2026-12-18",
+"end": "2027-01-03",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"holiday"
+]
+},
+{
+"id": "practice-resumes",
+"title": "Regular Practice Schedule Resumes",
+"start": "2027-01-04",
+"end": "2027-01-04",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"holiday"
+]
+},
+{
+"id": "intersquad-jan",
+"title": "Team Intersquad",
+"start": "2027-01-08",
+"end": "2027-01-08",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"intersquad",
+"home"
+]
+},
+{
+"id": "nchsaa-regionals",
+"title": "NCHSAA Regionals",
+"start": "2027-01-29",
+"end": "2027-01-30",
+"precision": "day",
+"type": "high-school-meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Tentative",
+"infoOnly": true,
+"venue": "TAC",
+"tags": [
+"high-school",
+"championship"
+]
+},
+{
+"id": "nchsaa-state",
+"title": "NCHSAA State Championships",
+"start": "2027-02-04",
+"end": "2027-02-06",
+"precision": "day",
+"type": "high-school-meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Tentative",
+"infoOnly": true,
+"venue": "TAC",
+"tags": [
+"high-school",
+"championship"
+]
+},
+{
+"id": "bac-cupid-qualifier",
+"title": "BAC Cupid Qualifier",
+"start": "2027-02-05",
+"end": "2027-02-07",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "BCC",
+"tags": [
+"invitational",
+"scy"
+]
+},
+{
+"id": "nc-ag-champs-scy",
+"title": "NC Age Group Championships",
+"start": "2027-02-18",
+"end": "2027-02-21",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Tidepool",
+"Riptide",
+"Breakers",
+"Surge"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "TAC",
+"tags": [
+"championship",
+"qualifier",
+"travel",
+"overnight"
+]
+},
+{
+"id": "nc-senior-champs-scy",
+"title": "NC Senior Championships",
+"start": "2027-02-25",
+"end": "2027-02-28",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "TAC",
+"tags": [
+"championship",
+"qualifier",
+"travel",
+"overnight"
+]
+},
+{
+"id": "spring-optout",
+"title": "Spring Opt-Out Deadline",
+"start": "2027-03-01",
+"end": "2027-03-01",
+"precision": "day",
+"type": "deadline",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"deadline"
+]
+},
+{
+"id": "wow-tri-county",
+"title": "WOW Tri-County Classic",
+"start": "2027-03-06",
+"end": "2027-03-07",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Splash",
+"Tidepool",
+"Riptide"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "UNCW",
+"tags": [
+"invitational",
+"local"
+]
+},
+{
+"id": "star-tar-heel-states",
+"title": "STAR Tar Heel States",
+"start": "2027-03-12",
+"end": "2027-03-14",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "GAC",
+"tags": [
+"invitational",
+"travel",
+"overnight"
+]
+},
+{
+"id": "spring-banquet",
+"title": "Team Spring Banquet & Senior Recognition",
+"start": "2027-03-22",
+"end": "2027-03-22",
+"precision": "day",
+"type": "team-event",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "TBD",
+"tags": [
+"social"
+]
+},
+{
+"id": "last-day-scy",
+"title": "Last Day - Short Course Session",
+"start": "2027-03-24",
+"end": "2027-03-24",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": []
+},
+{
+"id": "spring-break",
+"title": "Spring Break",
+"start": "2027-03-25",
+"end": "2027-04-04",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"holiday"
+]
+},
+{
+"id": "spring-session-begins",
+"title": "Spring Session Begins",
+"start": "2027-04-05",
+"end": "2027-04-05",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": []
+},
+{
+"id": "ncs-select-camp",
+"title": "NCS Select Camp",
+"start": "2027-04-10",
+"end": "2027-04-10",
+"precision": "day",
+"type": "camp",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"selection"
+]
+},
+{
+"id": "carolina-crown",
+"title": "NC / SC Carolina Crown",
+"start": "2027-04-11",
+"end": "2027-04-11",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"selection",
+"travel"
+]
+},
+{
+"id": "sz-open-water",
+"title": "Southern Zone Open Water Championships",
+"start": "2027-04-23",
+"end": "2027-04-25",
+"precision": "day",
+"type": "camp",
+"groups": [
+"Riptide",
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"open-water",
+"selection",
+"travel",
+"championship"
+]
+},
+{
+"id": "wave-lcm",
+"title": "WAVE Sprint into LCM",
+"start": "2027-04-24",
+"end": "2027-04-25",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "TAC",
+"tags": [
+"lcm",
+"travel"
+]
+},
+{
+"id": "spring-showers-wow",
+"title": "Spring Showers WOW Dual Meet",
+"start": "2027-04-30",
+"end": "2027-04-30",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Splash",
+"Tidepool",
+"Riptide"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"dual",
+"home"
+]
+},
+{
+"id": "summer-optout",
+"title": "Summer Opt-Out Deadline",
+"start": "2027-05-01",
+"end": "2027-05-01",
+"precision": "day",
+"type": "deadline",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"deadline"
+]
+},
+{
+"id": "charlotte-open",
+"title": "Martha McKee Charlotte Open",
+"start": "2027-05-13",
+"end": "2027-05-16",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Senior"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "MCAC",
+"tags": [
+"lcm",
+"qualifier",
+"travel"
+]
+},
+{
+"id": "may-flowers-wow",
+"title": "May Flowers WOW Dual Meet",
+"start": "2027-05-20",
+"end": "2027-05-20",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Splash",
+"Tidepool",
+"Riptide"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "EJP",
+"tags": [
+"dual",
+"home"
+]
+},
+{
+"id": "summer-session-begins",
+"title": "Summer Session Begins",
+"start": "2027-05-31",
+"end": "2027-05-31",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": []
+},
+{
+"id": "team-lcm-may",
+"title": "Team LCM Meet",
+"start": null,
+"end": null,
+"precision": "month",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "TBD",
+"tags": [
+"lcm"
+]
+},
+{
+"id": "intent-deadline",
+"title": "2027-28 Season Intent Deadline",
+"start": "2027-06-01",
+"end": "2027-06-01",
+"precision": "day",
+"type": "deadline",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"deadline"
+]
+},
+{
+"id": "summer-practice-begins",
+"title": "Summer Practice Schedule Begins",
+"start": "2027-06-07",
+"end": "2027-06-07",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": []
+},
+{
+"id": "summer-nationals",
+"title": "USA Swimming Summer Nationals",
+"start": "2027-06-08",
+"end": "2027-06-12",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Senior"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "Indy",
+"tags": [
+"lcm",
+"national",
+"travel",
+"overnight",
+"qualifier"
+]
+},
+{
+"id": "game-summer-invitational",
+"title": "GAME Summer Invitational",
+"start": "2027-06-11",
+"end": "2027-06-13",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "USC",
+"tags": [
+"invitational",
+"travel",
+"overnight"
+]
+},
+{
+"id": "nc-senior-lcm",
+"title": "NC Senior LCM Championships",
+"start": "2027-07-08",
+"end": "2027-07-11",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Breakers",
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "TAC",
+"tags": [
+"championship",
+"lcm",
+"qualifier",
+"travel",
+"overnight"
+]
+},
+{
+"id": "nc-ag-lcm",
+"title": "NC Age Group LCM Championships",
+"start": "2027-07-15",
+"end": "2027-07-18",
+"precision": "day",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "GAC",
+"tags": [
+"championship",
+"lcm",
+"qualifier",
+"travel",
+"overnight"
+]
+},
+{
+"id": "optout-2728",
+"title": "2027-28 Season Opt-Out Deadline",
+"start": "2027-07-18",
+"end": "2027-07-18",
+"precision": "day",
+"type": "deadline",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "",
+"tags": [
+"deadline"
+]
+},
+{
+"id": "last-day-season",
+"title": "Last Day of the 2026-27 Season",
+"start": "2027-07-27",
+"end": "2027-07-27",
+"precision": "day",
+"type": "schedule",
+"groups": [
+"All"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "",
+"tags": []
+},
+{
+"id": "tyr-futures",
+"title": "TYR Futures Championships",
+"start": "2027-07-28",
+"end": "2027-07-31",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "FAST",
+"tags": [
+"lcm",
+"national",
+"travel",
+"overnight",
+"qualifier"
+]
+},
+{
+"id": "wow-summer-spectacular",
+"title": "WOW Summer Spectacular",
+"start": null,
+"end": null,
+"precision": "month",
+"type": "meet",
+"groups": [
+"All"
+],
+"status": "Tentative",
+"infoOnly": false,
+"venue": "UNCW",
+"tags": [
+"local",
+"scy"
+]
+},
+{
+"id": "junior-nationals",
+"title": "Speedo Summer Juniors (USA Swimming Junior Nationals)",
+"start": "2027-08-02",
+"end": "2027-08-06",
+"precision": "day",
+"type": "meet",
+"groups": [
+"Surge",
+"Senior"
+],
+"status": "Confirmed",
+"infoOnly": false,
+"venue": "Huntsville",
+"tags": [
+"lcm",
+"national",
+"travel",
+"overnight",
+"qualifier"
+]
+}
+]
+}

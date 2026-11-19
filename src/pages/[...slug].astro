@@ -11,6 +11,7 @@ import OfferingStatus from '../components/OfferingStatus.astro';
 import AlumniUpdates from '../components/AlumniUpdates.astro';
 import Spotlights from '../components/Spotlights.astro';
 import Recognition from '../components/Recognition.astro';
+import PracticeSchedule from '../components/PracticeSchedule.astro';
 import AssessmentRequest from '../components/AssessmentRequest.astro';
 import { pages, children, crossLinks, statusLabel } from '../lib/nav.mjs';
 import { moved } from '../data/site.mjs';
@@ -42,6 +43,7 @@ const hasEmbed = p.embed || p.variants;
   {p.gated && <p class="chip new">Members only</p>}
 
   {p.fees && <FeesTable />}
+  {p.schedule && <PracticeSchedule />}
   {p.offering && <OfferingStatus slug={p.offering} />}
 
   {Content && <div class="prose"><Content /></div>}
@@ -62,7 +64,7 @@ const hasEmbed = p.embed || p.variants;
 
   {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
 
-  {!Content && !hasEmbed && !p.glossary && !p.carpool && !p.assessmentForm && !p.coach && !p.spotlights && !p.recognition && p.type !== 'hub' && !live && (
+  {!Content && !hasEmbed && !p.schedule && !p.glossary && !p.carpool && !p.assessmentForm && !p.coach && !p.spotlights && !p.recognition && p.type !== 'hub' && !live && (
     <div class="todo">
       <h3>Content not migrated yet</h3>
       <dl>

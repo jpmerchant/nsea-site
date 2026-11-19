@@ -1,0 +1,78 @@
+---
+// Practice schedule. The base schedules render at build time from src/data/schedule-defaults.mjs, then the page loads
+// the live data (/api/content/schedule): this week and next with approved changes marked, and the current base schedules.
+// Edited in the admin console (Practice Schedule). Captyn messages are still where changes are announced first.
+import { SEASONS, SCHED_GROUPS } from '../data/schedule-defaults.mjs';
+const DAYS6 = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const fmt = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+---
+<div class="sched" data-sched>
+  <section data-sched-weeks hidden>
+    <h2>This week &amp; next</h2>
+    <p class="sched-legend"><span>Shaded</span> times are changes from the usual schedule. Captyn messages always have the latest.</p>
+    <div data-sched-weeklist></div>
+  </section>
+  <div data-sched-base>
+    {SEASONS.map((s, si) => (
+      <section class="sched-season">
+        <h2>{s.label}</h2>
+        <p class="cp-small">{fmt(s.start)} – {fmt(s.end)}</p>
+        {s.note && <p>{s.note}</p>}
+        <div class="table-wrap"><table class="sched-table">
+          <thead><tr><th>Group</th>{DAYS6.map((d) => <th>{d}</th>)}</tr></thead>
+          <tbody>
+            {SCHED_GROUPS.flatMap((g) => ['AM', 'PM'].filter((x) => s.base[g] && s.base[g][x]).map((x, xi) => (
+              <tr id={si === 0 && xi === 0 ? g.toLowerCase() : undefined}><th scope="row">{g} {x}</th>{s.base[g][x].map((t) => <td class={t === 'Off' ? 'off' : undefined}>{t}</td>)}</tr>
+            )))}
+          </tbody>
+        </table></div>
+      </section>
+    ))}
+  </div>
+</div>
+<script is:inline>
+(function () {
+  var root = document.querySelector('[data-sched]');
+  if (!root) return;
+  var GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'], DAYS6 = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function long(d) { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); }
+  function table(head, rows) {
+    var wrap = el('div', 'table-wrap'), t = el('table', 'sched-table'), th = el('thead'), tr = el('tr');
+    head.forEach(function (h) { tr.appendChild(el('th', null, h)); }); th.appendChild(tr); t.appendChild(th);
+    var tb = el('tbody');
+    rows.forEach(function (r) {
+      var row = el('tr'), h = el('th', null, r.label); h.scope = 'row'; row.appendChild(h);
+      if (r.id) row.id = r.id;
+      r.cells.forEach(function (c) { var td = el('td', c.changed ? 'changed' : (c.text === 'Off' ? 'off' : ''), c.text); if (c.note) td.appendChild(el('small', null, c.note)); row.appendChild(td); });
+      tb.appendChild(row);
+    });
+    t.appendChild(tb); wrap.appendChild(t); return wrap;
+  }
+  fetch('/api/content/schedule?weeks=2').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d) return;
+    var wl = root.querySelector('[data-sched-weeklist]'); wl.replaceChildren();
+    d.weeks.forEach(function (w, i) {
+      if (!w.rows.length) return;
+      var s = el('div', 'sched-week');
+      s.appendChild(el('h3', null, (i === 0 ? 'This week' : 'Next week') + ': ' + w.days[0].short + ' – ' + w.days[6].short));
+      s.appendChild(table(['Group'].concat(w.days.map(function (x) { return x.short; })), w.rows.map(function (r) { return { label: r.group + ' ' + r.session, cells: r.cells }; })));
+      wl.appendChild(s);
+    });
+    root.querySelector('[data-sched-weeks]').hidden = !wl.children.length;
+    var base = root.querySelector('[data-sched-base]'); base.replaceChildren();
+    var anchored = {};
+    d.seasons.filter(function (s) { return s.end >= d.today; }).forEach(function (s) {
+      var sec = el('section', 'sched-season');
+      sec.appendChild(el('h2', null, s.label));
+      sec.appendChild(el('p', 'cp-small', long(s.start) + ' – ' + long(s.end)));
+      if (s.note) sec.appendChild(el('p', null, s.note));
+      var rows = [];
+      GROUPS.forEach(function (g) { ['AM', 'PM'].forEach(function (x) { if (s.base[g] && s.base[g][x]) rows.push({ id: anchored[g] ? null : (anchored[g] = g.toLowerCase()), label: g + ' ' + x, cells: s.base[g][x].map(function (t) { return { text: t }; }) }); }); });
+      sec.appendChild(table(['Group'].concat(DAYS6), rows));
+      base.appendChild(sec);
+    });
+    if (location.hash) { var t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); }
+  }).catch(function () {});
+})();
+</script>
