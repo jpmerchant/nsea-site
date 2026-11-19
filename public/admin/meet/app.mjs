@@ -294,11 +294,7 @@ function renderDay(day, sessN) {
   ${sessNav(B, 'live')}
   <p class="kicker">${esc(dayName(day))} · ${B.lead.tt ? 'Time trials (added in the app)' : `Session ${esc(B.multi ? B.lead.block : (B.lead.code || B.n))}`}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
   <h1>${esc(B.name)}</h1>
-  ${w ? `<div class="warm"><p class="kicker">Our warm-up · ${esc(w.group)}</p><div class="big">${esc(w.time)}</div>
-    <div><b>${esc(w.pool)}</b> · lanes ${esc(w.lanes)}</div><div class="small">${esc(w.sprints || '')}</div>
-    ${B.multi ? B.sessions.map((x) => `<div class="small"><b>${esc(poolName(x))}</b>: starts ${esc(hm(x.start))} · est. finish ${esc(hm(x.finish || ''))}</div>`).join('')
-      : `<div class="small">Meet starts <b>${esc(B.start)}</b> · est. finish ${esc(B.finish || '')}</div>`}</div>`
-    : B.multi ? `<div class="card tight">${B.sessions.map((x) => `<div class="small"><b>${esc(poolName(x))}</b>: starts ${esc(hm(x.start))} · est. finish ${esc(hm(x.finish || ''))}</div>`).join('')}</div>` : ''}
+  <p class="small muted times">${B.multi ? B.sessions.map((x) => `<b>${esc(poolName(x))}</b> ${esc(hm(x.start))}–${esc(hm(x.finish || ''))}`).join(' · ') : `Starts <b>${esc(hm(B.start))}</b>${B.finish ? ` · est. finish ${esc(hm(B.finish))}` : ''}`}${w ? ` · <a href="#/setup/${B.n}">warm-up &amp; setup</a>` : ''}</p>
   ${B.note ? `<div class="banner warn">${esc(B.note)}</div>` : ''}
   ${out.length ? `<p class="small muted">Absent this session: ${[...new Set(out.map((r) => r.swimmer.name))].map(esc).join(', ')} · <a href="#/setup/${B.n}">check-in</a></p>` : ''}
   ${B.lead.tt ? `<div class="card ttcard"><h3>Time trials</h3><p class="small muted">Add our swims as they're posted. Officials' handwritten changes (combined heats, moved lanes, merged events) can't be read from a photo, so check every row before applying.</p>
@@ -464,7 +460,11 @@ function renderSetup(n) {
   app.innerHTML = `${sessNav(B, 'setup')}
   <p class="kicker">${esc(dayName(B.day))} · Session ${esc(B.multi ? B.lead.block : (B.lead.code || B.n))}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
   <h1>${esc(B.name)}: setup</h1>
-  ${B.warmup ? `<div class="card tight small">Warm-up <b>${esc(B.warmup.time)}</b> · ${esc(B.warmup.pool || '')} ${esc(B.warmup.lanes ? 'lanes ' + B.warmup.lanes : '')}<br>${B.sessions.map((x) => `${B.multi ? `<b>${esc(poolName(x))}</b>: ` : 'Events '}${esc(hm(x.start))}–${esc(hm(x.finish || ''))} · ${M.rows.filter((r) => r.session === x.n && !r.scratched).length} swims`).join('<br>')}</div>` : ''}
+  ${(() => { const w = B.warmup, pools = B.sessions.map((x) => `<div class="small">${B.multi ? `<b>${esc(poolName(x))}</b>: starts` : 'Meet starts'} <b>${esc(hm(x.start))}</b> · est. finish ${esc(hm(x.finish || ''))} · ${M.rows.filter((r) => r.session === x.n && !r.scratched).length} of our swims</div>`).join('');
+    return w ? `<div class="warm"><p class="kicker">Our warm-up · ${esc(w.group || '')}</p><div class="big">${esc(w.time)}</div>
+      <div><b>${esc(w.pool || '')}</b>${w.lanes ? ` · lanes ${esc(w.lanes)}` : ''}</div>${w.sprints ? `<div class="small">${esc(w.sprints)}</div>` : ''}${pools}</div>`
+      : `<div class="card tight">${pools}</div>`; })()}
+  ${B.note ? `<div class="banner warn">${esc(B.note)}</div>` : ''}
 
   <div class="card"><h3>Coaches</h3><p class="small muted">Who is mainly watching which ${B.multi ? 'pool and ' : ''}swimmers. On the Events page each coach can switch to their own view.</p>
     ${asg.length ? `<ul class="sumlist">${asg.map((a) => `<li><b>${esc(a.coach)}</b> · ${B.multi ? (a.pools.length && a.pools.length < B.sessions.length ? a.pools.map((p) => esc(poolName(B.sessions.find((x) => x.n === p) || {}))).join(', ') : 'both pools') + ' · ' : ''}${esc(GROUPS[a.group] || a.group)} <a href="#" data-act="assign-del" data-c="${esc(a.coach)}" data-b="${B.n}" class="small">remove</a></li>`).join('')}</ul>` : '<p class="small muted">No one assigned yet.</p>'}
@@ -478,10 +478,11 @@ function renderSetup(n) {
     ${B.multi ? `<label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="cut-both" style="width:auto"> Change every pool together</label>` : ''}
     ${B.sessions.map(cutCard).join('')}</div>
 
-  <div class="card"><h3>Check-in <span class="muted small">${sw.length - nAbs} here · ${nAbs} absent</span></h3>
-    <p class="small muted">Everyone counts as here. Tap anyone who won't be at this session: their swims here are scratched and left out of the wrap-up. Their other sessions aren't touched.</p>
+  <div class="card checkin"><h3>Check-in</h3>
+    <div class="cicount"><span class="ci-tally in">✓ ${sw.length - nAbs} checked in</span>${nAbs ? `<span class="ci-tally out">✕ ${nAbs} absent</span>` : ''}</div>
+    <p class="small muted">Everyone starts <b>checked in</b>. Tap <b>Mark absent</b> for anyone who won't be at this session: their swims here are scratched and left out of the wrap-up. Their other sessions aren't touched.</p>
     <table class="t"><tbody>${sw.map((w) => { const off = absent(w.id), c = rows.filter((r) => r.swimmerId === w.id).length;
-      return `<tr class="${off ? 'scr' : ''}"><td><b>${esc(w.name)}</b> <span class="muted small">${w.age ?? ''}${B.multi ? ' · ' + esc(poolOfSw(w.id)) : ''} · ${c} swim${c === 1 ? '' : 's'}</span></td><td class="num"><button class="btn sm ${off ? 'coral' : 'ghost'}" data-act="checkin" data-id="${w.id}" data-b="${B.n}" data-on="${off ? 0 : 1}">${off ? 'Absent' : 'Here'}</button></td></tr>`; }).join('') || '<tr><td class="muted small">No swimmers in this session yet (entries come from the heat sheet).</td></tr>'}</tbody></table>
+      return `<tr class="${off ? 'ci-out' : 'ci-in'}"><td><span class="ci ${off ? 'out' : 'in'}" aria-label="${off ? 'Absent' : 'Checked in'}">${off ? '✕' : '✓'}</span><b>${esc(w.name)}</b> <span class="muted small">${w.age ?? ''}${B.multi ? ' · ' + esc(poolOfSw(w.id)) : ''} · ${c} swim${c === 1 ? '' : 's'}${off ? ' · <span class="ci-word">absent</span>' : ''}</span></td><td class="num"><button class="btn sm ${off ? '' : 'ghost'}" data-act="checkin" data-id="${w.id}" data-b="${B.n}" data-on="${off ? 0 : 1}">${off ? 'Undo' : 'Mark absent'}</button></td></tr>`; }).join('') || '<tr><td class="muted small">No swimmers in this session yet (entries come from the heat sheet).</td></tr>'}</tbody></table>
     ${M.meetOut.size ? `<p class="small muted">Out for the whole meet: ${[...M.meetOut.keys()].map((id) => M.swimmers.get(id)).filter(Boolean).map((w) => esc(w.name)).join(', ')}</p>` : ''}</div>
   <div class="btns"><a class="btn solid" href="#/day/${B.day}/${B.n}">Go to events →</a></div>`;
 }
