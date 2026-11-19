@@ -9,9 +9,10 @@ import { handleReportsAdmin } from './reports.mjs';
 import { handleMeetdayAdmin, canMeetday } from './meetday.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 import { handleScheduleAdmin } from './schedule.mjs';
+import { handleStaffAdmin, isManager, linkedCoach } from './staff.mjs';
 
 export const MODULES = ['carpool', 'events', 'schedule', 'content', 'assessment', 'reports', 'meetday'];
-const ROLE_NAMES = ['owner', ...MODULES, 'coach'];
+const ROLE_NAMES = ['owner', ...MODULES, 'coach', 'staff'];
 
 // ---------- Cloudflare Access JWT ----------
 let jwksCache = { at: 0, keys: null };
@@ -107,7 +108,12 @@ export async function handleAdmin(req, env, url) {
     if (!me) return fail(401, accessOn(env) ? 'Your account is not set up as an admin.' : 'Not signed in');
     await env.DB.prepare(`UPDATE admin_users SET last_seen = datetime('now') WHERE email = ?`).bind(me.email).run();
 
-    if (method === 'GET' && path === '/me') return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, modules: [...MODULES.filter((m) => can(me, m)), ...(can(me, 'coach') && !can(me, 'meetday') ? ['meetday'] : []), ...(can(me, 'coach') || isEditor(me) ? ['coach'] : [])] });
+    if (method === 'GET' && path === '/me') {
+      const linked = await linkedCoach(env, me).catch(() => null);
+      return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, coachId: linked ? linked.id : null,
+        modules: [...MODULES.filter((m) => can(me, m)), ...(can(me, 'coach') && !can(me, 'meetday') ? ['meetday'] : []), ...(can(me, 'coach') || isEditor(me) ? ['coach'] : []),
+          ...(isManager(me) ? ['staff'] : []), ...(linked ? ['profile'] : [])] });
+    }
 
     if (method === 'GET' && path === '/overview') {
       const q = (sql) => env.DB.prepare(sql).first();
@@ -118,7 +124,8 @@ export async function handleAdmin(req, env, url) {
       ]);
       const sched = can(me, 'schedule') ? await env.DB.prepare(`SELECT COUNT(*) n FROM sched_changes WHERE status = 'suggested' AND date >= date('now', '-1 day')`).first().catch(() => ({ n: 0 })) : null;
       const recent = isOwner(me) ? (await env.DB.prepare(`SELECT at, admin_email, module, action, detail FROM audit_log ORDER BY id DESC LIMIT 8`).all()).results : [];
-      return json({ carpool: can(me, 'carpool') ? { pending: pending.n, members: members.n, openPosts: posts.n, matches: conns.n } : null, schedule: sched ? sched.n : null, admins: isOwner(me) ? admins.n : null, recent });
+      const staff = isManager(me) ? await env.DB.prepare(`SELECT (SELECT COUNT(*) FROM staff_changes WHERE status = 'pending') + (SELECT COUNT(*) FROM staff_items WHERE approved = 0 AND removed_at IS NULL) n`).first().catch(() => ({ n: 0 })) : null;
+      return json({ carpool: can(me, 'carpool') ? { pending: pending.n, members: members.n, openPosts: posts.n, matches: conns.n } : null, schedule: sched ? sched.n : null, staff: staff ? staff.n : null, admins: isOwner(me) ? admins.n : null, recent });
     }
 
     // ----- carpool module -----
@@ -210,6 +217,12 @@ export async function handleAdmin(req, env, url) {
     if (path.startsWith('/coach')) {
       if (!(can(me, 'coach') || isEditor(me))) return fail(403, 'You do not have access to Coach’s Corner.');
       const r = await handleCoachAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d));
+      if (r) return r;
+    }
+
+    // ----- coaching staff records (owner/staff: everyone; a linked coach: their own record) -----
+    if (path.startsWith('/staff')) {
+      const r = await handleStaffAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d));
       if (r) return r;
     }
 

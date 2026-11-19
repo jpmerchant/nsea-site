@@ -6,6 +6,7 @@ import ToolEmbed from '../components/ToolEmbed.astro';
 import Glossary from '../components/Glossary.astro';
 import Carpool from '../components/Carpool.astro';
 import CoachCorner from '../components/CoachCorner.astro';
+import CoachingStaff from '../components/CoachingStaff.astro';
 import FeesTable from '../components/FeesTable.astro';
 import OfferingStatus from '../components/OfferingStatus.astro';
 import AlumniUpdates from '../components/AlumniUpdates.astro';
@@ -58,13 +59,15 @@ const hasEmbed = p.embed || p.variants;
 
   {p.coach && <CoachCorner mode="list" />}
 
+  {p.staff && <CoachingStaff />}
+
   {p.spotlights && <Spotlights />}
 
   {p.recognition && <Recognition />}
 
   {hasEmbed && <ToolEmbed src={p.embed} variants={p.variants} height={p.height} title={p.title} />}
 
-  {!Content && !hasEmbed && !p.schedule && !p.glossary && !p.carpool && !p.assessmentForm && !p.coach && !p.spotlights && !p.recognition && p.type !== 'hub' && !live && (
+  {!Content && !hasEmbed && !p.schedule && !p.glossary && !p.carpool && !p.assessmentForm && !p.coach && !p.staff && !p.spotlights && !p.recognition && p.type !== 'hub' && !live && (
     <div class="todo">
       <h3>Content not migrated yet</h3>
       <dl>
