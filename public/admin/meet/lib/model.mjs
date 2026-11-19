@@ -5,8 +5,38 @@ import { sameSwimmer, clockMin, minClock, parseMmNotify } from './parse.mjs';
 export const relayKey = (event, round, letter) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-R${letter}`;
 export const entryKey = (event, round, swimmerId) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-${swimmerId}`;
 
+// Motivational standards (B through AAAA): one "B–AAAA" choice in the app.
+export const MOTIVATIONAL = ['B', 'BB', 'A', 'AA', 'AAA', 'AAAA'];
+// A session (pool) where every event is 12 & under: track the motivational times and age group champs by default.
+const YOUNG = /\b(?:8|10|12) & Under\b|\b(?:9-10|11-12|10 & U|8 & U)\b/i;
+export function youngSession(session, events) {
+  const ts = (session.events || []).map((e) => (events[e.num] || {}).title || '').filter(Boolean);
+  return ts.length > 0 && ts.every((t) => YOUNG.test(t) && !/\b1[3-9]\b|Open|Senior|& Over/i.test(t));
+}
+export function autoCuts(session, events, base, names) {
+  if (!youngSession(session, events)) return base;
+  const have = new Set(names && names.length ? names : [...MOTIVATIONAL, 'NC AG']);
+  return [...MOTIVATIONAL, 'NC AG'].filter((c) => have.has(c));
+}
+// Coach assignment groups (session setup): which of the session's swimmers a coach is mainly watching.
+export const GROUPS = { all: 'All swimmers', '12U': '12 & Under', '13O': '13 & Over', '10U': '10 & Under', '11-12': '11–12', '13-14': '13–14', '15O': '15 & Over', F: 'Girls', M: 'Boys' };
+export function inGroup(group, sw) {
+  const a = sw && sw.age;
+  switch (group || 'all') {
+    case 'all': return true;
+    case '12U': return a != null && a <= 12;
+    case '13O': return a != null && a >= 13;
+    case '10U': return a != null && a <= 10;
+    case '11-12': return a === 11 || a === 12;
+    case '13-14': return a === 13 || a === 14;
+    case '15O': return a != null && a >= 15;
+    case 'F': case 'M': return sw.sex === group;
+    default: return true;
+  }
+}
+
 export function derive(pkg, ops, settings = {}) {
-  const cuts = settings.cuts || DEFAULT_CUTS;
+  const baseCuts = settings.cuts || DEFAULT_CUTS;
   const swimmers = new Map(pkg.swimmers.map((s) => [s.id, { ...s }]));
   const entries = new Map(pkg.entries.map((e) => [e.id, { ...e }]));
   const sorted = [...ops].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : String(a.id).localeCompare(String(b.id))));
@@ -14,6 +44,7 @@ export function derive(pkg, ops, settings = {}) {
   const results = new Map(), notes = new Map(), scratch = new Map(), official = new Map(), sources = [];
   const notices = []; let notifyKey = null;
   const meetOut = new Map(), gnotes = [], renames = [], legsOf = new Map(); let tags = null;
+  const dqs = new Map(), stars = new Map(), sessOut = new Map(), assigns = new Map(), sessCuts = new Map(); let meetCuts = null;
   const events = { ...pkg.events };
   const addEvents = (list) => { for (const e of list || []) if (e && e.num && !events[e.num] && (e.title || e.dist)) events[e.num] = { ...(e.tt ? { tt: true, ttSession: e.ttSession, shown: e.shown ?? null } : {}), num: e.num, sex: e.sex, dist: e.dist, stroke: e.stroke, relay: !!e.relay, course: pkg.course, title: String(e.title || '').replace(/ Yard /, ' ').replace(/ Open /, ' ') }; };
   const sessions = pkg.sessions.map((x) => ({ ...x, warmup: x.warmup ? { ...x.warmup } : x.warmup, events: (x.events || []).map((e) => ({ ...e })) }));
@@ -39,6 +70,11 @@ export function derive(pkg, ops, settings = {}) {
     else if (o.type === 'mscratch') { if (d.on) meetOut.set(d.swimmer, { by: o.by, at: o.at, why: d.why || '' }); else meetOut.delete(d.swimmer); }
     else if (o.type === 'gnote') gnotes.push({ scope: d.scope, key: d.key ?? null, text: d.text || '', tags: d.tags || [], by: o.by, at: o.at, op: o.id });
     else if (o.type === 'tags') { if (Array.isArray(d.list)) tags = d.list.filter(Boolean); if (d.rename && d.rename.from && d.rename.to) renames.push(d.rename); }
+    else if (o.type === 'dq') { if ((d.codes && d.codes.length) || d.text) dqs.set(d.entry, { codes: d.codes || [], text: d.text || '', by: o.by, at: o.at, op: o.id }); else dqs.delete(d.entry); }
+    else if (o.type === 'star') { if (d.on) stars.set(d.entry, { by: o.by, at: o.at }); else stars.delete(d.entry); }
+    else if (o.type === 'sscratch') for (const n of [].concat(d.sessions ?? d.session)) { const k = `${n}|${d.swimmer}`; if (d.on) sessOut.set(k, { by: o.by, at: o.at, why: d.why || '' }); else sessOut.delete(k); }
+    else if (o.type === 'assign') { const k = `${d.block}|${d.coach}`; if (d.on === false) assigns.delete(k); else if (d.coach) assigns.set(k, { block: d.block, coach: d.coach, pools: d.pools || [], group: d.group || 'all', by: o.by, at: o.at }); }
+    else if (o.type === 'cuts') { const list = Array.isArray(d.list) ? d.list : null; if (d.session == null) meetCuts = list; else for (const n of [].concat(d.session)) if (list) sessCuts.set(n, list); else sessCuts.delete(n); }
     else if (o.type === 'mmnotify') notices.push(applyNotify(pkg, sessions, entries, swimmers, results, d, o));
   }
 
@@ -48,6 +84,17 @@ export function derive(pkg, ops, settings = {}) {
     for (const list of notes.values()) for (const n of list) n.tags = (n.tags || []).map(relabel);
     for (const n of gnotes) n.tags = n.tags.map(relabel);
   }
+  // Cuts flagged in a session: that session's (or pool's) own choice, else the meet's, else 12 & under
+  // defaults for a 12 & under pool, else this phone's list. Team records and Top 10 are always tracked.
+  const meetBase = meetCuts || baseCuts;
+  const cutInfo = (n) => {
+    if (sessCuts.has(n)) return { list: sessCuts.get(n), how: 'session' };
+    const s = sessions.find((x) => x.n === n);
+    const auto = s ? autoCuts(s, events, meetBase, pkg.refs && pkg.refs.cutNames) : meetBase;
+    return { list: auto, how: auto !== meetBase ? 'auto' : meetCuts ? 'meet' : 'phone' };
+  };
+  const cutsMemo = new Map();
+  const cutsOf = (n) => { if (!cutsMemo.has(n)) cutsMemo.set(n, cutInfo(n)); return cutsMemo.get(n).list; };
   const rows = [];
   for (const e of entries.values()) {
     const ev = events[e.event] || {};
@@ -58,7 +105,7 @@ export function derive(pkg, ops, settings = {}) {
       const r = results.get(e.id) || null, off = official.get(e.session);
       rows.push({
         ...e, swimmer: { id: `R${e.relay}`, name: `${pkg.teamName || 'NSEA'} ${e.relay} relay`, first: `${e.relay} relay`, relay: true, sex: ev.sex }, ev, result: r,
-        notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id), meetOut: false, legs, legSw,
+        notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id), meetOut: false, legs, legSw, dq: dqs.get(e.id) || null, starred: stars.has(e.id),
         legOut: legs.filter((x) => meetOut.has(x)).map((x) => swimmers.get(x)?.name).filter(Boolean),
         official: !!(off && off.on) || !!(r && r.official), pre: [], post: [],
         delta: r && r.time != null && e.seed != null ? r.time - e.seed : null, startMin: clockMin(e.start || ''),
@@ -70,17 +117,48 @@ export function derive(pkg, ops, settings = {}) {
     const r = results.get(e.id) || null;
     const off = official.get(e.session);
     const swim = { sex: s.sex, age: s.age, dist: ev.dist, stroke: ev.stroke, name: s.name, seed: e.seed };
+    const cuts = cutsOf(e.session);
     const pre = flagsFor(swim, pkg.refs, { cuts });
     const post = r && r.time != null ? flagsFor({ ...swim, time: r.time }, pkg.refs, { cuts }) : [];
+    const so = sessOut.get(`${e.session}|${e.swimmerId}`) || null;
     rows.push({
-      ...e, swimmer: s, ev, result: r, notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id) || meetOut.has(e.swimmerId), meetOut: meetOut.has(e.swimmerId),
+      ...e, swimmer: s, ev, result: r, notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id) || meetOut.has(e.swimmerId) || !!so, meetOut: meetOut.has(e.swimmerId), sessOut: so,
+      dq: dqs.get(e.id) || null, starred: stars.has(e.id),
       official: !!(off && off.on) || !!(r && r.official), pre, post,
       delta: r && r.time != null && e.seed != null ? r.time - e.seed : null,
       startMin: clockMin(e.start || ''),
     });
   }
+  compareRounds(rows);
   rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(sessions, a) - order(sessions, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
-  return { rows, swimmers, official, sources, results, sessions, events, legsOf, notices, notifyKey, meetOut, gnotes, tags };
+  const cutsInfo = (n) => { cutsOf(n); return cutsMemo.get(n); };
+  return { rows, swimmers, official, sources, results, sessions, events, legsOf, notices, notifyKey, meetOut, gnotes, tags, sessOut, assigns: [...assigns.values()], meetCuts, cutsOf, cutsInfo };
+}
+
+// Entry time vs prelims: every swim is measured against the swimmer's entry time (best time, time dropped);
+// a final after prelims also shows its change from the prelim swim. Adds entryTime, dEntry, best, and for finals
+// isFinal, prelim ({ time, status } or null), dPrelim. `delta` is what the card shows first: vs prelims for a
+// final, vs seed otherwise.
+export function compareRounds(rows) {
+  const prelims = new Map();
+  for (const r of rows) if (!r.relay && /Prelim/i.test(r.round || '')) prelims.set(`${r.swimmerId}|${r.event}`, r);
+  for (const r of rows) {
+    const t = r.result && r.result.time != null ? r.result.time : null;
+    const p = !r.relay && !/Prelim/i.test(r.round || '') ? prelims.get(`${r.swimmerId}|${r.event}`) : null;
+    if (p && p !== r) {
+      r.isFinal = true;
+      r.prelim = p.result ? { time: p.result.time ?? null, status: p.result.status } : null;
+      r.entryTime = p.entrySeed ?? p.seed ?? null;
+      const base = r.prelim && r.prelim.time != null ? r.prelim.time : r.seed;
+      r.dPrelim = t != null && base != null ? t - base : null;
+      r.delta = r.dPrelim;
+    } else {
+      r.entryTime = r.entrySeed ?? r.seed ?? null;
+    }
+    r.dEntry = t != null && r.entryTime != null ? t - r.entryTime : null;
+    r.best = t != null && !r.relay && (r.entryTime == null || t < r.entryTime);
+  }
+  return rows;
 }
 
 // Session time change (e.g. the host pushes the session back 30 min).
@@ -327,8 +405,8 @@ export function sessionSummary(model, session) {
   const rows = model.rows.filter((r) => set.has(r.session) && !r.scratched);
   const swum = rows.filter((r) => r.result && (r.result.time != null || r.result.status !== 'OK'));
   const timed = swum.filter((r) => r.result.time != null && !r.relay);
-  const best = timed.filter((r) => r.seed == null || r.result.time < r.seed);
-  const drop = best.filter((r) => r.seed != null).reduce((n, r) => n + (r.seed - r.result.time), 0);
+  const best = timed.filter((r) => r.best);
+  const drop = best.filter((r) => r.entryTime != null).reduce((n, r) => n + (r.entryTime - r.result.time), 0);
   const ach = (kind) => timed.flatMap((r) => r.post.filter((f) => f.kind === kind && f.tier === 'hit' && !f.open).map((f) => ({ r, f })));
   const close = timed.flatMap((r) => r.pre.filter((f) => (f.tier === '1' || f.tier === 'under') && !f.open && !f.improve && !r.post.some((p) => p.label === f.label)).map((f) => ({ r, f, miss: r.result.time - f.target })))
     .filter((x) => x.miss > 0 && x.miss <= x.f.target * 0.01);
@@ -336,15 +414,51 @@ export function sessionSummary(model, session) {
   const relays = rows.filter((r) => r.relay);
   const swimmers = [...new Set(rows.filter((r) => !r.relay).map((r) => r.swimmerId))].map((id) => {
     const mine = rows.filter((r) => r.swimmerId === id);
-    return { swimmer: model.swimmers.get(id), rows: mine, best: mine.filter((r) => r.result && r.result.time != null && (r.seed == null || r.result.time < r.seed)).length };
+    return { swimmer: model.swimmers.get(id), rows: mine, best: mine.filter((r) => r.best).length };
   }).sort((a, b) => a.swimmer.name.localeCompare(b.swimmer.name));
   return {
     entries: rows.length, swum: swum.length, timed: timed.length, best: best.length, drop,
     pctBest: timed.length ? Math.round((best.length / timed.length) * 100) : 0,
     records: ach('record'), top10: ach('top10'), cuts: ach('cut'), close, dq, swimmers, relays,
+    dqNoReason: dq.filter((r) => r.result.status === 'DQ' && !r.dq), starred: rows.filter((r) => r.starred),
     notes: rows.flatMap((r) => r.notes.map((n) => ({ r, n }))),
     official: rows.length > 0 && rows.every((r) => r.official),
     pending: rows.filter((r) => !r.result).length,
+  };
+}
+
+// ---------- meet wrap-up ----------
+// Whole meet: each swimmer/event counted once (the faster of prelims and finals) for best times and drops.
+export function meetSummary(model) {
+  const rows = model.rows.filter((r) => !r.scratched);
+  const swum = rows.filter((r) => r.result && (r.result.time != null || r.result.status !== 'OK'));
+  const timed = swum.filter((r) => r.result.time != null && !r.relay);
+  const byEv = new Map();
+  for (const r of timed) { const k = `${r.swimmerId}|${r.event}`, o = byEv.get(k); if (!o || r.result.time < o.result.time) byEv.set(k, r); }
+  const fastest = [...byEv.values()];
+  const best = fastest.filter((r) => r.best);
+  const drop = best.filter((r) => r.entryTime != null).reduce((n, r) => n + (r.entryTime - r.result.time), 0);
+  const ach = (kind) => {
+    const seen = new Map();
+    for (const r of timed) for (const f of r.post) if (f.kind === kind && f.tier === 'hit' && !f.open) {
+      const k = `${r.swimmerId}|${r.event}|${f.label}`, o = seen.get(k);
+      if (!o || r.result.time < o.r.result.time) seen.set(k, { r, f });
+    }
+    return [...seen.values()];
+  };
+  const dq = swum.filter((r) => r.result.status && r.result.status !== 'OK');
+  const swimNotes = rows.flatMap((r) => r.notes.map((n) => ({ r, n })));
+  const all = [...swimNotes, ...(model.gnotes || []).map((n) => ({ r: null, n }))];
+  const byTag = new Map();
+  for (const x of all) for (const t of (x.n.tags && x.n.tags.length ? x.n.tags : [''])) (byTag.get(t) || byTag.set(t, []).get(t)).push(x);
+  const tags = [...byTag.entries()].filter(([t]) => t).sort((a, b) => b[1].length - a[1].length).map(([tag, list]) => ({ tag, list }));
+  return {
+    entries: rows.length, swum: swum.length, events: fastest.length, best: best.length, drop,
+    pctBest: fastest.length ? Math.round((best.length / fastest.length) * 100) : 0,
+    swimmers: new Set(rows.filter((r) => !r.relay).map((r) => r.swimmerId)).size,
+    records: ach('record'), top10: ach('top10'), cuts: ach('cut'), dq, dqNoReason: dq.filter((r) => r.result.status === 'DQ' && !r.dq),
+    starred: rows.filter((r) => r.starred), tags, untagged: byTag.get('') || [], swimNotes,
+    official: rows.length > 0 && rows.every((r) => r.official),
   };
 }
 

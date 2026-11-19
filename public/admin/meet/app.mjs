@@ -2,7 +2,7 @@
 // for syncing between coaches and for fetching live results pages.
 import { fmt, readPdf, pdfLines, parseHeatSheet, parseSessionReport, parseResults, clockMin, minClock, ocrColumns } from './lib/parse.mjs';
 import { DEFAULT_CUTS } from './lib/flags.mjs';
-import { derive, sessionSummary, parseTyped, notesFor, blocksOf, blockOf, blockFlow, nowInPools, poolName, ttEvent } from './lib/model.mjs';
+import { derive, sessionSummary, meetSummary, parseTyped, notesFor, blocksOf, blockOf, blockFlow, nowInPools, poolName, ttEvent, MOTIVATIONAL, GROUPS, inGroup } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, ttPhotoRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
 
@@ -18,8 +18,24 @@ const TAGS = ['Great start', 'Breakouts', 'Underwaters', 'Turns', 'Finish', 'Pac
 const tagList = () => (S.model && S.model.tags) || S.settings.tags || TAGS;
 const TIER_TXT = { hit: 'Got it', under: 'Seed under', 1: '≤1%', 3: '≤3%' };
 const KIND_TXT = { record: 'REC', top10: 'T10', cut: 'CUT' };
+// DQ quick picks by stroke (coaches can also type the reason, and edit it later from the wrap-up).
+const DQ_BY = {
+  Free: ['No touch on the turn', 'Walked on the bottom', 'Pulled on the lane line'],
+  Back: ['Shoulders past vertical', 'Non-continuous turn', 'Not on back off the wall', 'Past 15 m', 'Finish not on back'],
+  Breast: ['One-hand touch', 'Non-simultaneous kick', 'Alternating kick', 'Scissors kick', 'Downward fly kick', 'Hands past hips', 'Two strokes under water', 'Head not up each cycle'],
+  Fly: ['One-hand touch', 'Non-simultaneous arms', 'Alternating kick', 'Breaststroke kick', 'Arms not over water', 'Past 15 m'],
+};
+DQ_BY.IM = ['Out of order', ...new Set([...DQ_BY.Back, ...DQ_BY.Breast, ...DQ_BY.Fly])];
+function dqPicks(r) {
+  const st = String((r.ev && r.ev.stroke) || '');
+  const k = /IM|Medley/i.test(st) ? 'IM' : /Back/i.test(st) ? 'Back' : /Breast/i.test(st) ? 'Breast' : /Fly|Butter/i.test(st) ? 'Fly' : 'Free';
+  return [...(r.relay ? ['Early takeoff', 'Out of order'] : []), 'False start', ...DQ_BY[k], 'Did not finish'];
+}
+const dqText = (q) => (q ? [...(q.codes || []), q.text].filter(Boolean).join(' · ') : '');
+const delta = (d, lbl, cls = '') => (d == null ? '' : `<small class="${d < 0 ? 'drop' : 'add'} ${cls}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}${lbl ? ' ' + lbl : ''}</small>`);
+const sgn = (d) => (d == null ? '' : (d < 0 ? '−' : '+') + fmt(Math.abs(d)));
 
-const S = { pool: '', meets: [], meetId: null, pkg: null, ops: [], model: null, settings: { cuts: DEFAULT_CUTS }, me: null, online: navigator.onLine, syncing: false, lastSync: null, outbox: 0, authed: true, filter: 'all', q: '', poll: null };
+const S = { pool: '', coach: '', meets: [], meetId: null, pkg: null, ops: [], model: null, settings: { cuts: DEFAULT_CUTS }, me: null, online: navigator.onLine, syncing: false, lastSync: null, outbox: 0, authed: true, filter: 'all', q: '', poll: null };
 const $ = (s, r = document) => r.querySelector(s);
 const app = $('#app');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -107,7 +123,7 @@ async function sync(force) {
     S.lastSync = new Date(); await store.set('lastSync', S.lastSync.toISOString());
     S.outbox = (await store.outbox()).length;
     // Don't redraw under someone mid-task (uploads/reviews on Tools, an open swim sheet, typing in search)
-    if ((changed && !hadPkg) || (changed && route().v !== 'tools' && $('#sheet').hidden && !['q', 'gnote', 'tag-new'].includes(document.activeElement?.id) && !document.querySelector('#o-ttphoto table'))) render();
+    if ((changed && !hadPkg) || (changed && route().v !== 'tools' && $('#sheet').hidden && !['q', 'gnote', 'tag-new', 'as-coach'].includes(document.activeElement?.id) && !document.querySelector('#o-ttphoto table'))) render();
   } catch (e) {
     if (e.auth) S.authed = false;
     else if (!navigator.onLine) S.online = false;
@@ -134,7 +150,7 @@ setInterval(() => { if (document.visibilityState === 'visible') sync(); }, 25000
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
 
 // ---------- routing ----------
-addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+addEventListener('hashchange', () => { if (!$('#sheet').hidden) closeSheet(); render(); window.scrollTo(0, 0); });
 function route() { const p = location.hash.replace(/^#\/?/, '').split('/'); return { v: p[0] || 'meet', a: p[1], b: p[2] }; }
 
 function render() {
@@ -144,13 +160,15 @@ function render() {
   if (!S.pkg) return renderNoMeet();
   if (r.v === 'day') return renderDay(r.a, r.b);
   if (r.v === 'summary') return renderSummary(+r.a);
+  if (r.v === 'setup') return renderSetup(+r.a);
+  if (r.v === 'wrapup') return renderWrapup();
   if (r.v === 'swimmer') return renderSwimmer(+r.a);
   if (r.v === 'tools') return renderTools();
   return renderMeet();
 }
 function tabs(r) {
   const days = S.pkg ? [...new Set(SS().filter((s) => s.nsea !== false).map((s) => s.day))] : [];
-  const items = [['#/', 'Meet', S.pkg ? S.pkg.short || 'Summary' : '', r.v === 'meet'], ...days.map((d) => [`#/day/${d}`, dayShort(d), d === todayIso() ? 'today' : d.slice(5).replace('-', '/'), r.v === 'day' && r.a === d]), ['#/tools', 'Tools', 'upload · live', r.v === 'tools']];
+  const items = [['#/', 'Meet', S.pkg ? S.pkg.short || 'Summary' : '', r.v === 'meet'], ...days.map((d) => [`#/day/${d}`, dayShort(d), d === todayIso() ? 'today' : d.slice(5).replace('-', '/'), (r.v === 'day' && r.a === d) || (['setup', 'summary'].includes(r.v) && SS().find((s) => s.n === +r.a)?.day === d)]), ['#/wrapup', 'Wrap-up', 'whole meet', r.v === 'wrapup'], ['#/tools', 'Tools', 'upload · live', r.v === 'tools']];
   $('#tabs').innerHTML = items.map(([h, t, s, on]) => `<a href="${h}" ${on ? 'aria-current="page"' : ''}>${esc(t)}<small>${esc(s)}</small></a>`).join('');
 }
 
@@ -177,7 +195,7 @@ function notesCard(session) {
     ${session ? gnoteList(N.session, 'This session') + gnoteList(N.day, dayName(session.day)) : ''}${gnoteList(N.meet, 'Whole meet')}
     <div class="tags" style="margin-top:8px">${tagList().map((t) => `<button class="chip" data-act="tag" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
     <textarea id="gnote" placeholder="Pool notes, reminders, who's on which events, things to tell the team…"></textarea>
-    <div class="btns" style="margin-top:8px">${scopes.length > 1 ? `<select id="gscope" style="width:auto">${scopes.map((k) => `<option value="${k}">${SCOPE_TXT[k]}</option>`).join('')}</select>` : ''}
+    <div class="btns" style="margin-top:8px">${micBtn('gnote')}${scopes.length > 1 ? `<select id="gscope" style="width:auto">${scopes.map((k) => `<option value="${k}">${SCOPE_TXT[k]}</option>`).join('')}</select>` : ''}
       <button class="btn" data-act="save-gnote" ${session ? `data-s="${session.n}"` : ''}>Add note</button></div></details>`;
 }
 
@@ -227,7 +245,7 @@ function renderMeet() {
           ${B.multi ? `<div class="small">${B.sessions.map((x) => `${esc(poolName(x))} ${esc(hm(x.start))}–${esc(hm(x.finish || ''))} (${rows.filter((r) => r.session === x.n).length})`).join(' · ')}</div>` : ''}
           <div class="small">${rows.length ? `${sw} swimmers · ${rows.length} swims` : esc(B.note || 'Entries come from the heat sheet.')} ${off ? '<span class="pill ok">official</span>' : ''}</div>
           <div>${pills(flagCounts(rows))}</div>
-          <div class="btns" style="margin-top:6px"><a class="btn sm" href="#/day/${d}/${B.n}">Events</a>${rows.length ? `<a class="btn sm ghost" href="#/summary/${B.n}">Session summary</a>` : ''}</div>`}
+          <div class="btns" style="margin-top:6px"><a class="btn sm ghost" href="#/setup/${B.n}">Setup</a><a class="btn sm" href="#/day/${d}/${B.n}">Events</a>${rows.length ? `<a class="btn sm ghost" href="#/summary/${B.n}">Wrap-up</a>` : ''}</div>`}
         </div></div>`;
       }).join('')}</div>`;
   }).join('')}
@@ -241,7 +259,8 @@ function renderMeet() {
     const c = flagCounts(M.rows.filter((r) => r.swimmerId === s.id));
     return `<tr data-act="go" data-href="#/swimmer/${s.id}" style="cursor:pointer"><td><b>${esc(s.name)}</b> <span class="muted small">${s.age}</span><div>${pills(c)}</div></td><td class="num">${n} swims</td></tr>`;
   }).join('')}</tbody></table></div>
-  <p class="small muted">Records and Top 10 from the live boards (${esc(P.refs.asOf?.records || '')}); cuts: ${esc(S.settings.cuts.join(', '))}. Package built ${esc(new Date(P.builtAt).toLocaleString())}.</p>`;
+  <p class="small muted">Records and Top 10 from the live boards (${esc(P.refs.asOf?.records || '')}) are tracked in every session. Cuts (meet default): ${esc(cutLabel(M.meetCuts || S.settings.cuts))}; each session or pool can change its own on its Setup page. Package built ${esc(new Date(P.builtAt).toLocaleString())}.</p>
+  <div class="btns"><a class="btn" href="#/wrapup">Meet wrap-up</a></div>`;
 }
 
 // ---------- day / session event flow ----------
@@ -251,21 +270,28 @@ function renderDay(day, sessN) {
   const B = bs.find((x) => x.sessions.some((y) => String(y.n) === String(sessN))) || (day === todayIso() ? bs.find((x) => clockMin(x.finish) > nowMin()) : null) || bs[0];
   const M = S.model, ns = new Set(B.sessions.map((x) => x.n));
   if (S.pool && !B.sessions.some((x) => poolName(x) === S.pool)) S.pool = '';
-  let rows = M.rows.filter((r) => ns.has(r.session) && !r.meetOut);
+  let rows = M.rows.filter((r) => ns.has(r.session) && !r.meetOut && !r.sessOut);
+  const asg = M.assigns.filter((a) => a.block === B.n);
+  if (S.coach && !asg.some((a) => a.coach === S.coach)) S.coach = '';
+  const mine = S.coach ? asg.find((a) => a.coach === S.coach) : null;
+  if (mine && mine.group !== 'all') rows = rows.filter((r) => r.relay || inGroup(mine.group, r.swimmer));
   const q = S.q.trim().toLowerCase();
   if (q) rows = rows.filter((r) => r.swimmer.name.toLowerCase().includes(q));
   if (S.filter === 'flag') rows = rows.filter((r) => (r.result ? r.post : r.pre).some((f) => !f.improve && !f.open));
   if (S.filter === 'todo') rows = rows.filter((r) => !r.result && !r.scratched);
   if (S.filter === 'notes') rows = rows.filter((r) => r.notes.length);
+  if (S.filter === 'star') rows = rows.filter((r) => r.starred);
   const allOff = B.sessions.every((x) => M.official.get(x.n)?.on), someOff = B.sessions.filter((x) => M.official.get(x.n)?.on);
-  const narrowed = !!q || S.filter !== 'all';
+  const narrowed = !!q || S.filter !== 'all' || !!(mine && mine.group !== 'all');
   const all = blockFlow(PK(), B, rows);
   const now = day === todayIso() ? nowInPools(all, nowMin()) : [];
   const nowSet = new Set(now.map((x) => `${x.item.num}-${x.item.round}`));
-  const flow = all.filter((it) => (it.rows.length || !narrowed) && (!S.pool || it.pool === S.pool));
+  const flow = all.filter((it) => (it.rows.length || !narrowed) && (!S.pool || it.pool === S.pool) && (!mine || !mine.pools.length || mine.pools.includes(it.session)));
+  const out = M.rows.filter((r) => ns.has(r.session) && r.sessOut && !r.meetOut);
   const w = B.warmup;
   app.innerHTML = `
   ${bs.length > 1 ? `<div class="chips" style="margin-bottom:10px">${bs.map((x) => `<a class="chip" href="#/day/${day}/${x.n}" aria-pressed="${x.key === B.key}">${esc(x.name)}</a>`).join('')}</div>` : ''}
+  ${sessNav(B, 'live')}
   <p class="kicker">${esc(dayName(day))} · ${B.lead.tt ? 'Time trials (added in the app)' : `Session ${esc(B.multi ? B.lead.block : (B.lead.code || B.n))}`}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
   <h1>${esc(B.name)}</h1>
   ${w ? `<div class="warm"><p class="kicker">Our warm-up · ${esc(w.group)}</p><div class="big">${esc(w.time)}</div>
@@ -274,6 +300,7 @@ function renderDay(day, sessN) {
       : `<div class="small">Meet starts <b>${esc(B.start)}</b> · est. finish ${esc(B.finish || '')}</div>`}</div>`
     : B.multi ? `<div class="card tight">${B.sessions.map((x) => `<div class="small"><b>${esc(poolName(x))}</b>: starts ${esc(hm(x.start))} · est. finish ${esc(hm(x.finish || ''))}</div>`).join('')}</div>` : ''}
   ${B.note ? `<div class="banner warn">${esc(B.note)}</div>` : ''}
+  ${out.length ? `<p class="small muted">Absent this session: ${[...new Set(out.map((r) => r.swimmer.name))].map(esc).join(', ')} · <a href="#/setup/${B.n}">check-in</a></p>` : ''}
   ${B.lead.tt ? `<div class="card ttcard"><h3>Time trials</h3><p class="small muted">Add our swims as they're posted. Officials' handwritten changes (combined heats, moved lanes, merged events) can't be read from a photo, so check every row before applying.</p>
     <div class="btns"><button class="btn solid" data-act="tt-add" data-s="${B.n}">Add swims</button><label class="btn">Photo of the sheet<input type="file" id="f-ttphoto" accept="image/*" capture="environment" hidden></label></div><div id="o-ttphoto"></div></div>` : ''}
   ${notesCard(B.lead)}
@@ -282,10 +309,10 @@ function renderDay(day, sessN) {
       return `<button data-act="now" data-ev="${it.num}-${esc(it.round)}"><b>${x.live ? 'Now' : 'Next'}</b>${x.pool ? ` · ${esc(x.pool)}` : ''}<span>#${it.num} ${esc((it.ev.title || '').replace(/^(Girls|Boys|Mixed) /, '').replace(/^13 & Over /, ''))}</span><small>${h ? `about heat ${h} of ${it.heats}` : x.live ? '' : `starts ~${esc(hm(it.start))}`}</small></button>`; }).join('')}</div>` : ''}
   <div class="sticky noprint">
     <input type="search" id="q" placeholder="Find a swimmer" value="${esc(S.q)}" autocomplete="off">
-    ${B.multi ? `<div class="chips pools" style="margin-top:8px">${[['', 'Both pools'], ...B.sessions.map((x) => [poolName(x), poolName(x)])].map(([k, t]) => `<button class="chip" data-act="pool" data-p="${esc(k)}" aria-pressed="${S.pool === k}">${esc(t)}</button>`).join('')}</div>` : ''}
+    ${asg.length ? `<div class="chips coaches" style="margin-top:8px">${[['', 'Everyone'], ...asg.map((a) => [a.coach, `${a.coach}${a.group !== 'all' ? ' · ' + GROUPS[a.group] : ''}${B.multi && a.pools.length && a.pools.length < B.sessions.length ? ' · ' + a.pools.map((n) => poolName(B.sessions.find((x) => x.n === n) || {})).join(', ') : ''}`])].map(([k, t]) => `<button class="chip" data-act="coach" data-c="${esc(k)}" aria-pressed="${S.coach === k}">${esc(t)}</button>`).join('')}</div>` : ''}
+    ${B.multi && !(mine && mine.pools.length) ? `<div class="chips pools" style="margin-top:8px">${[['', 'Both pools'], ...B.sessions.map((x) => [poolName(x), poolName(x)])].map(([k, t]) => `<button class="chip" data-act="pool" data-p="${esc(k)}" aria-pressed="${S.pool === k}">${esc(t)}</button>`).join('')}</div>` : ''}
     <div class="chips" style="margin-top:8px">
-      ${[['all', 'All'], ['flag', 'Flagged'], ['todo', 'No result yet'], ['notes', 'Notes']].map(([k, t]) => `<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${S.filter === k}">${t}</button>`).join('')}
-      <a class="chip" href="#/summary/${B.n}" style="text-decoration:none;color:inherit">Session summary</a>
+      ${[['all', 'All'], ['flag', 'Flagged'], ['todo', 'No result yet'], ['star', '★ Starred'], ['notes', 'Notes']].map(([k, t]) => `<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${S.filter === k}">${t}</button>`).join('')}
       <a class="chip" href="#/tools/${B.n}" style="text-decoration:none;color:inherit">Upload / live</a>
     </div>
   </div>
@@ -317,24 +344,41 @@ function eventBlock(it, nowSet) {
   }
   return `<section class="ev ${isNow ? 'now' : ''}" id="ev-${it.num}-${esc(it.round)}">${head}
     ${it.heatGroups.map((h) => `<div class="heat"><span>${h.heat ? `Heat ${h.heat}${h.of ? ` of ${h.of}` : ''}` : 'Heat TBD'}</span>${h.start ? `<span class="hs">~${esc(hm(h.start))}</span>` : ''}</div>
-      ${h.rows.map((r) => rowHtml(r, false)).join('')}`).join('')}</section>`;
+      ${h.rows.map((r) => rowHtml(r, false, true)).join('')}`).join('')}</section>`;
 }
-function rowHtml(r, showHeat = true) {
+function rowHtml(r, showHeat = true, quick = false) {
   const res = r.result;
   const flags = (res && res.time != null ? r.post : r.pre);
   const top = flags.find((f) => !f.open && !f.improve) || flags[0];
   const tier = top ? top.tier : '';
   const chips = flags.slice(0, 4).map((f) => `<span class="pill t-${f.tier}" title="${esc(f.label + ' ' + (f.sub || ''))}">${KIND_TXT[f.kind]} ${esc(shortLabel(f))}</span>`).join('');
-  const d = r.delta;
+  const seedLine = r.isFinal ? `prelims ${r.prelim ? (r.prelim.time != null ? fmt(r.prelim.time) : esc(r.prelim.status)) : fmt(r.seed)} · entry ${fmt(r.entryTime)}` : `seed ${fmt(r.seed)}`;
+  const dqLine = res && res.status === 'DQ' ? `<div class="small dqwhy">DQ${r.dq ? ': ' + esc(dqText(r.dq)) : ' · <i>reason?</i>'}</div>` : '';
   return `<div class="row tier-${esc(tier)} ${r.scratched ? 'scr' : ''}" data-act="entry" data-id="${esc(r.id)}">
     ${showHeat ? `<div class="hl ${r.heat ? '' : 'tbd'}">${r.heat ? `H${r.heat}<br>L${r.lane ?? '?'}` : 'TBD'}</div>`
       : `<div class="hl lane ${r.lane ? '' : 'tbd'}"><small>Lane</small>${r.lane ?? '?'}</div>`}
-    <div class="who"><b>${esc(r.swimmer.name)}</b> <span class="muted small">${r.swimmer.age ?? ''}</span>${r.notes.length ? `<span class="note-dot">✎${r.notes.length}</span>` : ''}
+    <div class="who"><b>${esc(r.swimmer.name)}</b> <span class="muted small">${r.swimmer.age ?? ''}</span>${r.starred ? '<span class="star-dot">★</span>' : ''}${r.notes.length ? `<span class="note-dot">✎${r.notes.length}</span>` : ''}
       ${r.relay ? legsLine(r) : ''}
-      <div class="seed">seed ${fmt(r.seed)}${r.scratched ? ' · SCRATCHED' : ''}</div><div>${chips}</div></div>
-    <div class="res">${res ? `<b>${res.time != null ? fmt(res.time) : esc(res.status)}</b>${d != null ? `<small class="${d < 0 ? 'drop' : 'add'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</small>` : ''}<br>${r.official ? '<span class="pill ok">official</span>' : '<span class="pill off">unofficial</span>'}` : '<span class="muted small">tap to add</span>'}</div>
-  </div>`;
+      <div class="seed">${seedLine}${r.sessOut ? ' · ABSENT' : r.scratched ? ' · SCRATCHED' : ''}</div>${dqLine}<div>${chips}</div></div>
+    <div class="res">${res ? `<b>${res.time != null ? fmt(res.time) : esc(res.status)}</b>${r.isFinal ? delta(r.dPrelim, 'pre', 'blk') + delta(r.dEntry, 'entry', 'blk') : delta(r.delta)}${r.isFinal ? '' : '<br>'}${r.official ? '<span class="pill ok">official</span>' : '<span class="pill off">unofficial</span>'}` : '<span class="muted small">tap to add</span>'}</div>
+  </div>${quick && !r.scratched && S.settings.quick !== false ? quickBar(r) : ''}`;
 }
+// One-tap tags and a star right on the swim card: no typing during the session.
+function quickBar(r) {
+  const has = new Set(r.notes.flatMap((n) => n.tags || []));
+  return `<div class="quick noprint"><button class="qstar" data-act="star" data-id="${esc(r.id)}" aria-pressed="${r.starred}" aria-label="${r.starred ? 'Unstar' : 'Star for the wrap-up'}">${r.starred ? '★' : '☆'}</button>
+    <div class="chips">${tagList().map((t) => `<button class="chip qt" data-act="qtag" data-id="${esc(r.id)}" data-t="${esc(t)}" aria-pressed="${has.has(t)}">${esc(t)}</button>`).join('')}</div></div>`;
+}
+function sessNav(B, cur) {
+  return `<div class="chips stepnav noprint">${[['setup', '1 · Setup', `#/setup/${B.n}`], ['live', '2 · Events', `#/day/${B.day}/${B.n}`], ['wrap', '3 · Wrap-up', `#/summary/${B.n}`]].map(([k, t, h]) => `<a class="chip" href="${h}" aria-pressed="${k === cur}">${t}</a>`).join('')}</div>`;
+}
+// Cut names in the order coaches think of them: age group first, national meets last.
+const CUT_ORDER = [/NC AG/, /ESSZ AG/, /NC Senior/, /ESSZ Sr/, /Sectionals/, /Futures 18/, /Winter Jrs 18/, /Winter Jrs Bonus/, /Jr Nat/, /Futures 19/, /US Open/, /Nationals/];
+const cutOrder = (names) => [...names].sort((a, b) => { const i = (c) => { const k = CUT_ORDER.findIndex((re) => re.test(c)); return k < 0 ? 99 : k; }; return i(a) - i(b) || a.localeCompare(b); });
+const cutLabel = (list) => { const l = list || []; const mot = MOTIVATIONAL.every((c) => l.includes(c)); return [...(mot ? ['B–AAAA'] : []), ...l.filter((c) => !mot || !MOTIVATIONAL.includes(c))].join(', ') || 'none'; };
+// A note box with a microphone button (phone dictation) when the browser supports it.
+const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+const micBtn = (id) => (SR ? `<button class="btn sm ghost mic" type="button" data-act="mic" data-for="${id}" aria-label="Dictate">🎤 Talk</button>` : '');
 const shortName = (w) => (w ? (w.unknown ? w.name : `${w.first || w.name.split(',')[1]?.trim() || ''} ${(w.last || w.name.split(',')[0] || '').charAt(0)}`.trim()) : '');
 function legsLine(r) {
   const any = r.legSw.some(Boolean);
@@ -356,12 +400,16 @@ function openEntry(id) {
   sheet(`
     <p class="kicker">${evNo(r.event)} ${esc(r.ev.title || '')} · ${esc(r.round)}</p>
     <h2 style="margin-bottom:2px">${esc(r.swimmer.name)} <span class="muted small">${r.swimmer.age ?? ''}</span></h2>
-    <p class="small muted" style="margin-top:0">${r.heat ? `Heat ${r.heat}${r.heats ? ' of ' + r.heats : ''} · Lane ${r.lane}` : 'Heat/lane not set'}${r.start ? ' · ~' + esc(r.start) : ''} · Seed <b class="mono">${fmt(r.seed)}</b></p>
+    <p class="small muted" style="margin-top:0">${r.heat ? `Heat ${r.heat}${r.heats ? ' of ' + r.heats : ''} · Lane ${r.lane}` : 'Heat/lane not set'}${r.start ? ' · ~' + esc(r.start) : ''} · ${r.isFinal ? `Prelims <b class="mono">${r.prelim ? (r.prelim.time != null ? fmt(r.prelim.time) : esc(r.prelim.status)) : fmt(r.seed)}</b> · Entry <b class="mono">${fmt(r.entryTime)}</b>` : `Seed <b class="mono">${fmt(r.seed)}</b>${r.entryTime != null && r.entryTime !== r.seed ? ` · Entry <b class="mono">${fmt(r.entryTime)}</b>` : ''}`}</p>
+    ${res && res.time != null && (r.isFinal || r.dEntry != null) ? `<p class="small" style="margin-top:-6px">${r.isFinal ? `${esc(sgn(r.dPrelim) || '—')} vs prelims · ` : ''}${esc(sgn(r.dEntry) || '—')} vs entry${r.best ? ' · <b class="drop">best time</b>' : ''}</p>` : ''}
     <label class="f" for="t">Time ${res ? `<span class="muted">(now ${res.time != null ? fmt(res.time) : esc(res.status)}, ${esc(res.source || 'manual')}${r.official ? ', official' : ', unofficial'})</span>` : ''}</label>
     <div class="timein"><input id="t" inputmode="decimal" autocomplete="off" placeholder="e.g. 5912 or 2:15.33" value="${res && res.time != null ? fmt(res.time) : ''}"><button class="btn solid" data-act="save-time" data-id="${esc(id)}">Save</button></div>
-    <div class="btns" style="margin-top:8px">${['DQ', 'NS'].map((s) => `<button class="btn sm ghost" data-act="status" data-s="${s}" data-id="${esc(id)}">${s}</button>`).join('')}
+    <div class="btns" style="margin-top:8px"><button class="btn sm ghost" data-act="dq-open" data-id="${esc(id)}">DQ…</button><button class="btn sm ghost" data-act="status" data-s="NS" data-id="${esc(id)}">NS</button>
+      <button class="btn sm ${r.starred ? 'solid' : 'ghost'}" data-act="star" data-id="${esc(id)}">${r.starred ? '★ Starred' : '☆ Star'}</button>
       ${res ? `<button class="btn sm ghost" data-act="clear-time" data-id="${esc(id)}">Clear time</button>` : ''}
       ${r.meetOut ? '' : `<button class="btn sm ghost" data-act="scratch" data-id="${esc(id)}">${r.scratched ? 'Un-scratch' : 'Scratch'}</button>`}</div>
+    ${res && res.status === 'DQ' ? `<div class="banner warn" style="margin-top:10px"><b>DQ</b>${r.dq ? `: ${esc(dqText(r.dq))} <span class="small">(${esc(r.dq.by)})</span>` : ' · no reason yet'} · <a href="#" data-act="dq-open" data-id="${esc(id)}">${r.dq ? 'Edit reason' : 'Add reason'}</a></div>` : ''}
+    ${r.sessOut ? `<p class="small" style="color:var(--coral)">Marked absent for this session. <a href="#/setup/${r.session}" data-act="close-go">Check-in</a></p>` : ''}
     ${r.meetOut ? `<p class="small" style="color:var(--coral)">Scratched from the whole meet. <a href="#/swimmer/${r.swimmerId}" data-act="close-go">Change on ${esc(r.swimmer.first || 'their')} page</a></p>` : ''}
     <details style="margin-top:10px"><summary class="small" style="cursor:pointer;color:var(--teal-dark)">Change heat / lane${r.heat ? '' : ' (not set yet)'}</summary>
       <div class="timein" style="margin-top:8px"><input id="hh" inputmode="numeric" placeholder="Heat" value="${r.heat ?? ''}" style="font-size:18px"><input id="ll" inputmode="numeric" placeholder="Lane" value="${r.lane ?? ''}" style="font-size:18px"><button class="btn" data-act="save-hl" data-id="${esc(id)}">Save</button></div></details>
@@ -372,10 +420,72 @@ function openEntry(id) {
     ${r.notes.length ? `<ul class="notes">${r.notes.map((n) => `<li>${n.tags && n.tags.length ? `<b>${n.tags.map(esc).join(' · ')}</b> ` : ''}${esc(n.text)}<small>${esc(n.by)} · ${new Date(n.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}${n.op ? ` · <a href="#" data-act="undo" data-op="${esc(n.op)}">remove</a>` : ''}</small></li>`).join('')}</ul>` : ''}
     <div class="tags">${tagList().map((t) => `<button class="chip" data-act="tag" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
     <textarea id="note" placeholder="Race feedback, things to talk about…"></textarea>
-    <div class="btns" style="margin-top:8px"><button class="btn" data-act="save-note" data-id="${esc(id)}">Add note</button><button class="btn ghost" data-act="close">Close</button></div>
+    <div class="btns" style="margin-top:8px"><button class="btn" data-act="save-note" data-id="${esc(id)}">Add note</button>${micBtn('note')}<button class="btn ghost" data-act="close">Close</button></div>
     ${r.relay ? '' : `<p class="small muted" style="margin-top:10px"><a href="#/swimmer/${r.swimmerId}" data-act="close-go">All of ${esc(r.swimmer.first || r.swimmer.name)}'s swims →</a></p>`}`);
   setTimeout(() => { const t = $('#t'); if (t && !res) t.focus(); }, 60);
 }
+// DQ with its reason: quick picks for the stroke plus free text. The reason is its own record, so an official
+// DQ loaded later keeps it, and it can be added or changed after the session (wrap-up).
+function openDq(id) {
+  const r = S.model.rows.find((x) => x.id === id);
+  if (!r) return;
+  const cur = r.dq || { codes: [], text: '' };
+  sheet(`<p class="kicker">${evNo(r.event)} ${esc(r.ev.title || '')} · ${esc(r.round)}</p>
+    <h2 style="margin-bottom:2px">DQ · ${esc(r.swimmer.name)}</h2>
+    <p class="small muted" style="margin-top:0">Pick the call (or type it). Not sure yet? Save it and add the reason in the wrap-up.</p>
+    <div class="tags">${[...new Set([...dqPicks(r), ...cur.codes])].map((c) => `<button class="chip dqc" data-act="tag" aria-pressed="${cur.codes.includes(c)}">${esc(c)}</button>`).join('')}</div>
+    <textarea id="dqtext" placeholder="Details: which length, what the official said…">${esc(cur.text)}</textarea>
+    <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="dq-save" data-id="${esc(id)}">Save DQ</button>${micBtn('dqtext')}
+      ${r.result && r.result.status === 'DQ' ? '' : '<button class="btn ghost" data-act="entry" data-id="' + esc(id) + '">Back</button>'}<button class="btn ghost" data-act="close">Close</button></div>`);
+}
+
+// ---------- session setup: who's here, which coach is where, which cuts to watch ----------
+function renderSetup(n) {
+  const B = blockOf(SS(), n);
+  if (!B) { app.innerHTML = '<p class="empty">Session not found.</p>'; return; }
+  const M = S.model, ns = B.sessions.map((x) => x.n);
+  const rows = M.rows.filter((r) => ns.includes(r.session) && !r.relay && !r.meetOut);
+  const sw = [...new Set(rows.map((r) => r.swimmerId))].map((id) => M.swimmers.get(id)).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+  const absent = (id) => ns.some((x) => M.sessOut.has(`${x}|${id}`));
+  const nAbs = sw.filter((w) => absent(w.id)).length;
+  const asg = M.assigns.filter((a) => a.block === B.n);
+  const known = [...new Set([S.me && S.me.name, ...S.ops.map((o) => o.by), ...M.assigns.map((a) => a.coach)].filter((x) => x && x !== 'Meet Mobile' && x !== 'me'))].sort();
+  const names = cutOrder(S.pkg.refs.cutNames || []).filter((c) => !MOTIVATIONAL.includes(c));
+  const hasMot = MOTIVATIONAL.some((c) => (S.pkg.refs.cutNames || []).includes(c));
+  const poolOfSw = (id) => B.multi ? [...new Set(rows.filter((r) => r.swimmerId === id).map((r) => poolName(B.sessions.find((x) => x.n === r.session))))].join(', ') : '';
+  const cutCard = (x) => {
+    const info = M.cutsInfo(x.n), list = info.list;
+    const how = { session: 'set for this ' + (B.multi ? 'pool' : 'session'), auto: '12 & Under pool default', meet: 'meet default', phone: 'meet default' }[info.how];
+    const mot = MOTIVATIONAL.every((c) => list.includes(c));
+    return `<div style="margin-top:10px">${B.multi ? `<p class="kicker" style="margin:0 0 4px">${esc(poolName(x))}</p>` : ''}
+      <div class="tags">${hasMot ? `<button class="chip" data-act="cut-s" data-s="${x.n}" data-c="__mot" aria-pressed="${mot}">B–AAAA</button>` : ''}${names.map((c) => `<button class="chip" data-act="cut-s" data-s="${x.n}" data-c="${esc(c)}" aria-pressed="${list.includes(c)}">${esc(c)}</button>`).join('')}</div>
+      <p class="small muted" style="margin:0">${esc(how)}${info.how === 'session' ? ` · <a href="#" data-act="cut-reset" data-s="${x.n}">use the default</a>` : ''}</p></div>`;
+  };
+  app.innerHTML = `${sessNav(B, 'setup')}
+  <p class="kicker">${esc(dayName(B.day))} · Session ${esc(B.multi ? B.lead.block : (B.lead.code || B.n))}${B.multi ? ` · ${B.sessions.length} pools` : ''}</p>
+  <h1>${esc(B.name)}: setup</h1>
+  ${B.warmup ? `<div class="card tight small">Warm-up <b>${esc(B.warmup.time)}</b> · ${esc(B.warmup.pool || '')} ${esc(B.warmup.lanes ? 'lanes ' + B.warmup.lanes : '')}<br>${B.sessions.map((x) => `${B.multi ? `<b>${esc(poolName(x))}</b>: ` : 'Events '}${esc(hm(x.start))}–${esc(hm(x.finish || ''))} · ${M.rows.filter((r) => r.session === x.n && !r.scratched).length} swims`).join('<br>')}</div>` : ''}
+
+  <div class="card"><h3>Coaches</h3><p class="small muted">Who is mainly watching which ${B.multi ? 'pool and ' : ''}swimmers. On the Events page each coach can switch to their own view.</p>
+    ${asg.length ? `<ul class="sumlist">${asg.map((a) => `<li><b>${esc(a.coach)}</b> · ${B.multi ? (a.pools.length && a.pools.length < B.sessions.length ? a.pools.map((p) => esc(poolName(B.sessions.find((x) => x.n === p) || {}))).join(', ') : 'both pools') + ' · ' : ''}${esc(GROUPS[a.group] || a.group)} <a href="#" data-act="assign-del" data-c="${esc(a.coach)}" data-b="${B.n}" class="small">remove</a></li>`).join('')}</ul>` : '<p class="small muted">No one assigned yet.</p>'}
+    <label class="f" for="as-coach">Coach</label>
+    <input id="as-coach" type="text" list="as-known" placeholder="Name" value="${esc((S.me && S.me.name && !asg.some((a) => a.coach === S.me.name)) ? S.me.name : '')}"><datalist id="as-known">${known.map((k) => `<option value="${esc(k)}">`).join('')}</datalist>
+    ${B.multi ? `<label class="f">Pool</label><div class="tags">${B.sessions.map((x) => `<label class="chip" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" class="as-pool" value="${x.n}" style="width:auto;margin:0"> ${esc(poolName(x))}</label>`).join('')}</div>` : ''}
+    <label class="f" for="as-group">Swimmers</label><select id="as-group">${Object.entries(GROUPS).map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join('')}</select>
+    <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="assign-save" data-b="${B.n}">Assign</button></div></div>
+
+  <div class="card"><h3>Standards to flag</h3><p class="small muted">Team records and Top 10 are always tracked. Pick the cuts worth watching ${B.multi ? 'in each pool' : 'this session'}: a 12 &amp; Under pool starts with B–AAAA and NC AG.</p>
+    ${B.multi ? `<label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="cut-both" style="width:auto"> Change every pool together</label>` : ''}
+    ${B.sessions.map(cutCard).join('')}</div>
+
+  <div class="card"><h3>Check-in <span class="muted small">${sw.length - nAbs} here · ${nAbs} absent</span></h3>
+    <p class="small muted">Everyone counts as here. Tap anyone who won't be at this session: their swims here are scratched and left out of the wrap-up. Their other sessions aren't touched.</p>
+    <table class="t"><tbody>${sw.map((w) => { const off = absent(w.id), c = rows.filter((r) => r.swimmerId === w.id).length;
+      return `<tr class="${off ? 'scr' : ''}"><td><b>${esc(w.name)}</b> <span class="muted small">${w.age ?? ''}${B.multi ? ' · ' + esc(poolOfSw(w.id)) : ''} · ${c} swim${c === 1 ? '' : 's'}</span></td><td class="num"><button class="btn sm ${off ? 'coral' : 'ghost'}" data-act="checkin" data-id="${w.id}" data-b="${B.n}" data-on="${off ? 0 : 1}">${off ? 'Absent' : 'Here'}</button></td></tr>`; }).join('') || '<tr><td class="muted small">No swimmers in this session yet (entries come from the heat sheet).</td></tr>'}</tbody></table>
+    ${M.meetOut.size ? `<p class="small muted">Out for the whole meet: ${[...M.meetOut.keys()].map((id) => M.swimmers.get(id)).filter(Boolean).map((w) => esc(w.name)).join(', ')}</p>` : ''}</div>
+  <div class="btns"><a class="btn solid" href="#/day/${B.day}/${B.n}">Go to events →</a></div>`;
+}
+
 function legsEditor(r) {
   const sw = [...S.model.swimmers.values()].filter((w) => (r.legs.includes(w.id) || !S.model.meetOut.has(w.id)) && (!r.ev.sex || r.ev.sex === 'X' || w.sex === r.ev.sex)).sort((a, b) => a.name.localeCompare(b.name));
   const names = r.ev.stroke === 'Medley' || /medley/i.test(r.ev.title || '') ? ['Back', 'Breast', 'Fly', 'Free'] : ['1st', '2nd', '3rd', '4th'];
@@ -396,37 +506,87 @@ function renderSummary(n) {
   const tag = X.official ? '' : ' <span class="pill off">unofficial</span>';
   const li = (a) => a.map(({ r, f }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} ${f.sub ? `<span class="muted">(${esc(f.sub)})</span>` : ''}</li>`).join('');
   const finalsBack = /Prelim/.test(B.sessions.flatMap((x) => x.events).map((e) => e.round).join()) ? S.model.rows.filter((r) => ns.includes(r.session) && /Prelim/.test(r.round) && r.result && r.result.place && r.result.place <= 40) : [];
-  app.innerHTML = `
+  const todo = X.dqNoReason.length + X.starred.filter((r) => !r.notes.some((x) => x.text)).length;
+  app.innerHTML = `${sessNav(B, 'wrap')}
   <p class="kicker">${esc(dayName(s.day))} · Session ${esc(B.multi ? s.block : s.n)}${B.multi ? ` · ${B.sessions.map((x) => esc(poolName(x))).join(' + ')}` : ''}</p>
-  <h1>${esc(B.name)}: session summary</h1>
+  <h1>${esc(B.name)}: wrap-up</h1>
   <div class="banner ${X.official ? 'off' : 'unoff'}">${X.official ? 'Built from official results.' : `Unofficial: built from ${X.swum ? 'live / entered times' : 'no results yet'}. ${X.pending ? X.pending + ' swims still have no result.' : ''} Load official results to confirm.`}</div>
   <div class="grid2" style="margin-bottom:12px">
     <div class="stat"><b>${X.swum}/${X.entries}</b><span>swims with a result</span></div>
     <div class="stat"><b>${X.best}</b><span>best times (${X.pctBest}% of timed swims)</span></div>
-    <div class="stat"><b>${fmt(X.drop)}</b><span>total time dropped vs seed</span></div>
+    <div class="stat"><b>${fmt(X.drop)}</b><span>time dropped vs entry times</span></div>
     <div class="stat"><b>${X.records.length + X.top10.length + X.cuts.length}</b><span>records · Top 10 · new cuts</span></div>
   </div>
+  ${X.dqNoReason.length || X.starred.length ? `<div class="card todo"><h3>To finish${todo ? ` <span class="pill t-1">${todo}</span>` : ''}</h3>
+    ${X.dqNoReason.length ? `<p class="kicker" style="margin:6px 0 2px">DQs that need a reason</p><ul class="sumlist">${X.dqNoReason.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <button class="btn sm" data-act="dq-open" data-id="${esc(r.id)}">Add reason</button></li>`).join('')}</ul>` : ''}
+    ${X.starred.length ? `<p class="kicker" style="margin:6px 0 2px">Starred swims</p><ul class="sumlist">${X.starred.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</span>
+      ${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc([...(n.tags || []), n.text].filter(Boolean).join(' · '))).join('<br>')}</div>` : ''}
+      <button class="btn sm ${r.notes.some((x) => x.text) ? 'ghost' : ''}" data-act="entry" data-id="${esc(r.id)}">${r.notes.some((x) => x.text) ? 'Add more' : 'Add note'}</button></li>`).join('')}</ul>` : ''}</div>` : ''}
   ${X.records.length ? `<div class="card"><h3>Team records${tag}</h3><ul class="sumlist">${li(X.records)}</ul></div>` : ''}
   ${X.cuts.length ? `<div class="card"><h3>New championship cuts${tag}</h3><ul class="sumlist">${li(X.cuts)}</ul></div>` : ''}
   ${X.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(X.top10)}</ul></div>` : ''}
   ${finalsBack.length ? `<div class="card"><h3>Back for finals (top 40)${tag}</h3><ul class="sumlist">${finalsBack.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${r.result.place}${ordinal(r.result.place)} <span class="mono">${fmt(r.result.time)}</span></li>`).join('')}</ul></div>` : ''}
   ${X.close.length ? `<div class="card"><h3>Just missed (within 1%)</h3><ul class="sumlist">${X.close.map(({ r, f, miss }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} by <span class="mono">${fmt(miss)}</span></li>`).join('')}</ul></div>` : ''}
-  ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}</li>`).join('')}</ul></div>` : ''}
-  ${(() => { const N = notesFor(S.model, s); return N.meet.length + N.day.length + N.session.length ? `<div class="card"><h3>Coach notes</h3>${gnoteList(N.session, 'This session')}${gnoteList(N.day, dayName(s.day))}${gnoteList(N.meet, 'Whole meet')}</div>` : ''; })()}
+  ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status === 'DQ' ? (r.dq ? `: ${esc(dqText(r.dq))} <a href="#" class="small" data-act="dq-open" data-id="${esc(r.id)}">edit</a>` : ` · <a href="#" data-act="dq-open" data-id="${esc(r.id)}">add reason</a>`) : ''}</li>`).join('')}</ul></div>` : ''}
+  <h2>Session thoughts</h2>
+  ${notesCard(s)}
   ${X.relays.length ? `<div class="card"><h3>Relays</h3><table class="t"><tbody>${X.relays.map((r) => `<tr><td>${evNo(r.event)} ${esc(r.ev.title || '')} <b>${esc(r.relay)}</b><div class="small muted">${r.legSw.map((w, i) => `${i + 1} ${w ? esc(shortName(w)) : '?'}`).join(' · ')}</div></td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
-  <div class="card"><h3>By swimmer</h3><table class="t"><thead><tr><th>Swim</th><th style="text-align:right">Seed</th><th style="text-align:right">Time</th><th style="text-align:right">+/−</th></tr></thead><tbody>
-  ${X.swimmers.map((w) => `<tr><td colspan="4" style="background:var(--panel)"><b>${esc(w.swimmer.name)}</b> <span class="muted small">${w.best}/${w.rows.length} best times</span></td></tr>${w.rows.map((r) => `<tr><td>${evNo(r.event)} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc([...(n.tags || []), n.text].filter(Boolean).join(' · '))).join('<br>')}</div>` : ''}</td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}`).join('')}
+  <div class="card"><h3>By swimmer</h3><table class="t"><thead><tr><th>Swim</th><th style="text-align:right">Entry</th><th style="text-align:right">Time</th><th style="text-align:right">+/− entry</th></tr></thead><tbody>
+  ${X.swimmers.map((w) => `<tr><td colspan="4" style="background:var(--panel)"><b>${esc(w.swimmer.name)}</b> <span class="muted small">${w.best}/${w.rows.length} best times</span></td></tr>${w.rows.map((r) => `<tr><td>${r.starred ? '★ ' : ''}${evNo(r.event)} ${esc(r.ev.title)}${r.isFinal ? ` <span class="muted small">final${r.dPrelim != null ? ` · ${esc(sgn(r.dPrelim))} vs prelims` : ''}</span>` : ''}${r.dq ? `<div class="small dqwhy">DQ: ${esc(dqText(r.dq))}</div>` : ''}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc([...(n.tags || []), n.text].filter(Boolean).join(' · '))).join('<br>')}</div>` : ''}</td><td class="num">${fmt(r.entryTime)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.dEntry < 0 ? 'drop' : 'add'}">${esc(sgn(r.dEntry))}</td></tr>`).join('')}`).join('')}
   </tbody></table></div>
   <div class="btns noprint"><button class="btn solid" data-act="copy-summary" data-s="${n}">Copy as text</button><button class="btn" data-act="print">Print / PDF</button><a class="btn ghost" href="#/day/${s.day}/${s.n}">Back to events</a></div>`;
 }
 const ordinal = (n) => (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+const who = (r) => `${r.swimmer.first || r.swimmer.name} ${r.swimmer.last || ''}`.trim();
+const noteLine = (n) => [...(n.tags || []), n.text].filter(Boolean).join(' · ');
+function textBlocks(L, X) {
+  const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${who(r)} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
+  sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
+  if (X.dq.length) { L.push('', 'DQ / NS'); X.dq.forEach((r) => L.push(`• ${who(r)} – ${r.ev.title}: ${r.result.status}${r.dq ? ' – ' + dqText(r.dq) : ''}`)); }
+}
 function summaryText(n) {
   const B = blockOf(SS(), n), s = B.lead, X = sessionSummary(S.model, B.sessions.map((x) => x.n));
-  const L = [`${S.pkg.short || S.pkg.name} · ${B.name}${X.official ? '' : ' (UNOFFICIAL)'}`, `${X.swum}/${X.entries} swims · ${X.best} best times (${X.pctBest}%) · ${fmt(X.drop)} dropped`];
-  const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${r.swimmer.first || r.swimmer.name} ${r.swimmer.last || ''} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
-  sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
+  const L = [`${S.pkg.short || S.pkg.name} · ${B.name}${X.official ? '' : ' (UNOFFICIAL)'}`, `${X.swum}/${X.entries} swims · ${X.best} best times (${X.pctBest}%) · ${fmt(X.drop)} dropped vs entry times`];
+  textBlocks(L, X);
   const N = notesFor(S.model, s), gn = [...N.session, ...N.day, ...N.meet];
-  if (gn.length) { L.push('', 'COACH NOTES'); gn.forEach((x) => L.push(`• ${[...x.tags, x.text].filter(Boolean).join(' · ')}`)); }
+  if (gn.length) { L.push('', 'SESSION THOUGHTS'); gn.forEach((x) => L.push(`• ${noteLine(x)}`)); }
+  if (X.notes.length) { L.push('', 'SWIM NOTES'); X.notes.forEach(({ r, n: x }) => L.push(`• ${r.starred ? '★ ' : ''}${who(r)} – ${r.ev.title}: ${noteLine(x)}`)); }
+  return L.join('\n');
+}
+
+// ---------- meet wrap-up ----------
+function renderWrapup() {
+  const M = S.model, W = meetSummary(M), P = S.pkg;
+  const tag = W.official ? '' : ' <span class="pill off">unofficial</span>';
+  const li = (a) => a.map(({ r, f }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)}</li>`).join('');
+  const nl = (x) => `<li>${x.r ? `<b>${esc(x.r.swimmer.name)}</b> · ${evNo(x.r.event)} ${esc(x.r.ev.title)}${x.n.text ? ': ' : ''}` : '<b>Coach note</b>: '}${esc(x.n.text)} <span class="muted small">${esc(x.n.by)}</span></li>`;
+  app.innerHTML = `<p class="kicker">${esc(dayName(P.start))} – ${esc(dayName(P.end))}</p><h1>${esc(P.name)}: meet wrap-up</h1>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="stat"><b>${W.swimmers}</b><span>swimmers · ${W.swum}/${W.entries} swims with a result</span></div>
+    <div class="stat"><b>${W.best}/${W.events}</b><span>events with a best time (${W.pctBest}%)</span></div>
+    <div class="stat"><b>${fmt(W.drop)}</b><span>time dropped vs entry times (fastest swim per event)</span></div>
+    <div class="stat"><b>${W.records.length + W.top10.length + W.cuts.length}</b><span>records · Top 10 · new cuts</span></div>
+  </div>
+  ${W.dqNoReason.length ? `<div class="card todo"><h3>DQs that need a reason <span class="pill t-1">${W.dqNoReason.length}</span></h3><ul class="sumlist">${W.dqNoReason.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <button class="btn sm" data-act="dq-open" data-id="${esc(r.id)}">Add reason</button></li>`).join('')}</ul></div>` : ''}
+  ${W.records.length ? `<div class="card"><h3>Team records${tag}</h3><ul class="sumlist">${li(W.records)}</ul></div>` : ''}
+  ${W.cuts.length ? `<div class="card"><h3>New championship cuts${tag}</h3><ul class="sumlist">${li(W.cuts)}</ul></div>` : ''}
+  ${W.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(W.top10)}</ul></div>` : ''}
+  ${W.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${W.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.dq ? ': ' + esc(dqText(r.dq)) : ''}</li>`).join('')}</ul></div>` : ''}
+  ${W.tags.length ? `<div class="card"><h3>Notes by tag</h3><p class="small muted">Every swim note and coach note this meet, grouped by its tags. Useful for planning practice.</p>
+    ${W.tags.map((g) => `<details><summary><b>${esc(g.tag)}</b> <span class="muted small">${g.list.length}</span></summary><ul class="sumlist">${g.list.map(nl).join('')}</ul></details>`).join('')}</div>` : ''}
+  ${W.starred.length ? `<div class="card"><h3>Starred swims</h3><ul class="sumlist">${W.starred.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc(noteLine(n))).join('<br>')}</div>` : ''}</li>`).join('')}</ul></div>` : ''}
+  <h2>Final thoughts</h2>
+  ${notesCard(null)}
+  <div class="card tight"><table class="t"><tbody>${BB().filter((b) => b.nsea).map((b) => { const X = sessionSummary(M, b.sessions.map((x) => x.n)); return X.entries ? `<tr><td><a href="#/summary/${b.n}">${esc(dayShort(b.day))} · ${esc(b.name)}</a></td><td class="num small">${X.swum ? `${X.best} best · ${esc(fmt(X.drop))}` : '<span class="muted">no results yet</span>'}</td></tr>` : ''; }).join('')}</tbody></table></div>
+  <div class="btns noprint"><button class="btn solid" data-act="copy-meet">Copy as text</button><button class="btn" data-act="print">Print / PDF</button></div>`;
+}
+function meetText() {
+  const W = meetSummary(S.model);
+  const L = [`${S.pkg.name}${W.official ? '' : ' (UNOFFICIAL)'}`, `${W.swimmers} swimmers · ${W.best}/${W.events} events with a best time (${W.pctBest}%) · ${fmt(W.drop)} dropped vs entry times`];
+  textBlocks(L, W);
+  const meet = (S.model.gnotes || []).filter((n) => n.scope === 'meet');
+  if (meet.length) { L.push('', 'FINAL THOUGHTS'); meet.forEach((x) => L.push(`• ${noteLine(x)}`)); }
+  if (W.tags.length) { L.push('', 'NOTES BY TAG'); W.tags.forEach((g) => { L.push(`${g.tag} (${g.list.length})`); g.list.forEach((x) => L.push(`  • ${x.r ? who(x.r) + ' – ' + x.r.ev.title + (x.n.text ? ': ' + x.n.text : '') : x.n.text}`)); }); }
   return L.join('\n');
 }
 
@@ -505,7 +665,10 @@ function renderTools() {
   <div class="card"><h3>Offline</h3><p class="small muted">Downloads the PDF and photo readers to this phone so uploads and photos work with no signal. Do this on Wi-Fi before the meet.</p>
     <div class="btns"><button class="btn" data-act="offline-libs">Download readers for offline</button></div><div id="o-off"></div></div>
 
-  ${S.pkg ? `<div class="card"><h3>Cuts to flag</h3><div class="tags">${(S.pkg.refs.cutNames || []).map((c) => `<button class="chip" data-act="cut" data-c="${esc(c)}" aria-pressed="${S.settings.cuts.includes(c)}">${esc(c)}</button>`).join('')}</div></div>` : ''}
+  ${S.pkg ? (() => { const cur = S.model.meetCuts || S.settings.cuts, names = S.pkg.refs.cutNames || [], mot = MOTIVATIONAL.every((c) => cur.includes(c));
+    return `<div class="card"><h3>Cuts to flag (meet default)</h3><p class="small muted">Shared with every coach for this meet. Team records and Top 10 are always tracked. Each session or pool can pick its own on its Setup page; 12 &amp; Under pools start with B–AAAA and NC AG.</p>
+    <div class="tags">${MOTIVATIONAL.some((c) => names.includes(c)) ? `<button class="chip" data-act="cut" data-c="__mot" aria-pressed="${mot}">B–AAAA</button>` : ''}${cutOrder(names).filter((c) => !MOTIVATIONAL.includes(c)).map((c) => `<button class="chip" data-act="cut" data-c="${esc(c)}" aria-pressed="${cur.includes(c)}">${esc(c)}</button>`).join('')}</div></div>
+  <div class="card"><h3>Swim cards</h3><label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-act="quick-toggle" ${S.settings.quick !== false ? 'checked' : ''} style="width:auto"> Show the star and one-tap tags under each swim (this phone)</label></div>`; })() : ''}
 
   ${S.pkg ? `<div class="card"><h3>Note tags</h3><p class="small muted">The quick tags on swim and coach notes. Changes sync to every coach for this meet; renaming a tag also relabels notes that already use it.</p>
     <div id="tag-list">${tagList().map((t, i) => `<div class="timein" style="margin-top:6px"><input data-tag-i="${i}" value="${esc(t)}" aria-label="Tag ${i + 1}"><button class="btn sm" data-act="tag-save" data-i="${i}">Save</button><button class="btn sm ghost" data-act="tag-del" data-i="${i}" aria-label="Delete ${esc(t)}">✕</button></div>`).join('')}</div>
@@ -765,6 +928,23 @@ async function offlineLibs(el) {
   out(el, '<p class="small" style="color:var(--teal-dark)">Ready: PDF and photo reading work offline on this phone.</p>');
 }
 
+function toggleCut(cur, c) {
+  const list = [...(cur || [])];
+  if (c === '__mot') { const on = MOTIVATIONAL.every((x) => list.includes(x)); return on ? list.filter((x) => !MOTIVATIONAL.includes(x)) : [...list.filter((x) => !MOTIVATIONAL.includes(x)), ...MOTIVATIONAL]; }
+  return list.includes(c) ? list.filter((x) => x !== c) : [...list, c];
+}
+// Talk instead of typing: the phone's speech recognition fills the note box (Android Chrome; needs a signal).
+function dictate(btn) {
+  const ta = document.getElementById(btn.dataset.for); if (!ta || !SR) return;
+  if (dictate.rec) { dictate.rec.stop(); return; }
+  const rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
+  const label = btn.textContent; btn.textContent = '● Listening… tap to stop';
+  rec.onresult = (e) => { const said = [...e.results].map((x) => x[0].transcript).join(' ').trim(); if (said) ta.value = (ta.value.trim() ? ta.value.trim() + ' ' : '') + said; };
+  rec.onerror = (e) => toast(e.error === 'network' ? 'Dictation needs a signal' : e.error === 'not-allowed' ? 'Allow the microphone to dictate' : 'Dictation stopped');
+  rec.onend = () => { btn.textContent = label; dictate.rec = null; };
+  dictate.rec = rec; rec.start();
+}
+
 // ---------- clicks ----------
 document.addEventListener('click', async (ev) => {
   const t = ev.target.closest('[data-act]');
@@ -869,7 +1049,49 @@ document.addEventListener('click', async (ev) => {
       renderTools(); return;
     }
     if (a === 'offline-libs') { await offlineLibs($('#o-off')); return; }
-    if (a === 'cut') { const c = t.dataset.c; S.settings.cuts = S.settings.cuts.includes(c) ? S.settings.cuts.filter((x) => x !== c) : [...S.settings.cuts, c]; await store.set('settings', S.settings); recompute(); renderTools(); return; }
+    if (a === 'cut') { const list = toggleCut(S.model.meetCuts || S.settings.cuts, t.dataset.c); S.settings.cuts = list; await store.set('settings', S.settings); await addOp('cuts', { session: null, list }); return; }
+    if (a === 'cut-s') {
+      const n = +t.dataset.s, list = toggleCut(S.model.cutsOf(n), t.dataset.c), B = blockOf(SS(), n);
+      const targets = $('#cut-both') && $('#cut-both').checked && B ? B.sessions.map((x) => x.n) : [n];
+      await addOp('cuts', { session: targets, list }); return;
+    }
+    if (a === 'cut-reset') { ev.preventDefault(); await addOp('cuts', { session: [+t.dataset.s], list: null }); return; }
+    if (a === 'quick-toggle') { S.settings.quick = t.checked; await store.set('settings', S.settings); return; }
+    if (a === 'coach') { S.coach = t.dataset.c; S.pool = ''; render(); return; }
+    if (a === 'star') {
+      const r = S.model.rows.find((x) => x.id === t.dataset.id); if (!r) return;
+      const inSheet = !!t.closest('#sheet');
+      await addOp('star', { entry: r.id, on: !r.starred }); if (inSheet) openEntry(r.id); else toast(r.starred ? 'Unstarred' : '★ Starred for the wrap-up', 1400); return;
+    }
+    if (a === 'qtag') {
+      const r = S.model.rows.find((x) => x.id === t.dataset.id), tg = t.dataset.t; if (!r) return;
+      if (t.getAttribute('aria-pressed') === 'true') {
+        const only = [...r.notes].reverse().find((n) => !n.text && (n.tags || []).length === 1 && n.tags[0] === tg && n.op);
+        if (only) { await addOp('undo', { op: only.op }); toast(`Removed “${tg}”`, 1400); } else toast('That tag is on a written note: open the swim to change it');
+        return;
+      }
+      await addOp('note', { entry: r.id, text: '', tags: [tg] }); toast(`${r.swimmer.first || r.swimmer.name}: ${tg}`, 1400); return;
+    }
+    if (a === 'dq-open') { ev.preventDefault(); openDq(t.dataset.id); return; }
+    if (a === 'dq-save') {
+      const r = S.model.rows.find((x) => x.id === t.dataset.id); if (!r) return;
+      const codes = [...document.querySelectorAll('#sheet .dqc[aria-pressed=true]')].map((x) => x.textContent), text = $('#dqtext').value.trim();
+      if (!(r.result && r.result.status === 'DQ')) await addOp('result', { entry: r.id, time: null, status: 'DQ', source: 'manual', official: false });
+      if (codes.length || text || r.dq) await addOp('dq', { entry: r.id, codes, text });
+      closeSheet(); toast(codes.length || text ? 'DQ saved with the reason' : 'DQ saved · add the reason in the wrap-up'); return;
+    }
+    if (a === 'checkin') {
+      const B = blockOf(SS(), +t.dataset.b), on = t.dataset.on === '1';
+      await addOp('sscratch', { sessions: B.sessions.map((x) => x.n), swimmer: +t.dataset.id, on }); return;
+    }
+    if (a === 'assign-save') {
+      const coach = $('#as-coach').value.trim(); if (!coach) { toast('Type the coach’s name'); return; }
+      const pools = [...document.querySelectorAll('.as-pool:checked')].map((x) => +x.value);
+      await addOp('assign', { block: +t.dataset.b, coach, pools, group: $('#as-group').value }); toast(`${coach} assigned`); return;
+    }
+    if (a === 'assign-del') { ev.preventDefault(); await addOp('assign', { block: +t.dataset.b, coach: t.dataset.c, on: false }); return; }
+    if (a === 'copy-meet') { await navigator.clipboard.writeText(meetText()); toast('Copied'); return; }
+    if (a === 'mic') { dictate(t); return; }
   } catch (e) { toast(e.message, 4000); }
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 't') $('[data-act=save-time]').click(); if (e.key === 'Escape') closeSheet(); });

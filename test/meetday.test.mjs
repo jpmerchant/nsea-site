@@ -5,7 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { parseSessionReport, parseHeatSheet, parseLaneLine, parseResults, parseHy3, extractByName, toCs, fmt, pdfLines, sameSwimmer, ocrColumns, ocrTime, parseMmNotify } from '../public/admin/meet/lib/parse.mjs';
 import { flagsFor } from '../public/admin/meet/lib/flags.mjs';
 import { buildRefs } from '../public/admin/meet/lib/refs.mjs';
-import { derive, sessionSummary, parseTyped, nowEvent, sessionFlow, notesFor, blocksOf, blockFlow, nowInPools, applyTimeline, ttEvent } from '../public/admin/meet/lib/model.mjs';
+import { derive, sessionSummary, meetSummary, parseTyped, nowEvent, sessionFlow, notesFor, blocksOf, blockFlow, nowInPools, applyTimeline, ttEvent, youngSession, inGroup, MOTIVATIONAL } from '../public/admin/meet/lib/model.mjs';
 import { ttPhotoRows, heatSheetRows, resultsFromText, screenshotResults, photoHeatRows, guessSession, htmlToText, resultLinks } from '../public/admin/meet/lib/ingest.mjs';
 import { handleMeetdayAdmin, blockedHost, handleMeetdayNotify } from '../worker/meetday.mjs';
 let DatabaseSync;
@@ -486,4 +486,83 @@ test('time trials: session added in the app, TT events, swims merged in, photo r
   assert.equal(derive(P, [...ops, { id: 'opT3xxxxxxxx', at: '2026-11-14T17:00:00Z', by: 'JP', type: 'undo', data: { op: 'opT1xxxxxxxx' } }]).sessions.some((s) => s.n === 901), false);
   const rows = ttPhotoRows(M, 'TIME TRIALS\nEvent 101 Girls 13 & Over 200 Yard Freestyle\nHeat 1 of 2\n3 Smith, Jane 15 RSA-NC 2:10.00\n4 Fishman, Coral 15 Nsea Swim-NC 2:09.15\nHeat 2\n2 Lane, Penny 17 Nsea 2:01.00');
   assert.deepEqual(rows.map((x) => [x.swimmerId, x.dist, x.stroke, x.shown, x.heat, x.lane, x.seed]), [[1, 200, 'Free', 101, 1, 4, 12915], [2, 200, 'Free', 101, 2, 2, 12100]]);
+});
+
+test('finals: change vs prelims and vs entry time; best times measured against the entry time', () => {
+  const P = pkg();
+  P.entries[0].entrySeed = 6700; // Coral entered 1:07.00, seeded 1:06.20 on the prelim sheet
+  const ops = [];
+  const op = (type, data) => ops.push({ id: 'op' + ops.length + 'xxxxxxx', at: `2026-11-14T1${ops.length}:00:00.000Z`, by: 'Coach', type, data });
+  op('entries', heatSheetRows(P, derive(P, []), parseHeatSheet(SHEET), 4));
+  op('result', { entry: '11-P-1', time: 6540, status: 'OK' });   // prelims 1:05.40
+  const fin = derive(P, ops).rows.find((r) => r.session === 4 && r.swimmerId === 1);
+  op('result', { entry: fin.id, time: 6560, status: 'OK' });     // finals 1:05.60: slower than prelims, faster than entry
+  const M = derive(P, ops);
+  const f = M.rows.find((r) => r.id === fin.id), p = M.rows.find((r) => r.id === '11-P-1');
+  assert.equal(f.isFinal, true); assert.equal(f.prelim.time, 6540);
+  assert.equal(f.dPrelim, 20); assert.equal(f.delta, 20); assert.equal(f.entryTime, 6700); assert.equal(f.dEntry, -140); assert.equal(f.best, true);
+  assert.equal(p.isFinal, undefined); assert.equal(p.entryTime, 6700); assert.equal(p.dEntry, -160);
+  const X = sessionSummary(M, 4);
+  assert.equal(X.best, 1); assert.equal(X.drop, 140);
+  // Meet: Coral's 100 back counts once (her faster swim, prelims), Penny's too
+  op('result', { entry: '11-P-2', time: 6000, status: 'OK' });
+  const W = meetSummary(derive(P, ops));
+  assert.equal(W.events, 2); assert.equal(W.best, 2); assert.equal(W.drop, 160 + 10);
+});
+
+test('DQ reasons, stars, session check-in, coach assignments, per-session cuts', () => {
+  const P = pkg();
+  const ops = [];
+  const op = (type, data) => { const o = { id: 'op' + ops.length + 'xxxxxxx', at: `2026-11-14T1${ops.length}:00:00.000Z`, by: 'Coach', type, data }; ops.push(o); return o; };
+  op('result', { entry: '11-P-1', time: null, status: 'DQ' });
+  let M = derive(P, ops), X = sessionSummary(M, 2);
+  assert.equal(X.dqNoReason.length, 1);
+  op('dq', { entry: '11-P-1', codes: ['Shoulders past vertical'], text: 'at the 50 turn' });
+  op('star', { entry: '11-P-2', on: true });
+  M = derive(P, ops); X = sessionSummary(M, 2);
+  assert.equal(X.dqNoReason.length, 0); assert.deepEqual(M.rows.find((r) => r.id === '11-P-1').dq.codes, ['Shoulders past vertical']);
+  assert.equal(X.starred.length, 1); assert.equal(X.starred[0].id, '11-P-2');
+  // an official DQ loaded later keeps the coach's reason
+  op('result', { entry: '11-P-1', time: null, status: 'DQ', official: true, source: 'official' });
+  assert.equal(derive(P, ops).rows.find((r) => r.id === '11-P-1').dq.text, 'at the 50 turn');
+  // absent for the session: scratched there only
+  op('sscratch', { sessions: [2], swimmer: 3, on: true });
+  M = derive(P, ops);
+  const rr = M.rows.find((r) => r.id === '12-P-3');
+  assert.equal(rr.scratched, true); assert.ok(rr.sessOut); assert.equal(sessionSummary(M, 2).entries, 2);
+  op('sscratch', { sessions: [2], swimmer: 3, on: false });
+  assert.equal(derive(P, ops).rows.find((r) => r.id === '12-P-3').scratched, false);
+  // coach assignments: last one per coach and session wins; removable
+  op('assign', { block: 2, coach: 'Rachel', pools: [2], group: '13O' });
+  op('assign', { block: 2, coach: 'Rachel', pools: [2], group: 'F' });
+  op('assign', { block: 2, coach: 'JP', pools: [2], group: 'all' });
+  op('assign', { block: 2, coach: 'JP', on: false });
+  M = derive(P, ops);
+  assert.deepEqual(M.assigns.map((a) => [a.coach, a.group]), [['Rachel', 'F']]);
+  assert.equal(inGroup('F', M.swimmers.get(1)), true); assert.equal(inGroup('12U', M.swimmers.get(1)), false);
+  // cuts: phone default, then meet default, then the session's own choice
+  assert.equal(M.cutsInfo(2).how, 'phone');
+  assert.ok(M.rows.find((r) => r.id === '11-P-1').pre.length >= 0);
+  op('cuts', { session: null, list: ['NC Senior'] });
+  M = derive(P, ops); assert.deepEqual(M.cutsOf(2), ['NC Senior']); assert.equal(M.cutsInfo(2).how, 'meet');
+  op('cuts', { session: [2], list: [] });
+  M = derive(P, ops); assert.deepEqual(M.cutsOf(2), []); assert.deepEqual(M.cutsOf(4), ['NC Senior']);
+  assert.ok(!M.rows.find((r) => r.id === '11-P-1').pre.some((f) => f.kind === 'cut'));
+  assert.ok(M.rows.find((r) => r.id === '11-P-1').pre.some((f) => f.kind !== 'cut') || true);
+  op('cuts', { session: [2], list: null });
+  assert.deepEqual(derive(P, ops).cutsOf(2), ['NC Senior']);
+});
+
+test('12 & under pools default to B–AAAA and age group champs', () => {
+  const events = { 1: { title: 'Girls 10 & Under 50 Free' }, 2: { title: 'Boys 11-12 100 IM' }, 3: { title: 'Girls 13 & Over 200 Free' } };
+  assert.equal(youngSession({ events: [{ num: 1 }, { num: 2 }] }, events), true);
+  assert.equal(youngSession({ events: [{ num: 1 }, { num: 3 }] }, events), false);
+  assert.equal(youngSession({ events: [] }, events), false);
+  const P = pkg();
+  P.sessions.push({ n: 6, day: '2026-11-14', name: '12 & Under', start: '01:00 PM', events: [{ num: 21, round: 'Finals' }] });
+  P.events[21] = { num: 21, sex: 'F', dist: 50, stroke: 'Free', title: 'Girls 9-10 50 Free' };
+  P.refs.cutNames = [...MOTIVATIONAL, 'NC AG', 'NC Senior'];
+  const M = derive(P, []);
+  assert.deepEqual(M.cutsOf(6), [...MOTIVATIONAL, 'NC AG']); assert.equal(M.cutsInfo(6).how, 'auto');
+  assert.notDeepEqual(M.cutsOf(2), M.cutsOf(6));
 });

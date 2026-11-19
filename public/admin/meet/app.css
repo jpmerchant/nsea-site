@@ -161,3 +161,20 @@ table.tt input{width:48px;font-size:15px;padding:6px 4px;text-align:center;borde
 table.tt input.ttnum{width:44px;margin-top:4px;display:block}
 table.tt input[data-k=seed]{width:68px}
 .ttcard label.btn input{display:none}
+
+/* one-tap tags + star under each swim card */
+.quick{display:flex;gap:6px;align-items:center;padding:0 12px 8px 66px;margin-top:-4px}
+.quick .chips{flex:1;min-width:0}
+.quick .chip.qt{padding:5px 9px;font-size:11px}
+.qstar{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;width:32px;height:28px;font-size:16px;line-height:1;cursor:pointer;color:var(--amber)}
+.qstar[aria-pressed=true]{background:var(--amber-tint);border-color:var(--amber)}
+.star-dot{margin-left:4px;color:var(--amber);font-size:13px}
+.row .res small.blk{display:block;white-space:nowrap}
+.dqwhy{color:var(--coral)}
+.stepnav{margin-bottom:10px}
+.stepnav a{text-decoration:none;color:inherit}
+.card.todo{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-tint)}
+.sumlist .btn.sm{margin-left:6px;min-height:28px;padding:3px 8px}
+tr.scr td{opacity:.55}
+.mic{min-width:0}
+@media print{.quick,.stepnav{display:none}}
