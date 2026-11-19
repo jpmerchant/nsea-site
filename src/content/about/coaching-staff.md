@@ -105,3 +105,28 @@ Genny is a certified water safety instructor and also coaches UNCW’s club swim
 </div>
 
 </div>
+
+<div class="staff">
+
+<img src="/assets/cdn/img/rachel_hs.jpg" alt="Coach Rachel Soubier on the pool deck at Earl Jackson Pool" loading="lazy">
+
+<div>
+
+#### Rachel Soubier
+
+Assistant Coach
+
+Primary Groups  
+Breakers / Surge
+
+[Email](mailto:rachel@nseaswim.com)
+
+Rachel is from Ellicott City, Maryland, where she learned to swim at 3 years old and grew up swimming for Rockville Montgomery Swim Club. She coached and gave lessons for her summer league swim team, Connecticut Belair, for several years. In college, she competed at the Division I level for the University of Pittsburgh and UNCW as a mid/distance freestyler and backstroker.
+
+Rachel graduated from UNCW in December 2025 with a Bachelor of Science degree in Cybersecurity, concentrating in Cyber Operations. During her final year, she worked as a research assistant and published a paper on malware. After graduation she wanted to return to coaching, and she joined the YMCA Narwhals summer swim team staff in the summer of 2026.
+
+In her free time, Rachel continues to swim as part of a local masters group and particularly enjoys open water events. Outside of the water, she works in cybersecurity risk management for the North Carolina state government. She likes watching baseball, reading, and playing with her cat, Maki.
+
+</div>
+
+</div>
