@@ -178,3 +178,16 @@ table.tt input[data-k=seed]{width:68px}
 tr.scr td{opacity:.55}
 .mic{min-width:0}
 @media print{.quick,.stepnav{display:none}}
+
+/* check-in: everyone starts checked in (green check); absent = red cross, struck-through name */
+.cicount{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 6px}
+.ci-tally{font:700 12px var(--f-mono);border-radius:999px;padding:4px 10px}
+.ci-tally.in{background:var(--teal-tint);color:var(--green)}
+.ci-tally.out{background:var(--coral);color:#fff}
+.ci{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;font:700 13px/1 var(--f-body);margin-right:8px;vertical-align:-5px}
+.ci.in{background:var(--green);color:#fff}
+.ci.out{background:var(--coral);color:#fff}
+tr.ci-out td{background:var(--coral-light)}
+tr.ci-out b{text-decoration:line-through;color:#8a1f0b}
+.ci-word{color:var(--coral);font-weight:700;text-transform:uppercase;font-size:11px}
+.times{margin:-4px 0 10px}
