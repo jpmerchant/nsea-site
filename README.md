@@ -212,3 +212,29 @@ npx wrangler d1 create nsea-hub          # done Nov 18 2026: database_id 7e588f1
 npx wrangler d1 execute nsea-hub --remote --yes --file="<NSEA Swim>/results-db/hub/hub.sql"   # after each export
 ```
 `hub.sql` drops and recreates its tables, so reloading replaces everything. The edge cache holds answers for up to an hour.
+
+## Practice Schedule (admin console › Practice Schedule)
+
+The base schedule for each season plus dated changes on top of it. One source feeds `/programs/schedule/` (this week, next week and the usual schedule) and the newsletter's weekly table (`/embeds/practice-week.html?start=YYYY-MM-DD`, or the JSON at `/api/content/schedule?start=YYYY-MM-DD&weeks=1`).
+
+**Weekly check.** Every Wednesday night (cron `0 2 * * 4`, 9 PM Eastern in winter / 10 PM in summer) the Worker reads the events calendar (`events.nseaswimteam.com/events.json`), the High School Meets / Holidays calendar, any school calendars that are switched on and, once WSL teams are set, the WSL Meets calendar. It puts suggestions in the Pending changes queue:
+
+| Trigger | Suggestion |
+|---|---|
+| Away meet | No practice for the groups entered, on the meet days (likely) |
+| Meet over Sat + Sun | Monday off for those groups (maybe) |
+| Home meet | Meet in place of practice (maybe) |
+| Team event for some groups | Replaces practice (maybe), or added on a day with no practice |
+| Holiday practice plan (`schedule` events) | Reminder to enter the times from the Holiday Break sheet; school-day checks are skipped inside it |
+| School holiday / teacher workday | AM practices only: move the time? (holiday likely, workday maybe). Early release ignored |
+| HS meet night | Only schools with NSEA swimmers count; 3+ swimming that night and Surge/Senior have a PM practice → shift? An NSEA event that night is flagged |
+| WSL meet (summer) | Senior PM shift, once the WSL teams with Senior swimmers are set; April/May reminder to set them |
+
+Nothing reaches families until it is approved. Rejected suggestions are never suggested again. Changes added by hand (taper, coach out, pool closure) are approved straight away. Each approved change has a "Posted in Captyn" tick.
+
+**One-time setup**
+
+1. `npx wrangler d1 migrations apply nsea-carpool --remote` (adds `sched_changes` and `sched_runs`).
+2. Give yourself (or other coaches) the **Practice Schedule** role under Admins (owners already have it).
+3. In Google Calendar, open the High School Meets / Holidays calendar's settings and copy its **Secret address in iCal format**. Paste it in Practice Schedule › Base schedule & settings › High school meets. Do the same for WSL Meets in the spring.
+4. Press **Run the check now** once to fill the queue.

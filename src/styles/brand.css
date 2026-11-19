@@ -309,3 +309,20 @@ main{padding:28px 0 64px;min-height:50vh}
 .uni-tech p{margin:10px 0 0;font-size:14px;line-height:1.5}
 .uni-tech .colors{font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.5px;color:var(--gray)}
 .cp-form .cp-btns label{margin-right:12px}
+
+/* Practice schedule (public page + admin console) */
+.sched-table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+.sched-table th,.sched-table td{border:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+.sched-table thead th{background:var(--teal);color:#fff;font:600 13px var(--f-head);letter-spacing:.4px;text-transform:uppercase}
+.sched-table tbody th{text-align:left;background:var(--panel);font-weight:600}
+.sched-table td.off{color:var(--gray-light)}
+.sched-table td.changed{background:var(--coral-light);font-weight:600;color:#a02a17}
+.sched-table td small{display:block;font-weight:400;font-size:11px;color:var(--gray)}
+.sched-table.edit td{padding:2px}
+.sched-table.edit input{width:100%;min-width:90px;font-size:13px;padding:3px 4px}
+.sched-table.edit input[type=checkbox]{width:auto;min-width:0;margin:0 6px 0 0}
+.sched-table.edit tbody th label{display:inline-flex;align-items:center;white-space:nowrap;font-weight:600}
+.sched-week{margin:0 0 24px}
+.sched-week h3{margin:0 0 6px}
+.sched-legend{font-size:13px;color:var(--gray);margin:4px 0 16px}
+.sched-legend span{background:var(--coral-light);color:#a02a17;font-weight:600;padding:1px 6px;border-radius:4px}

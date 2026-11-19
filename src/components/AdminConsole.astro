@@ -9,8 +9,8 @@
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own posts only)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own posts only)' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -54,7 +54,7 @@
   }
 
   // ---------- shell ----------
-  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'], ['meetday', 'Meet Day', 'meetday'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
+  var NAV = [['overview', 'Overview'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['schedule', 'Practice Schedule', 'schedule'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'], ['meetday', 'Meet Day', 'meetday'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
   function shell(content) {
     mount(
@@ -66,7 +66,7 @@
         })),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -80,6 +80,7 @@
         el('p', { class: 'cp-small' }, o.carpool.members + ' families · ' + o.carpool.openPosts + ' open posts · ' + o.carpool.matches + ' matches'),
         btn('Open Carpool', function () { go('carpool'); }, o.carpool.pending ? '' : 'ghost')));
       if (me.modules.indexOf('events') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Events & Calendar'), el('p', { class: 'cp-small' }, 'Edit the 2026–27 events and venues.'), btn('Open', function () { go('events'); }, 'ghost')));
+      if (me.modules.indexOf('schedule') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Practice Schedule'), el('p', null, el('strong', null, String(o.schedule || 0)), ' suggested change' + (o.schedule === 1 ? '' : 's') + ' waiting'), btn('Review', function () { go('schedule'); }, o.schedule ? '' : 'ghost')));
       if (o.admins != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Admins'), el('p', null, el('strong', null, String(o.admins)), ' people'), btn('Manage admins', function () { go('admins'); }, 'ghost')));
       box.replaceChildren(el('h2', null, 'Overview'), el('div', { class: 'ac-cards' }, cards),
         o.recent && o.recent.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Recent activity'), o.recent.map(logLine)) : null);
@@ -109,6 +110,165 @@
         el('div', { class: 'cp-panel' }, el('h3', null, 'Recent connections'),
           o.connections.length ? o.connections.slice(0, 50).map(function (c) { return el('p', { class: 'cp-small' }, c.requester + ' → ' + c.poster + ' (' + c.kind + ', ' + c.area + ') · ' + c.status + ' · ' + date(c.updated_at).slice(0, 10)); }) : el('p', { class: 'cp-empty' }, 'None yet.')));
     }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- practice schedule ----------
+  var stab = 'queue';
+  var KIND_LABEL = { cancel: 'No practice', time: 'Time change', replace: 'Replaced by', add: 'Added', info: 'FYI' };
+  var SRC_LABEL = { meet: 'Meet', 'team-event': 'Team event', holiday: 'Holiday plan', school: 'School day', hs: 'HS meets', wsl: 'WSL', reminder: 'Reminder', manual: 'Added by hand' };
+  var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function sday(d) { var t = new Date(d + 'T12:00:00Z'); return DOW[t.getUTCDay()] + ' ' + (+d.slice(5, 7)) + '/' + (+d.slice(8, 10)); }
+  function vSchedule() {
+    var box = el('div', null, loading());
+    var tabs = [['queue', 'Pending changes'], ['week', 'This week & next'], ['settings', 'Base schedule & settings']];
+    shell(el('div', null, el('h2', null, 'Practice Schedule'),
+      el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-selected': stab === t[0] ? 'true' : 'false', 'aria-current': stab === t[0] ? 'page' : 'false', onclick: function () { stab = t[0]; vSchedule(); } }, t[1]); })),
+      box));
+    api('GET', '/schedule').then(function (o) { ({ queue: sQueue, week: sWeek, settings: sSettings })[stab](box, o); }).catch(function (e) { fail(box, e); });
+  }
+  function sPost(path, body, okMsg) {
+    return api('POST', path, body || {}).then(function (r) { flash = typeof okMsg === 'function' ? okMsg(r) : okMsg; vSchedule(); }).catch(function (e) { alert(e.message); });
+  }
+  function groupSelect(groups, val, all) {
+    return el('select', { name: 'group_name' }, (all ? ['All'] : []).concat(groups).map(function (g) { return el('option', { value: g, selected: g === val }, g); }));
+  }
+  function addForm(o) {
+    var out = el('div');
+    var f = el('form', { class: 'cp-inline', onsubmit: function (e) {
+      e.preventDefault();
+      var b = {}; Array.prototype.forEach.call(f.elements, function (x) { if (x.name) b[x.name] = x.value; });
+      api('POST', '/schedule/changes', b).then(function () { flash = 'Change added and approved. Remember to post it in Captyn.'; vSchedule(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+    } },
+      el('label', null, 'Date', el('input', { type: 'date', name: 'date', required: true, min: o.today })),
+      el('label', null, 'Group', groupSelect(o.groups, 'All', true)),
+      el('label', null, 'Session', el('select', { name: 'session' }, el('option', { value: 'AM' }, 'AM'), el('option', { value: 'PM', selected: true }, 'PM'))),
+      el('label', null, 'Change', el('select', { name: 'kind' }, ['cancel', 'time', 'replace', 'add'].map(function (k) { return el('option', { value: k }, KIND_LABEL[k]); }))),
+      el('label', null, 'New time or label', el('input', { name: 'value', maxlength: 60, placeholder: '4:30 - 6:00  or  Rock Gym' })),
+      el('label', null, 'Note for families (optional)', el('input', { name: 'note', maxlength: 140, placeholder: 'Taper week' })),
+      el('label', null, 'Why (coaches only)', el('input', { name: 'reason', maxlength: 300, placeholder: 'Coach out, taper, pool closed…' })),
+      el('button', { class: 'btn small', type: 'submit' }, 'Add change'));
+    return el('div', null, f, out);
+  }
+  function chip(c) { return el('span', { class: 'chip ' + (c === 'likely' ? 'new' : c === 'maybe' ? 'pull' : '') }, c); }
+  function sQueue(box, o) {
+    var last = o.runs[0];
+    var nextMon = o.weeks[1].start;
+    var likely = o.queue.filter(function (q) { return q.confidence === 'likely' && ['cancel', 'add', 'replace'].indexOf(q.kind) >= 0; }).length;
+    var byDate = {};
+    o.queue.forEach(function (q) { (byDate[q.date] = byDate[q.date] || []).push(q); });
+    var list = Object.keys(byDate).sort().map(function (d) {
+      return el('div', { class: 'cp-panel' }, el('h3', null, sday(d)), byDate[d].map(function (q) {
+        var val = el('input', { value: q.value || '', maxlength: 60, 'aria-label': 'New time or label', placeholder: q.kind === 'time' ? 'New time, e.g. 4:30 - 6:00' : 'Label' });
+        var note = el('input', { value: q.note || '', maxlength: 140, 'aria-label': 'Note for families', placeholder: 'Note for families (optional)' });
+        var kind = el('select', { 'aria-label': 'Change', onchange: function () { val.hidden = kind.value === 'cancel'; } }, ['cancel', 'time', 'replace', 'add'].map(function (k) { return el('option', { value: k, selected: k === q.kind }, KIND_LABEL[k]); }));
+        val.hidden = q.kind === 'cancel';
+        return el('div', { class: 'cp-row' },
+          el('div', null, el('strong', null, (q.group_name === 'All' ? 'All groups' : q.group_name) + (q.kind === 'info' ? '' : ' ' + q.session) + ' · ' + KIND_LABEL[q.kind] + (q.value && q.kind !== 'time' ? ' ' + q.value : '')), ' ', chip(q.confidence),
+            el('p', { class: 'cp-small' }, (q.reason.indexOf(SRC_LABEL[q.source]) === 0 ? '' : (SRC_LABEL[q.source] || q.source) + ': ') + q.reason),
+            q.kind === 'info' ? null : el('div', { class: 'cp-inline' }, kind, val, note)),
+          el('div', { class: 'cp-btns' },
+            btn(q.kind === 'info' ? 'Got it' : 'Approve', function () {
+              api('POST', '/schedule/changes/' + q.id + '/approve', q.kind === 'info' ? {} : { kind: kind.value, value: val.value, note: note.value })
+                .then(function () { flash = q.kind === 'info' ? '' : 'Approved. Remember to post it in Captyn.'; vSchedule(); }).catch(function (e) { alert(e.message); });
+            }),
+            btn(q.kind === 'info' ? 'Dismiss' : 'Reject', function () { sPost('/schedule/changes/' + q.id + '/reject', {}, ''); }, 'ghost')));
+      }));
+    });
+    var upcoming = o.decided.filter(function (q) { return q.status === 'approved' && q.kind !== 'info' && q.date >= o.today; });
+    box.replaceChildren(
+      el('div', { class: 'cp-panel' },
+        el('p', null, last ? 'Last check: ' + date(last.at) + ' UTC (' + (last.by === 'cron' ? 'Wednesday night' : last.by) + ') · ' + last.added + ' new · covers ' + sday(last.window_start) + ' – ' + sday(last.window_end) : 'The check has not run yet. It runs every Wednesday night.'),
+        last && last.problems ? el('div', { class: 'cp-msg err' }, last.problems.split('\n').map(function (p) { return el('p', { class: 'cp-small' }, p); })) : null,
+        el('div', { class: 'cp-btns' }, btn('Run the check now', function (e) { e.target.disabled = true; e.target.textContent = 'Checking…'; sPost('/schedule/run', {}, function (r) { return 'Check done: ' + r.added + ' new suggestion(s)' + (r.removed ? ', ' + r.removed + ' no longer needed' : '') + '.'; }); }, 'ghost'),
+          likely ? btn('Approve all ' + likely + ' “likely” cancellations & replacements', function () { if (confirm('Approve all ' + likely + '? Time changes still need a time and stay in the list.')) sPost('/schedule/approve-likely', {}, function (r) { return r.approved + ' approved. Remember to post them in Captyn.'; }); }) : null)),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Anything else for the week of ' + sday(nextMon) + '?'),
+        el('p', { class: 'cp-small' }, 'Taper, coach out, pool closure, anything the calendars don’t show. Changes added here are approved straight away.'), addForm(o)),
+      o.queue.length ? el('div', null, el('h3', null, 'Suggested (' + o.queue.length + ')'), list) : el('p', { class: 'cp-empty' }, 'Nothing waiting. The next check runs Wednesday night.'),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'Approved, coming up (' + upcoming.length + ')'),
+        el('p', { class: 'cp-small' }, 'Captyn is where families look first. Tick each change once it is posted there.'),
+        upcoming.length ? upcoming.map(function (q) {
+          return el('div', { class: 'cp-row' },
+            el('div', null, el('strong', null, sday(q.date) + ' · ' + (q.group_name === 'All' ? 'All groups' : q.group_name) + ' ' + q.session + ' · ' + KIND_LABEL[q.kind] + (q.value ? ' ' + q.value : '')),
+              el('p', { class: 'cp-small' }, (SRC_LABEL[q.source] || q.source) + (q.reason ? ': ' + q.reason : '') + (q.note ? ' · Note: ' + q.note : '') + (q.decided_by ? ' · ' + q.decided_by : ''))),
+            el('div', { class: 'cp-btns' },
+              el('label', { class: 'inline' }, el('input', { type: 'checkbox', checked: !!q.captyn, onchange: function (e) { api('POST', '/schedule/changes/' + q.id + '/captyn', { on: e.target.checked }).catch(function (er) { alert(er.message); }); } }), ' Posted in Captyn'),
+              q.source_ref ? btn('Undo', function () { sPost('/schedule/changes/' + q.id + '/reopen', {}, 'Moved back to the suggestions.'); }, 'ghost')
+                : btn('Delete', function () { if (confirm('Delete this change?')) sPost('/schedule/changes/' + q.id + '/delete', {}, 'Deleted.'); }, 'ghost')));
+        }) : el('p', { class: 'cp-empty' }, 'None.')));
+  }
+  function weekTable(w) {
+    return el('div', { class: 'cp-panel' }, el('h3', null, 'Week of ' + sday(w.start) + (w.season ? ' · ' + w.season : '')),
+      el('div', { class: 'table-wrap' }, el('table', { class: 'sched-table' },
+        el('thead', null, el('tr', null, el('th', null, 'Group'), w.days.map(function (d) { return el('th', null, d.short); }))),
+        el('tbody', null, w.rows.map(function (r) {
+          return el('tr', null, el('th', { scope: 'row' }, r.group + ' ' + r.session), r.cells.map(function (c) { return el('td', { class: c.changed ? 'changed' : (c.text === 'Off' ? 'off' : '') }, c.text, c.note ? el('small', null, ' ' + c.note) : null); }));
+        })))),
+      el('p', { class: 'cp-small' }, 'Shaded cells are changes. Newsletter version: ', el('a', { href: '/embeds/practice-week.html?start=' + w.start, target: '_blank', rel: 'noopener' }, 'open the week table'), '.'));
+  }
+  function sWeek(box, o) { box.replaceChildren(el('p', { class: 'cp-small' }, 'Approved changes only. This is what families see on the website and in the newsletter.'), weekTable(o.weeks[0]), weekTable(o.weeks[1])); }
+  function sSettings(box, o) {
+    var cfg = JSON.parse(JSON.stringify(o.config)), c = cfg.check;
+    var DAYS6 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var out = el('div');
+    var seasonPanels = cfg.seasons.map(function (s) {
+      var rows = [];
+      o.groups.forEach(function (g) {
+        ['AM', 'PM'].forEach(function (ss) {
+          var has = s.base[g] && s.base[g][ss];
+          var cb = el('input', { type: 'checkbox', checked: !!has, 'aria-label': g + ' ' + ss + ' practices this season', onchange: function (e) {
+            if (e.target.checked) { s.base[g] = s.base[g] || {}; s.base[g][ss] = ['Off', 'Off', 'Off', 'Off', 'Off', 'Off']; } else if (s.base[g]) { delete s.base[g][ss]; }
+            box.replaceChildren(); sSettings(box, Object.assign({}, o, { config: cfg }));
+          } });
+          rows.push(el('tr', null, el('th', { scope: 'row' }, el('label', { class: 'inline' }, cb, ' ' + g + ' ' + ss)),
+            DAYS6.map(function (d, i) {
+              return el('td', null, has ? el('input', { value: s.base[g][ss][i], maxlength: 30, size: 11, 'aria-label': g + ' ' + ss + ' ' + d, oninput: function (e) { s.base[g][ss][i] = e.target.value; } }) : '');
+            })));
+        });
+      });
+      return el('div', { class: 'cp-panel' },
+        el('div', { class: 'cp-inline' },
+          el('label', null, 'Season name', el('input', { value: s.label, maxlength: 60, oninput: function (e) { s.label = e.target.value; } })),
+          el('label', null, 'Starts', el('input', { type: 'date', value: s.start, oninput: function (e) { s.start = e.target.value; } })),
+          el('label', null, 'Ends', el('input', { type: 'date', value: s.end, oninput: function (e) { s.end = e.target.value; } }))),
+        el('div', { class: 'table-wrap' }, el('table', { class: 'sched-table edit' }, el('thead', null, el('tr', null, el('th', null, 'Group / session'), DAYS6.map(function (d) { return el('th', null, d); }))), el('tbody', null, rows))),
+        el('label', { class: 'cp-form' }, 'Note shown with this season (optional)', el('input', { value: s.note || '', maxlength: 300, oninput: function (e) { s.note = e.target.value; } })),
+        el('p', { class: 'cp-small' }, 'Sunday is always off unless a dated change says otherwise. Use “Off” or “TBD” where there is no time yet.'));
+    });
+    function field(label, key, attrs, help) {
+      var v = Array.isArray(c[key]) ? c[key].join(', ') : c[key];
+      var inp = el('input', Object.assign({ value: v == null ? '' : v, oninput: function (e) { c[key] = e.target.value; } }, attrs || {}));
+      return el('label', null, label, inp, help ? el('span', { class: 'cp-small' }, help) : null);
+    }
+    var schools = c.schools.map(function (s) {
+      return el('div', { class: 'cp-inline' },
+        el('label', { class: 'inline' }, el('input', { type: 'checkbox', checked: !!s.on, onchange: function (e) { s.on = e.target.checked; } }), ' Check'),
+        el('label', null, 'Name', el('input', { value: s.name, maxlength: 60, oninput: function (e) { s.name = e.target.value; } })),
+        el('label', null, 'Calendar link (.ics)', el('input', { value: s.url, size: 50, oninput: function (e) { s.url = e.target.value; } })));
+    });
+    box.replaceChildren(
+      el('h3', null, 'Base schedule'), el('div', null, seasonPanels),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'High school meets'),
+        el('div', { class: 'cp-form' },
+          field('High School Meets / Holidays calendar link', 'hsUrl', { size: 60, placeholder: 'https://calendar.google.com/calendar/ical/…/basic.ics' }, 'In Google Calendar: Settings › this calendar › “Secret address in iCal format”. Kept private.'),
+          field('Schools with NSEA swimmers (comma separated)', 'hsSchools', { size: 60 }),
+          field('Shift when at least this many of them swim the same night', 'hsMin', { type: 'number', min: 1, max: 20 }),
+          field('Groups affected', 'hsGroups', { size: 30 }),
+          field('Its all-day events are school days for', 'hsSchoolDays', { size: 40 }, 'Leave empty if that calendar stops carrying the school holidays.'))),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'School calendars'), el('p', { class: 'cp-small' }, 'A school holiday only moves AM practices. Switch a county on when you have morning swimmers there.'), el('div', { class: 'cp-form' }, schools),
+        el('div', { class: 'cp-form' }, field('Counties that must be off before suggesting a change', 'minCounties', { type: 'number', min: 1, max: 6 }))),
+      el('div', { class: 'cp-panel' }, el('h3', null, 'WSL (summer)'),
+        el('div', { class: 'cp-form' },
+          field('WSL Meets calendar link', 'wslUrl', { size: 60 }, 'Same “Secret address in iCal format” step.'),
+          field('WSL teams with Senior swimmers (comma separated)', 'wslTeams', { size: 60 }, 'Usually known in April or May. Until then WSL meets are not checked.'),
+          field('Groups affected', 'wslGroups', { size: 30 }))),
+      el('div', { class: 'cp-panel' }, el('div', { class: 'cp-form' }, field('Days ahead the check looks', 'lookaheadDays', { type: 'number', min: 7, max: 60 }))),
+      out,
+      el('div', { class: 'cp-btns' },
+        btn('Save settings', function () {
+          ['hsSchools', 'hsGroups', 'wslTeams', 'wslGroups'].forEach(function (k) { if (!Array.isArray(c[k])) c[k] = String(c[k] || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); });
+          api('POST', '/schedule/settings', cfg).then(function () { flash = 'Settings saved. The website schedule updates within a minute.'; vSchedule(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+        }),
+        btn('Reset to starting values', function () { if (confirm('Go back to the starting schedule and settings? Calendar links you added will be removed.')) sPost('/schedule/settings/reset', {}, 'Reset to the starting values.'); }, 'ghost')));
   }
 
   // ---------- events / content (stage 2) ----------
