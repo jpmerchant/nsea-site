@@ -82,3 +82,30 @@ test('hub: swimmer search, profile, splits, benchmarks, cutoffs, meets', { skip:
   assert.equal((await get(env, '/meet/1')).json.swims.length, 2);
   const meta = (await get(env, '/meta')).json; assert.equal(meta.series[0].series, 'NC_SC_AG'); assert.equal(meta.series[0].champ, 1);
 });
+
+test('hub: historical standards by date (series / is_current)', { skip: !DatabaseSync }, async () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(SCHEMA.replace('note text, as_of text);', 'note text, as_of text, series text, is_current int);'));
+  db.exec(`insert into hub_meta values('built','2026-11-20');
+    insert into hub_benchmark_set values
+      (1,'MOT_A','A','standard','motivational','Y','2024-2028 Motivational','2024-09-01','2028-08-31','by_age',null,null,null,'MOT_A',1),
+      (2,'H_MOT2012_A','A · 2009-2012','standard','motivational','Y','2009-2012 Motivational','2008-09-01','2012-08-31','by_age',null,'historical edition',null,'MOT_A',0),
+      (3,'NSEA_REC','NSEA Team Record','record','team','Y','db',null,null,'by_age',null,null,null,'NSEA_REC',1),
+      (4,'NCAG','NC AG','standard','lsc','Y','2027 NC AG',null,null,'by_age',null,null,null,'NCAG',1);
+    insert into hub_benchmark_time values(1,'F','11-12',11,12,50,1,0,'Y',2929,'29.29',null,null,null,null,null,null),
+      (2,'F','11-12',11,12,50,1,0,'Y',3019,'30.19',null,null,null,null,null,null),
+      (3,'F','11-12',11,12,50,1,0,'Y',2600,'26.00',null,'Ava Able','NSEA','2026-02-26',null,null),
+      (4,'F','11-12',11,12,50,1,0,'Y',2850,'28.50',null,null,null,null,null,null);`);
+  const prep = (sql) => ({ bind: (...b) => ({ first: async () => db.prepare(sql).get(...b) ?? null, all: async () => ({ results: db.prepare(sql).all(...b) }) }) });
+  const env = { HUB: { prepare: (sql) => { const p = prep(sql); return { ...p.bind(), bind: p.bind }; } } };
+  const q = '/benchmarks?course=Y&distance=50&stroke=1&sex=F&age=12';
+  assert.deepEqual((await get(env, q)).json.benchmarks.map((b) => b.code), ['NSEA_REC', 'NCAG', 'MOT_A']);   // today's standards only
+  assert.deepEqual((await get(env, q + '&asof=2011-03-01')).json.benchmarks.map((b) => b.code), ['NSEA_REC', 'NCAG', 'H_MOT2012_A']);   // edition in force; records kept
+  assert.deepEqual((await get(env, q + '&asof=2025-01-10')).json.benchmarks.map((b) => b.code), ['NSEA_REC', 'NCAG', 'MOT_A']);
+  const old = (await get(env, q + '&asof=2001-01-01')).json.benchmarks;
+  assert.deepEqual(old.map((b) => b.code), ['NSEA_REC', 'NCAG']);   // no motivational edition on file that early
+  assert.equal(old.find((b) => b.code === 'NCAG').undated, 1);   // no older NC AG edition: today's times, flagged
+  const meta = (await get(env, '/meta')).json;
+  assert.equal(meta.standards_history_from, '2008-09-01');
+  assert.deepEqual(meta.benchmark_sets.map((s) => s.code).sort(), ['MOT_A', 'NCAG', 'NSEA_REC']);   // the picker list is unchanged
+});

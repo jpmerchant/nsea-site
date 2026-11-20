@@ -17,6 +17,9 @@ const ok = (data) => json(data, 200, CACHE);
 // /meta carries the data's `built` stamp, which the page adds (as v=) to every other request, so it is only cached briefly.
 const META_CACHE = { 'cache-control': 'public, max-age=0, s-maxage=60' };
 const rows = async (stmt) => (await stmt.all()).results || [];
+// hub_benchmark_set.series / is_current arrived with the historical standards (Nov 20 2026). Until a hub copy that has
+// them is loaded, run the older query instead of failing.
+const tryRows = async (stmt, fallback) => { try { return await rows(stmt()); } catch (e) { if (/no such column/i.test(String(e?.message || e))) return rows(fallback()); throw e; } };
 
 // Event filter shared by the list and the compare views.
 function eventFilter(q) {
@@ -31,10 +34,12 @@ async function meta(env) {
     rows(env.HUB.prepare('SELECT key, value FROM hub_meta')),
     rows(env.HUB.prepare(`SELECT series, MAX(champ_level) AS champ_level, MAX(is_champ) AS champ, COUNT(*) AS meets, MIN(substr(start_date,1,4)) AS first_year, MAX(substr(start_date,1,4)) AS last_year
       FROM hub_meet WHERE series IS NOT NULL GROUP BY series ORDER BY series`)),
-    rows(env.HUB.prepare(`SELECT id, code, label, family, level, course, edition, as_of FROM hub_benchmark_set WHERE family <> 'cutoff' ORDER BY family, level, label`)),
+    tryRows(() => env.HUB.prepare(`SELECT id, code, label, family, level, course, edition, as_of FROM hub_benchmark_set WHERE family <> 'cutoff' AND COALESCE(is_current, 1) = 1 ORDER BY family, level, label`),
+      () => env.HUB.prepare(`SELECT id, code, label, family, level, course, edition, as_of FROM hub_benchmark_set WHERE family <> 'cutoff' ORDER BY family, level, label`)),
     rows(env.HUB.prepare('SELECT DISTINCT season FROM hub_meet WHERE season IS NOT NULL ORDER BY season DESC')),
   ]);
-  return json({ meta: Object.fromEntries(m.map((r) => [r.key, r.value])), series, benchmark_sets: sets, seasons: seasons.map((r) => r.season) }, 200, META_CACHE);
+  const hist = await tryRows(() => env.HUB.prepare(`SELECT MIN(effective_from) AS first FROM hub_benchmark_set WHERE is_current = 0`), () => env.HUB.prepare('SELECT NULL AS first'));
+  return json({ meta: Object.fromEntries(m.map((r) => [r.key, r.value])), series, benchmark_sets: sets, seasons: seasons.map((r) => r.season), standards_history_from: hist[0]?.first || null }, 200, META_CACHE);
 }
 
 async function swimmers(env, q) {
@@ -112,6 +117,8 @@ async function rank(env, q) {
 }
 
 // Every reference time for one event at one age: standards, records, and (optionally) championship cutoffs.
+// Standards: today's editions by default; with asof=YYYY-MM-DD, the edition of each standard in force on that date
+// (older editions from the historical archive, Nov 20 2026). Records and cutoffs are the same either way.
 async function benchmarks(env, q) {
   const f = eventFilter(q);
   if (f.error) return fail(400, f.error);
@@ -119,12 +126,21 @@ async function benchmarks(env, q) {
   const age = int(q.get('age'), 0, 99);
   const fam = q.get('cutoffs') === '1' ? '' : "AND s.family <> 'cutoff'";
   const ageSql = age === null ? '' : 'AND ? BETWEEN t.age_lo AND t.age_hi';
-  const list = await rows(env.HUB.prepare(`SELECT s.id AS set_id, s.code, s.label, s.family, s.level, s.edition, t.age_group, t.age_lo, t.age_hi,
-      t.time_cs, t.time_text, t.rank, t.holder, t.holder_team, t.swim_date, t.meet, t.note
-    FROM hub_benchmark_time t JOIN hub_benchmark_set s ON s.id = t.set_id
-    WHERE t.course = ? AND t.distance = ? AND t.stroke = ? AND t.sex = ? AND t.is_relay = 0 ${fam} ${ageSql}
-    ORDER BY t.time_cs`).bind(f.course, f.distance, f.stroke, f.sex, ...(age === null ? [] : [age])));
-  return ok({ benchmarks: list });
+  const asof = date(q.get('asof'));
+  const when = asof
+    ? `AND (s.family <> 'standard' OR (COALESCE(s.effective_from, '0000') <= ? AND COALESCE(s.effective_to, '9999') >= ?))`
+    : 'AND COALESCE(s.is_current, 1) = 1';
+  const cols = `s.id AS set_id, s.code, s.label, s.family, s.level, s.edition, t.age_group, t.age_lo, t.age_hi,
+      t.time_cs, t.time_text, t.rank, t.holder, t.holder_team, t.swim_date, t.meet, t.note`;
+  const base = `FROM hub_benchmark_time t JOIN hub_benchmark_set s ON s.id = t.set_id
+    WHERE t.course = ? AND t.distance = ? AND t.stroke = ? AND t.sex = ? AND t.is_relay = 0 ${fam} ${ageSql}`;
+  const bind = [f.course, f.distance, f.stroke, f.sex, ...(age === null ? [] : [age])];
+  const list = await tryRows(
+    () => env.HUB.prepare(`SELECT ${cols}, COALESCE(s.is_current, 1) AS current, s.effective_from, s.effective_to ${base} ${when} ORDER BY t.time_cs`).bind(...bind, ...(asof ? [asof, asof] : [])),
+    () => env.HUB.prepare(`SELECT ${cols} ${base} ORDER BY t.time_cs`).bind(...bind));
+  // A standard with no older editions on file shows its current times on any date; flag it so the page can say so.
+  if (asof) for (const r of list) if (r.family === 'standard' && r.current === 1 && !r.effective_from) r.undated = 1;
+  return ok({ benchmarks: list, asof });
 }
 
 // Championship placing history: Nth-place times by year for one series and event age group.
