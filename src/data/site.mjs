@@ -164,7 +164,7 @@ export const pages = [
   { path: '/times/achievements/', type: 'hub', title: 'Achievements by Season', desc: 'The year-by-year story of the team.', status: 'rebuild' },
   { path: '/times/achievements/2025-26/', type: 'page', title: '2025 – 2026', desc: 'Championship finishes, new team records and every board addition from the 2025–26 season.', status: 'done', from: ['/2025---2026', '/2025---26-updates', '/records-set-in-2025---26'], embed: '/embeds/board-additions-2025-26.html', legacy: ['public/embeds/new-additions.html (2025–26 version, rebuilt from the results database Nov 2026)'], height: 1600 },
   { path: '/times/achievements/2024-25/', type: 'page', title: '2024 – 2025', desc: '', status: 'done', from: ['/2024---2025'] },
-  { path: '/times/achievements/2023-24/', type: 'tool', title: '2023 – 2024', desc: '', embed: '/embeds/achievements-2023-24.html', status: 'done', from: ['/2023---2024'] },
+  { path: '/times/achievements/2023-24/', type: 'tool', title: '2023 – 2024', desc: 'Team finishes, NC qualifiers, national cuts, records, IMX and a season timeline, rebuilt from the results database.', embed: '/embeds/achievements-2023-24.html', status: 'done', from: ['/2023---2024'] },
   { path: '/times/achievements/2022-23/', type: 'tool', title: '2022 – 2023', desc: '', embed: '/embeds/achievements-2022-23.html', status: 'done', from: ['/2022---23-achievements'] },
 
   // ------------------------------------------------------------- TRAINING ----
