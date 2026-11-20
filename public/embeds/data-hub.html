@@ -131,6 +131,7 @@ tr.foc td:first-child{box-shadow:inset 4px 0 0 var(--coral)}tr.avg td{font-style
   <div class="row noprint">
     <div><div class="lbl">View</div><div class="pills" id="c-view"></div></div>
     <div><div class="lbl">Championship</div><select id="c-series"></select></div>
+    <div><div class="lbl">Standards</div><select id="c-asof"></select></div>
     <div id="c-agbox"><div class="lbl">Event age group</div><select id="c-ag"></select></div>
     <div id="c-avgbox" class="opts"><label><input type="checkbox" id="c-avg" checked> 3-year averages in the ladder</label></div>
   </div>
@@ -210,12 +211,17 @@ function drawProfile() {
   pills($('p-course'), [['Y', 'SCY'], ['L', 'LCM']].filter(([c]) => P.swims.some((x) => x.course === c)), P.course, (c) => { P.course = c; drawProfile(); });
   $('profile').querySelector('table').onclick = (e) => { const tr = e.target.closest('tr[data-k]'); if (tr) eventDetail(tr.dataset.k); };
 }
-async function eventDetail(k) {
+async function eventDetail(k, asof) {
   const [d, st] = k.split(' ').map(Number);
   const list = P.swims.filter((x) => x.course === P.course && x.distance === d && x.stroke === st).sort((a, b) => (a.swim_date < b.swim_date ? -1 : 1));
   const best = list.reduce((a, b) => (b.time_cs < a.time_cs ? b : a));
-  const age = list[list.length - 1].age;
-  const bm = (await api(`/benchmarks?course=${P.course}&distance=${d}&stroke=${st}&sex=${P.swimmer.sex}${age != null ? '&age=' + age : ''}`)).benchmarks;
+  let age = list[list.length - 1].age;
+  // Default: the editions in force on the date of the best swim ('swim'), at the age swum then; '' = today's standards
+  // (latest age); a date = that season's editions.
+  if (asof === undefined) asof = 'swim';
+  const at = asof === 'swim' ? best.swim_date : asof;
+  if (asof === 'swim' && best.age != null) age = best.age;
+  const bm = (await api(`/benchmarks?course=${P.course}&distance=${d}&stroke=${st}&sex=${P.swimmer.sex}${age != null ? '&age=' + age : ''}${asofQ(at)}`)).benchmarks;
   const met = bm.filter((b) => b.family === 'standard' && best.time_cs <= b.time_cs).sort((a, b) => a.time_cs - b.time_cs)[0];
   const next = bm.filter((b) => b.family === 'standard' && b.time_cs < best.time_cs).sort((a, b) => b.time_cs - a.time_cs)[0];
   $('p-event').innerHTML = `<h2>${evName(d, st)} <span>${CNAME[P.course]}</span></h2>
@@ -225,7 +231,12 @@ async function eventDetail(k) {
     <div class="block" style="flex:1 1 420px"><h3>Every swim</h3><table><tr><th>Date</th><th class="tm">Time</th><th>Rd</th><th class="n">Pl</th><th class="n">Age</th><th>Meet</th><th></th></tr>
       ${list.slice().reverse().map((x) => `<tr${x === best ? ' class="me"' : ''}><td class="mut">${esc(x.swim_date)}</td><td class="tm">${fmt(x.time_cs)}</td><td>${esc(x.round || '')}${x.kind === 'L' ? ' r' : ''}</td><td class="n">${x.place ?? ''}</td><td class="n">${x.age ?? ''}</td><td class="mut">${esc(x.meet)}</td><td>${x.splits ? `<a class="btn" style="padding:1px 8px;font-size:12px" data-split="${x.id}">splits</a>` : ''}</td></tr><tr class="hide" id="sp${x.id}"><td colspan="7"></td></tr>`).join('')}
     </table></div>
-    <div class="block ladder" style="flex:1 1 380px"><h3>Standards and records</h3>${ladder(bm, best.time_cs, 'Best')}</div></div>`;
+    <div class="block ladder" style="flex:1 1 380px"><h3>Standards and records</h3>
+      <div class="noprint" style="padding:0 10px 6px"><select id="p-asof"></select></div>
+      <div class="note" style="padding:0 10px">${at ? `Editions in force ${asof === 'swim' ? 'on ' + esc(best.swim_date) + ', the date of the best swim' : 'in the ' + asofSeason(at) + ' season'}.` : "Today's standards."}</div>
+      ${ladder(bm, best.time_cs, 'Best')}</div></div>`;
+  seasonOptions($('p-asof'), asof, `<option value="swim">Standards on the swim date</option><option value="">Today's standards</option>`);
+  $('p-asof').onchange = () => eventDetail(k, $('p-asof').value);
   $('p-event').onclick = async (e) => {
     const a = e.target.closest('[data-split]'); if (!a) return;
     const row = $('sp' + a.dataset.split); if (!row.classList.contains('hide')) { row.classList.add('hide'); return; }
@@ -396,7 +407,19 @@ function csv() {
 // Meet-specific standards: the events calendar links here with ?std=Name|Name (names as the standards are labelled; "Motivational" = B–AAAA).
 const FOCUS = new Set((new URLSearchParams(location.search).get('std') || '').split('|').map((x) => x.trim()).filter(Boolean));
 const isFocus = (b) => b.family === 'standard' && (FOCUS.has(b.label) || (b.level === 'motivational' && [...FOCUS].some((x) => /^motivational/i.test(x))));
-const CDEF = { course: 'Y', event: '100 1', sex: 'F', age: '12', time: '', view: 'check', series: null, ag: '', avg: true, only: false };
+const CDEF = { course: 'Y', event: '100 1', sex: 'F', age: '12', time: '', view: 'check', series: null, ag: '', avg: true, only: false, asof: '' };
+// Older editions of the standards (Nov 20 2026): a season picker. A season's editions are the ones in force on March 1 of
+// its second year (summer meets run Sept-Aug, December meets the season that starts that September, US Open the calendar year).
+function seasonOptions(sel, value, first) {
+  const from = +(META?.standards_history_from || '').slice(0, 4);
+  const now = new Date(); const last = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;   // current season starts Sept
+  let h = first;
+  if (from) for (let y = last - 1; y >= from; y--) h += `<option value="${y + 1}-03-01">${seasonLabel(y)} season editions</option>`;
+  sel.innerHTML = h; sel.value = [...sel.options].some((o) => o.value === value) ? value : sel.options[0].value;
+  sel.parentElement.classList.toggle('hide', !from);
+}
+const asofSeason = (d) => seasonLabel(+d.slice(0, 4) - 1);
+const asofQ = (d) => (d ? '&asof=' + d : '');
 let C = { ...CDEF };
 const AGE_COLS = [['10 & under', 10], ['11-12', 12], ['13-14', 14], ['15-16', 16], ['17-18', 18], ['19 & over / Open', 19]];
 const ORD = (r) => (r === 1 ? 'winner' : r === 3 ? '3rd' : r + 'th');
@@ -408,6 +431,7 @@ function initCompare() {
   $('c-series').onchange = () => { C.series = $('c-series').value; C.ag = ''; runCompare(); };
   $('c-age').onchange = () => { C.age = $('c-age').value; C.ag = ''; runCompare(); };
   $('c-ag').onchange = () => { C.ag = $('c-ag').value; runCompare(); };
+  $('c-asof').onchange = () => { C.asof = $('c-asof').value; runCompare(); };
   $('c-avg').onchange = () => { C.avg = $('c-avg').checked; runCompare(); };
   $('c-time').oninput = () => { C.time = $('c-time').value; clearTimeout(qTimer); qTimer = setTimeout(runCompare, 300); };
   $('c-focus').onchange = (e) => { if (e.target.id === 'c-only') { C.only = e.target.checked; runCompare(); } };
@@ -417,6 +441,7 @@ function syncCompare() {
   set($('c-course'), C.course); set($('c-sex'), C.sex); set($('c-view'), C.view);
   C.event = evOptions($('c-event'), C.course, C.event); seriesOptions();
   $('c-age').value = C.age; if (document.activeElement !== $('c-time')) $('c-time').value = C.time; $('c-avg').checked = C.avg;
+  seasonOptions($('c-asof'), C.asof, `<option value="">Today's standards</option>`);
 }
 // C.series: null = not chosen yet (default to the NC Age Group meet for the course), '' = none.
 function seriesOptions() {
@@ -429,13 +454,14 @@ function seriesOptions() {
 }
 function compareHash() {
   const p = new URLSearchParams();
-  for (const k of ['course', 'event', 'sex', 'age', 'time', 'view', 'ag']) if (C[k] !== CDEF[k] && C[k] !== '') p.set(k, C[k]);
+  for (const k of ['course', 'event', 'sex', 'age', 'time', 'view', 'ag', 'asof']) if (C[k] !== CDEF[k] && C[k] !== '') p.set(k, C[k]);
   if (C.series !== null) p.set('series', C.series);
   if (!C.avg) p.set('avg', '0');
   return p.toString();
 }
 function readCompare(p) {
   for (const k of ['event', 'sex', 'age', 'time', 'view', 'ag']) if (p.get(k)) C[k] = p.get(k);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('asof') || '')) C.asof = p.get('asof');
   const c = (p.get('course') || '').toUpperCase(); if (c) C.course = c === 'LCM' || c === 'L' ? 'L' : 'Y';
   if (p.has('series')) C.series = p.get('series');
   if (p.get('avg') === '0') C.avg = false;
@@ -461,7 +487,7 @@ function ladder(bm, mine, label) {
     if (!placed && mine <= b.time_cs) { h += me(); placed = true; }
     const got = mine != null && mine <= b.time_cs && b.family === 'standard';
     const cls = [got ? 'got' : '', FOCUS.size && isFocus(b) ? 'foc' : '', b.family === 'cutoff' ? 'avg' : ''].filter(Boolean).join(' ');
-    h += `<tr${cls ? ` class="${cls}"` : ''}><td>${esc(b.label)}${b.family === 'record' ? '<span class="tag c">record</span>' : b.family === 'cutoff' ? '<span class="tag">meet avg</span>' : ''}</td><td class="mut">${esc(b.age_group)}</td><td class="tm">${esc(b.time_text || fmt(b.time_cs))}</td><td class="mut">${esc(b.holder || '')}${b.swim_date ? ' · ' + esc(b.swim_date.slice(0, 4)) : ''}</td></tr>`;
+    h += `<tr${cls ? ` class="${cls}"` : ''}><td>${esc(b.label)}${b.family === 'record' ? '<span class="tag c">record</span>' : b.family === 'cutoff' ? '<span class="tag">meet avg</span>' : ''}${b.undated ? '<span class="tag" title="No older edition on file: today\'s times">today\'s</span>' : ''}</td><td class="mut">${esc(b.age_group)}</td><td class="tm">${esc(b.time_text || fmt(b.time_cs))}</td><td class="mut">${esc(b.holder || '')}${b.swim_date ? ' · ' + esc(b.swim_date.slice(0, 4)) : ''}</td></tr>`;
   }
   if (!placed) h += me();
   return h + '</table>';
@@ -475,24 +501,24 @@ async function runCompare() {
   if (!$('compare').classList.contains('hide')) history.replaceState(null, '', '#compare&' + compareHash());
   const [d, s] = C.event.split(' '), age = +C.age || 12, mine = parse(C.time);
   const base = `course=${C.course}&distance=${d}&stroke=${s}&sex=${C.sex}`;
-  $('c-focus').innerHTML = focusBar();
+  $('c-focus').innerHTML = focusBar() + (C.asof ? `<div class="note">Showing the ${asofSeason(C.asof)} season's editions of each standard (older sheets from the USA Swimming archive kept by Potomac Valley Swimming). Standards with no older edition on file show today's times and are tagged <i>today's</i>; standards from before the archive's first edition are left out.</div>` : '');
   const keep = (b) => !(FOCUS.size && C.only) || isFocus(b);
   const ages = C.view === 'ages', series = ages ? '' : $('c-series').value;
   $('c-agbox').classList.toggle('hide', !series); $('c-avgbox').classList.toggle('hide', !series);
   $('c-series').parentElement.classList.toggle('hide', ages);
   if (ages) {
-    const all = (await api(`/benchmarks?${base}`)).benchmarks.filter((b) => b.family === 'standard' && keep(b));
+    const all = (await api(`/benchmarks?${base}${asofQ(C.asof)}`)).benchmarks.filter((b) => b.family === 'standard' && keep(b));
     $('c-sum').innerHTML = summary(all.filter((b) => age >= b.age_lo && age <= b.age_hi), mine);
     // Standards with no age limit (U.S. Open, Sectionals, NC Senior...) go in the Open column only; 18 & under cuts show in every column up to 18.
     const open = (b) => b.age_lo <= 10 && b.age_hi >= 99;
     const col = (a) => all.filter((b) => a >= b.age_lo && a <= b.age_hi && (a === 19 || !open(b))).sort((x, y) => x.time_cs - y.time_cs);
     const here = AGE_COLS.find(([, a], i) => age <= a || i === AGE_COLS.length - 1)[1];
     $('c-out').innerHTML = `<div class="block"><h3>${C.sex === 'F' ? 'Girls / Women' : 'Boys / Men'} · ${evName(+d, +s)} ${CNAME[C.course]} · standards by age group</h3><div class="cols">
-      ${AGE_COLS.map(([t, a]) => `<div class="col${a === here ? ' mine' : ''}"><h4>${t}</h4>${col(a).map((b) => `<div class="crow${mine != null && mine <= b.time_cs ? ' got' : ''}${FOCUS.size && isFocus(b) ? ' foc' : ''}"><span>${esc(b.label)}</span><b>${esc(b.time_text || fmt(b.time_cs))}</b></div>`).join('') || '<div class="mut">not offered</div>'}</div>`).join('')}
+      ${AGE_COLS.map(([t, a]) => `<div class="col${a === here ? ' mine' : ''}"><h4>${t}</h4>${col(a).map((b) => `<div class="crow${mine != null && mine <= b.time_cs ? ' got' : ''}${FOCUS.size && isFocus(b) ? ' foc' : ''}"><span>${esc(b.label)}${b.undated ? ' <span class="tag">today\'s</span>' : ''}</span><b>${esc(b.time_text || fmt(b.time_cs))}</b></div>`).join('') || '<div class="mut">not offered</div>'}</div>`).join('')}
       </div></div>${mine != null ? `<div class="note">Green rows are standards a ${fmt(mine)} meets in that age group.</div>` : ''}`;
     return;
   }
-  const bm = (await api(`/benchmarks?${base}&age=${age}`)).benchmarks.filter(keep);
+  const bm = (await api(`/benchmarks?${base}&age=${age}${asofQ(C.asof)}`)).benchmarks.filter(keep);
   $('c-sum').innerHTML = summary(bm.filter((b) => b.family === 'standard'), mine);
   let html = `<div class="row" style="align-items:flex-start">`;
   const extra = [];
