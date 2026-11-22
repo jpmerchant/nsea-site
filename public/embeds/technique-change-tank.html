@@ -66,7 +66,7 @@ body.family .adv,body.family .coach{display:none}
 <body>
 <div class="wrap">
   <h1>How long does a technique change take?</h1>
-  <p class="lede">Think of a swimmer's current technique as a tank of hot water. Every focused rep of the new technique pours in cool water, and the overflow carries mixed water away. Old-way reps keep dripping hot water back in. Move the settings to see how fast the tank cools.</p>
+  <p class="lede">Think of a swimmer's current technique as a tank of hot water. Every deliberate rep of the new technique pours in cool water, and the overflow carries mixed water away. Old-way reps keep dripping hot water back in. Move the settings to see how fast the tank cools, in practice and under race stress.</p>
 
   <div class="bar">
     <div class="seg" role="group" aria-label="View">
@@ -76,6 +76,9 @@ body.family .adv,body.family .coach{display:none}
     <div class="seg" role="group" aria-label="Starting example">
       <button id="pAge" aria-pressed="true">Age group swimmer</button>
       <button id="pSen" aria-pressed="false">Senior swimmer</button>
+    </div>
+    <div class="seg" role="group" aria-label="Try a practice style">
+      <button id="pAll" aria-pressed="false">Try: every wall, deliberate</button>
     </div>
   </div>
 
@@ -132,17 +135,18 @@ body.family .adv,body.family .coach{display:none}
 
   <section class="curve coach" aria-label="Change over time">
     <h2>Share of the new technique, week by week</h2>
+    <p class="hint" style="margin:0 0 8px;color:var(--muted)">Solid line: in practice. Dashed line: under race stress, where the old pattern can come back.</p>
     <div class="fig" id="fig"><svg id="chart" aria-hidden="true"></svg></div>
   </section>
   <p class="caption" id="caption"></p>
 
   <details>
     <summary>How the model works</summary>
-    <p>The tank follows the standard physics of a well-mixed tank with water flowing in and overflowing out. The gap between the tank and the incoming water closes exponentially: fast at first, slower as it gets close. That matches what coaches see and what motor-learning research calls the power law of practice.</p>
-    <p><strong>Tank size</strong> is the old technique's reps per week × 48 weeks a year × the square root of years. The square root reflects that old habits get deeper with time but not in a straight line.</p>
-    <p><strong>Inflow</strong> is every rep of the skill each week. Focused reps count extra, up to 20 automatic reps each at full attention, because deliberate practice changes a pattern faster than reps on autopilot.</p>
-    <p><strong>Leak and quality</strong> normally improve as the change takes hold: unfocused reps fall back to the old way less often, and new reps get cleaner. Turn on <em>Pure physics</em> to hold them fixed. Then a high leak or low quality makes the tank level off warm, and it may never reach the done line.</p>
-    <p><strong>Meets</strong> add a burst of old-way reps under race stress. The burst shrinks as the new technique sets.</p>
+    <p>The tank follows the standard physics of a well-mixed tank with water flowing in and overflowing out. The gap between the tank and the incoming water closes exponentially: fast at first, slower as it gets close.</p>
+    <p><strong>Tank size</strong> is anchored on Richard Schmidt's estimate, cited by Brent Rushall: about 300 trials make a habit and about 3,000 trials with meaningful feedback are needed to correct it. A 3-year habit is set at 3,000 reps for wall or length skills and 24,000 stroke cycles for stroke skills (Rod Havriluk: tens of thousands of repetitions). It grows with the square root of years, because older swimmers resist change more.</p>
+    <p><strong>Deliberate focus</strong> is the share of focused reps done with full attention and feedback. Most of that feedback is the swimmer's own: what they feel, see and count. A coach, teammates, video or devices add to it. A focused rep without it counts about a fifth, as do unfocused reps done the new way. Rushall and Havriluk both find that reps without feedback rarely change technique.</p>
+    <p><strong>Old-way reps</strong> practice the old habit. Each counts as a share of a deliberate rep (the weight setting). Leak and quality improve as the change takes hold; turn on <em>Pure physics</em> to hold them fixed.</p>
+    <p><strong>Race stress:</strong> a learned pattern is never erased, only suppressed, and it can return under fatigue or pressure. The dashed line is the practice share squared: it lags, and catches up only as the change becomes very strong.</p>
     <p>The numbers are illustrative. They show the shape of change and which settings matter most, not a promise for any one swimmer.</p>
   </details>
   <p class="note">Illustrative model, NSEA Swim. Defaults are sample settings for a typical age group or senior swimmer.</p>
@@ -159,19 +163,21 @@ const CTLS=[
  {id:'focus',l:'Focused new reps per practice',min:0,max:200,step:1,f:v=>v,h:'Reps done on purpose with the new technique.'},
  {id:'ppw',l:'Practices per week',min:1,max:10,step:1,f:v=>v,h:'How often the cold tap runs.'},
  {id:'qual',l:'Rep quality',min:0,max:100,step:5,f:v=>v+'%',h:'How correct a new rep usually is. Half-right reps are lukewarm water.'},
- {id:'att',l:'Attention and feedback',min:0,max:100,step:5,adv:1,f:v=>v+'%',h:'Stirring. How much each focused rep counts.'},
+ {id:'fb',l:'Deliberate focus',min:0,max:100,step:5,f:v=>v+'%',h:'Share of focused reps done with full attention and feedback. Most feedback is the swimmer\'s own: feel, what they see, counting. A coach, teammates, video or devices add to it. A rep on autopilot counts about a fifth.'},
  {g:'Hot water (the old habit)'},
  {id:'leak',l:'Leak: other reps still done the old way',min:0,max:100,step:5,f:v=>v+'%',h:'Tired reps, unwatched sets and drills done the old way.'},
+ {id:'oldw',l:'Weight of an old-way rep',min:0,max:100,step:5,adv:1,f:v=>v+'%',h:'How much an old-way rep strengthens the old habit, compared with one deliberate rep of the new technique.'},
  {id:'meets',l:'Meets per month',min:0,max:4,step:1,adv:1,f:v=>v,h:'Race stress reheats the tank.'},
  {id:'bump',l:'Size of the meet setback',type:'select',adv:1,opts:[['0.1','Small'],['0.3','Medium'],['0.6','Large']],h:'How far a swimmer slides back under pressure.'},
  {g:'Finish'},
  {id:'done',l:'Done line',min:50,max:99,step:1,f:v=>v+'%',h:'How far the change must go before you call it stuck.'},
+ {id:'doneWhen',l:'Done means it holds',type:'select',adv:1,opts:[['practice','In practice'],['stress','Under race stress']],h:'The old pattern is never erased. Under fatigue or race pressure it can come back.'},
  {id:'physics',l:'Pure physics: leak and quality stay fixed',type:'check',adv:1}
 ];
-const BASE={unit:'wall',qual:70,att:80,leak:70,meets:1,bump:'0.1',done:90,physics:false};
+const BASE={unit:'wall',qual:70,fb:60,leak:70,oldw:50,meets:1,bump:'0.1',done:90,doneWhen:'practice',physics:false};
 const PRE={age:{years:3,yards:4000,focus:20,ppw:4},sen:{years:8,yards:25000,focus:30,ppw:8}};
 let p=Object.assign({},BASE,PRE.age),view='coach',preset='age',cur=0,res=null,timer=null;
-try{const s=JSON.parse(localStorage.getItem('nseaTank')||'null');if(s){Object.assign(p,s.p);view=s.view||view;preset=s.preset||''}}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('nseaTank2')||'null');if(s){Object.assign(p,s.p);view=s.view||view;preset=s.preset||''}}catch(e){}
 const $=id=>document.getElementById(id);
 
 $('ctls').innerHTML=CTLS.map(c=>{
@@ -185,25 +191,28 @@ $('ctls').innerHTML=CTLS.map(c=>{
 function syncInputs(){for(const c of CTLS){if(!c.id)continue;const el=$(c.id);if(c.type==='check')el.checked=!!p[c.id];else el.value=p[c.id];if(c.f)$(c.id+'O').textContent=c.f(+p[c.id])}}
 
 function sim(p){
- const div={wall:25,lcm:50,cycle:25/8}[p.unit];
- const R=p.yards/div, V=R*48*Math.sqrt(p.years);
- const F=Math.min(p.focus*p.ppw,R), O=R-F, w=1+19*p.att/100;
- const L0=p.leak/100, q0=p.qual/100, D=p.done/100, bump=+p.bump;
+ const div={wall:25,lcm:50,cycle:25/8}[p.unit], base=p.unit==='cycle'?24000:3000;
+ const R=p.yards/div, V=base*Math.sqrt(p.years/3);
+ const F=Math.min(p.focus*p.ppw,R), O=R-F, fb=p.fb/100, wNo=0.2, wOld=p.oldw/100;
+ const L0=p.leak/100, q0=p.qual/100, D=p.done/100, bump=+p.bump, stress=p.doneWhen==='stress';
  const every=p.meets>0?Math.max(1,Math.round(4.33/p.meets)):0;
- let H=1;const c=[0],cold=[0],hot=[0],qa=[q0],lk=[L0];let doneWk=null;
+ let H=1;const c=[0],sx=[0],cold=[0],hot=[0],qa=[q0],lk=[L0];let pWk=null,sWk=null;
  for(let t=1;t<=520;t++){
   const L=p.physics?L0:L0*H, q=p.physics?q0:q0+(1-q0)*(1-H);
-  let hotV=O*L;const unf=O-O*L, Fe=F*w;
-  if(every&&t%every===0)hotV+=bump*R*(p.physics?1:H);
+  const Fe=F*(fb+wNo*(1-fb)), unf=O*(1-L)*wNo;
+  let hotV=O*L*wOld;
+  if(every&&t%every===0)hotV+=bump*R*wOld*(p.physics?1:H);
   const Q=Fe+unf+hotV;
-  if(Q>0){const hin=(Fe*(1-q)+unf*(1-q)+hotV)/Q;H=hin+(H-hin)*Math.exp(-Q/V)}
-  lk.push(p.physics?L0:L0*H);c.push(1-H);cold.push(Q?(Fe+unf)/Q:0);hot.push(Q?hotV/Q:0);qa.push(q);
-  if(doneWk===null&&1-H>=D)doneWk=t;
+  if(Q>0){const hin=((Fe+unf)*(1-q)+hotV)/Q;H=hin+(H-hin)*Math.exp(-Q/V)}
+  const v=1-H;c.push(v);sx.push(v*v);cold.push(Q?(Fe+unf)/Q:0);hot.push(Q?hotV/Q:0);qa.push(q);lk.push(L);
+  if(pWk===null&&v>=D)pWk=t;
+  if(sWk===null&&v*v>=D)sWk=t;
  }
+ const doneWk=stress?sWk:pWk, tgt=stress?sx:c;
  let span;
  if(doneWk)span=Math.min(520,Math.max(26,Math.ceil(doneWk*1.5)));
- else{const end=c[520];let t=1;while(t<520&&c[t]<end*0.98)t++;span=Math.min(520,Math.max(52,Math.ceil(t*1.4)))}
- return{c,cold,hot,qa,lk,doneWk,span,D,F,ppw:p.ppw};
+ else{const end=tgt[520];let t=1;while(t<520&&tgt[t]<end*0.98)t++;span=Math.min(520,Math.max(52,Math.ceil(t*1.4)))}
+ return{c,sx,cold,hot,qa,lk,doneWk,pWk,sWk,span,D,F,R,fb,stress};
 }
 
 const C0=[238,73,47],CM=[236,226,219],C1=[0,134,117];
@@ -211,14 +220,16 @@ function col(v){v=Math.max(0,Math.min(1,v));const a=v<.5?C0:CM,b=v<.5?CM:C1,k=v<
 function fmt(w){if(w<9)return w+(w==1?' week':' weeks');const m=w/4.33;if(m<24)return 'about '+Math.round(m)+' months';return 'about '+(w/52).toFixed(1)+' years'}
 
 function statusText(){
- const r=res;
- if(r.doneWk)return `Reaches the ${p.done}% line in ${fmt(r.doneWk)}.`;
- const end=Math.round(r.c[520]*100);
- if(p.physics&&r.c[520]<r.D-0.005){
-  const why=p.qual<p.done?`New reps are only ${p.qual}% right, so the water coming in is lukewarm.`:'Too many old-way reps keep the hot tap running.';
-  return `Levels off near ${end}% and never reaches the ${p.done}% line. ${why}`;
+ const r=res, where=r.stress?'under race stress':'in practice', tgt=r.stress?r.sx:r.c;
+ if(r.doneWk){
+  let t=`Holds ${where} at the ${p.done}% line in ${fmt(r.doneWk)}.`;
+  if(!r.stress)t+=r.sWk?` Under race stress: ${fmt(r.sWk)}.`:' Under race stress: not within 10 years.';
+  return t;
  }
- return `Still short of the ${p.done}% line after 10 years (about ${end}%).`;
+ const end=Math.round(tgt[520]*100), flat=tgt[520]-tgt[468]<0.005;
+ if(flat&&p.physics&&p.qual<p.done)return `Levels off near ${end}% ${where} and never reaches the ${p.done}% line. New reps are only ${p.qual}% right, so the water coming in is lukewarm.`;
+ if(flat)return `Levels off near ${end}% ${where} and never reaches the ${p.done}% line. Old-way reps keep pace with the deliberate ones: more deliberate reps, more focus or fewer old-way reps would move it.`;
+ return `Still short of the ${p.done}% line ${where} after 10 years (about ${end}%).`;
 }
 
 function paint(){
@@ -239,7 +250,7 @@ function paint(){
  $('week').value=t;
  drawChart();
  const lk=Math.round(r.lk[t]*100);
- $('caption').textContent=`${r.F} focused reps a week pour in cool water. At week ${t}, about ${lk}% of the other reps still slip back to the old way. ${statusText()}`;
+ $('caption').textContent=`${r.F} focused reps a week pour in cool water, ${p.fb}% of them deliberate. At week ${t}, about ${lk}% of the other reps still slip back to the old way. ${statusText()}`;
 }
 
 function run(keepWeek){
@@ -249,7 +260,7 @@ function run(keepWeek){
  cur=Math.min(cur,res.span);
  $('status').textContent=statusText();
  paint();
- try{localStorage.setItem('nseaTank',JSON.stringify({p,view,preset}))}catch(e){}
+ try{localStorage.setItem('nseaTank2',JSON.stringify({p,view,preset}))}catch(e){}
 }
 
 const svg=$('chart');
@@ -257,14 +268,14 @@ function drawChart(){
  if(!res)return;const W=svg.clientWidth,Hh=svg.clientHeight;if(!W||!Hh)return;
  const r=res,span=r.span,m={l:44,r:14,t:14,b:30},iw=W-m.l-m.r,ih=Hh-m.t-m.b;
  const x=t=>m.l+t/span*iw,y=v=>m.t+(1-v)*ih;
- let d='';for(let t=0;t<=span;t++)d+=(t?'L':'M')+x(t).toFixed(1)+' '+y(r.c[t]).toFixed(1);
+ let d='',ds='';for(let t=0;t<=span;t++){d+=(t?'L':'M')+x(t).toFixed(1)+' '+y(r.c[t]).toFixed(1);ds+=(t?'L':'M')+x(t).toFixed(1)+' '+y(r.sx[t]).toFixed(1)}
  const area=d+`L${x(span)} ${y(0)}L${x(0)} ${y(0)}Z`;
  let step,lab;
  if(span<=52){step=span<=26?4:8;lab=t=>t+' wk'}else if(span<=156){step=13;lab=t=>Math.round(t/4.33)+' mo'}else{step=52;lab=t=>t/52+' yr'}
  if(W<520)step*=2;
  let ticks='';for(let t=0;t<=span;t+=step)ticks+=`<line x1="${x(t)}" x2="${x(t)}" y1="${y(0)}" y2="${y(0)+5}" stroke="var(--glass)"/><text x="${x(t)}" y="${y(0)+19}" text-anchor="middle" font-size="12" fill="var(--muted)">${lab(t)}</text>`;
  let yt='';for(const v of [0,.5,1])yt+=`<line x1="${m.l}" x2="${m.l+iw}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)">${v*100}%</text>`;
- const dl=y(r.D);
+ const dl=y(r.D), lt=Math.round(span*0.35);
  let mk='';
  if(r.doneWk&&r.doneWk<=span)mk=`<circle cx="${x(r.doneWk)}" cy="${dl}" r="5.5" fill="var(--teal)" stroke="var(--bg)" stroke-width="2"/>`;
  const cx=x(Math.min(cur,span));
@@ -273,6 +284,9 @@ function drawChart(){
   <line x1="${m.l}" x2="${m.l+iw}" y1="${dl}" y2="${dl}" stroke="var(--coral)" stroke-width="2" stroke-dasharray="6 5"/>
   <text x="${m.l+8}" y="${dl-7}" text-anchor="start" font-size="12.5" font-weight="600" fill="var(--coral)">Done line ${Math.round(r.D*100)}%</text>
   <path d="${d}" fill="none" stroke="var(--teal)" stroke-width="3" stroke-linejoin="round"/>
+  <path d="${ds}" fill="none" stroke="var(--teal)" stroke-width="2.5" stroke-dasharray="7 5" stroke-opacity=".7"/>
+  <text x="${x(lt)+6}" y="${Math.max(m.t+12,y(r.c[lt])-10)}" text-anchor="end" font-size="12.5" font-weight="600" fill="var(--teal-d)">In practice</text>
+  <text x="${x(lt)+6}" y="${Math.min(y(0)-6,y(r.sx[lt])+20)}" text-anchor="start" font-size="12.5" font-weight="600" fill="var(--muted)">Under race stress</text>
   <line x1="${cx}" x2="${cx}" y1="${m.t}" y2="${y(0)}" stroke="var(--ink)" stroke-opacity=".35" stroke-width="1.5"/>
   ${mk}`;
 }
@@ -301,6 +315,7 @@ $('vCoach').addEventListener('click',()=>{setView('coach');run(true)});
 $('vFamily').addEventListener('click',()=>{setView('family');run(true)});
 $('pAge').addEventListener('click',()=>setPreset('age'));
 $('pSen').addEventListener('click',()=>setPreset('sen'));
+$('pAll').addEventListener('click',()=>{const div={wall:25,lcm:50,cycle:25/8}[p.unit];p.focus=Math.min(200,Math.round(p.yards/div/p.ppw));p.fb=100;syncInputs();stop();run(false)});
 
 syncInputs();
 $('pAge').setAttribute('aria-pressed',preset==='age');$('pSen').setAttribute('aria-pressed',preset==='sen');
