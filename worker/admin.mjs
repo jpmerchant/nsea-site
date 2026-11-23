@@ -10,6 +10,7 @@ import { handleMeetdayAdmin, canMeetday } from './meetday.mjs';
 import { eventsApp, eventsProxy, configured as eventsConfigured } from './events.mjs';
 import { handleScheduleAdmin } from './schedule.mjs';
 import { handleStaffAdmin, isManager, linkedCoach } from './staff.mjs';
+import { handleCoachingAdmin } from './coaching.mjs';
 
 export const MODULES = ['carpool', 'events', 'schedule', 'content', 'assessment', 'reports', 'meetday'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach', 'staff'];
@@ -112,7 +113,7 @@ export async function handleAdmin(req, env, url) {
       const linked = await linkedCoach(env, me).catch(() => null);
       return json({ email: me.email, name: me.name, roles: me.roles, owner: isOwner(me), via: me.via, coachId: linked ? linked.id : null,
         modules: [...MODULES.filter((m) => can(me, m)), ...(can(me, 'coach') && !can(me, 'meetday') ? ['meetday'] : []), ...(can(me, 'coach') || isEditor(me) ? ['coach'] : []),
-          ...(isManager(me) ? ['staff'] : []), ...(linked ? ['profile'] : [])] });
+          ...(isManager(me) ? ['staff'] : []), ...(linked ? ['profile'] : []), ...(isManager(me) || linked ? ['coaching'] : [])] });
     }
 
     if (method === 'GET' && path === '/overview') {
@@ -223,6 +224,12 @@ export async function handleAdmin(req, env, url) {
     // ----- coaching staff records (owner/staff: everyone; a linked coach: their own record) -----
     if (path.startsWith('/staff')) {
       const r = await handleStaffAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d));
+      if (r) return r;
+    }
+
+    // ----- meet coaching: availability by session, hotel rooms, assignments (linked coaches; owner/staff manage) -----
+    if (path.startsWith('/coaching')) {
+      const r = await handleCoachingAdmin(env, me, method, path, body, (m, a, d) => audit(env, me, m, a, d));
       if (r) return r;
     }
 

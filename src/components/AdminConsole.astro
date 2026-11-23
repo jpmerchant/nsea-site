@@ -10,7 +10,7 @@
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
   var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own Coach’s Corner posts, Meet Day)', staff: 'Staff records (every coach’s profile and private details, approves coach changes)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner', staff: 'Staff Records', profile: 'My Coach Profile' };
+  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner', staff: 'Staff Records', profile: 'My Coach Profile', coaching: 'Meet Coaching' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -56,7 +56,7 @@
   // ---------- shell ----------
   // The console is split: coaching tools first, club administration second. A heading shows only if its section has something you can open.
   var NAV = [['overview', 'Overview'],
-    ['-', 'Coaching'], ['profile', 'My Coach Profile', 'profile'], ['meetday', 'Meet Day', 'meetday'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'],
+    ['-', 'Coaching'], ['profile', 'My Coach Profile', 'profile'], ['meetday', 'Meet Day', 'meetday'], ['coaching', 'Meet Coaching', 'coaching'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'],
     ['-', 'Admin'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['schedule', 'Practice Schedule', 'schedule'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'],
     ['staff', 'Staff Records', 'staff'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return n[0] === '-' || !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
@@ -78,7 +78,7 @@
         el('nav', { class: 'ac-nav', 'aria-label': 'Admin sections' }, navItems()),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, staff: vStaff, profile: vProfile, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, coaching: vCoaching, staff: vStaff, profile: vProfile, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -93,6 +93,7 @@
         btn('Open Carpool', function () { go('carpool'); }, o.carpool.pending ? '' : 'ghost')));
       if (me.modules.indexOf('events') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Events & Calendar'), el('p', { class: 'cp-small' }, 'Edit the 2026–27 events and venues.'), btn('Open', function () { go('events'); }, 'ghost')));
       if (me.modules.indexOf('schedule') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Practice Schedule'), el('p', null, el('strong', null, String(o.schedule || 0)), ' suggested change' + (o.schedule === 1 ? '' : 's') + ' waiting'), btn('Review', function () { go('schedule'); }, o.schedule ? '' : 'ghost')));
+      if (me.modules.indexOf('coaching') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Meet Coaching'), el('p', { class: 'cp-small' }, 'Which meet sessions you can coach, and hotel rooms.'), btn('Open', function () { go('coaching'); }, 'ghost')));
       if (me.modules.indexOf('profile') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'My Coach Profile'), el('p', { class: 'cp-small' }, 'Your bio, photo, memberships and accomplishments.'), btn('Open', function () { go('profile'); }, 'ghost')));
       if (o.staff != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Staff Records'), el('p', null, el('strong', null, String(o.staff)), ' coach change' + (o.staff === 1 ? '' : 's') + ' waiting for your OK'), btn('Review', function () { staffTab = o.staff ? 'review' : 'list'; staffSel = null; go('staff'); }, o.staff ? '' : 'ghost')));
       if (o.admins != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Admins'), el('p', null, el('strong', null, String(o.admins)), ' people'), btn('Manage admins', function () { go('admins'); }, 'ghost')));
@@ -1226,6 +1227,147 @@
     var box = el('div', null, loading()); shell(box);
     api('GET', '/audit').then(function (rows) {
       box.replaceChildren(el('h2', null, 'Activity log'), el('div', { class: 'cp-panel' }, rows.length ? rows.map(logLine) : el('p', { class: 'cp-empty' }, 'Nothing yet.')));
+    }).catch(function (e) { fail(box, e); });
+  }
+
+  // ---------- meet coaching: availability by session, hotel rooms, assignments ----------
+  // Coaches answer for themselves; owner / staff role add meets and sessions, assign coaches, set the schedule status and export coaching.json.
+  var mcSel = null;
+  var MC_ANS = { yes: 'Yes', maybe: 'Maybe', no: 'No' }, MC_MARK = { yes: '✓', maybe: '?', no: '✕' };
+  var MC_STATUS = { none: 'Not scheduled', preliminary: 'Preliminary (sent with the check request)', confirmed: 'Confirmed (what happened)' };
+  function dayName(d) { var x = new Date(d + 'T12:00:00Z'); return x.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+  function vCoaching() {
+    var box = el('div', null, loading()); shell(box);
+    if (mcSel) return mcMeet(box, mcSel);
+    api('GET', '/coaching').then(function (o) {
+      var cards = o.meets.map(function (m) {
+        var need = o.mineId && m.open && !m.mine_answered;
+        return el('div', { class: 'cp-card' + (need ? ' need' : '') },
+          el('span', { class: 'cp-badge' }, need ? 'Waiting for your answer' : (m.open ? 'Open' : 'Closed') + ' · ' + (MC_STATUS[m.status] || '').split(' (')[0]),
+          el('h3', null, m.name), el('p', { class: 'cp-when' }, dayName(m.start_on) + (m.end_on !== m.start_on ? ' – ' + dayName(m.end_on) : '')),
+          el('p', null, m.sessions + ' session' + (m.sessions === 1 ? '' : 's') + ' · ' + m.answered + ' coach' + (m.answered === 1 ? '' : 'es') + ' answered'),
+          el('div', { class: 'cp-act' }, btn(need ? 'Answer' : 'Open', function () { mcSel = m.id; vCoaching(); })));
+      });
+      var add = null;
+      if (o.manager) {
+        var out = el('div');
+        var f = el('form', { class: 'cp-form', onsubmit: function (e) {
+          e.preventDefault(); var fm = e.target;
+          api('POST', '/coaching', { name: fm.mname.value, start_on: fm.start.value, end_on: fm.end.value || fm.start.value, event_id: fm.ev.value, travel: fm.travel.checked, sessions: [] })
+            .then(function (r) { flash = 'Meet added. Now add its sessions.'; mcSel = r.id; vCoaching(); }).catch(function (err) { out.replaceChildren(msg('err', err.message)); });
+        } },
+          el('label', null, 'Meet', el('input', { name: 'mname', required: true, maxlength: 100, placeholder: '2026 STAR Triad Tropic Invitational' })),
+          el('div', { class: 'st-two' }, el('label', null, 'First day', el('input', { name: 'start', type: 'date', required: true })), el('label', null, 'Last day', el('input', { name: 'end', type: 'date' }))),
+          el('label', null, 'Events calendar id (optional)', el('input', { name: 'ev', maxlength: 80, placeholder: 'star-triad-tropic' })),
+          el('label', { class: 'inline' }, el('input', { type: 'checkbox', name: 'travel', checked: true }), ' Away meet (coaches claim mileage)'),
+          out, el('div', { class: 'cp-btns' }, el('button', { class: 'btn', type: 'submit' }, 'Add meet')));
+        add = el('div', { class: 'cp-panel' }, el('h3', null, 'Add a meet'), f);
+      }
+      box.replaceChildren.apply(box, [el('h2', null, 'Meet Coaching'),
+        el('p', { class: 'cp-small' }, 'Say which sessions of each meet you can coach and whether you need a hotel room. JP builds the coaching schedule from these answers.'),
+        cards.length ? el('div', { class: 'cp-list' }, cards) : el('p', { class: 'cp-empty' }, 'No meets yet.'), add].filter(Boolean));
+    }).catch(function (e) { fail(box, e); });
+  }
+  function mcMeet(box, id) {
+    api('GET', '/coaching/' + id).then(function (d) {
+      var M = d.meet, mgr = d.manager, nights = d.days.slice(0, -1);
+      var back = el('p', null, el('button', { class: 'cp-link', type: 'button', onclick: function () { mcSel = null; vCoaching(); } }, '← All meets'));
+      var byDay = {}; d.sessions.forEach(function (s) { (byDay[s.day] = byDay[s.day] || []).push(s); });
+      var ans = function (sid, cid) { var a = d.avail.find(function (x) { return x.session_id === sid && x.coach_id === cid; }); return a ? a.answer : ''; };
+      var isAssigned = function (sid, cid) { return d.assign.some(function (x) { return x.session_id === sid && x.coach_id === cid; }); };
+      var infoOf = function (cid) { return d.info.find(function (x) { return x.coach_id === cid; }) || { hotel: '', nights: [], note: '' }; };
+      var head = el('div', null, el('h2', null, M.name),
+        el('p', { class: 'cp-small' }, [dayName(M.start_on) + (M.end_on !== M.start_on ? ' – ' + dayName(M.end_on) : ''), M.travel ? 'away meet' : 'home meet', M.open ? 'open for answers' : 'closed for answers', MC_STATUS[M.status]].join(' · ')),
+        M.note ? el('p', null, M.note) : null);
+
+      // --- my answers (or, for a manager, any coach's) ---
+      var who = d.mineId || (d.coaches[0] && d.coaches[0].id);
+      var mineBox = el('div', { class: 'cp-panel' });
+      function drawMine() {
+        var cid = who, cur = {}, info = infoOf(cid), out = el('div');
+        d.sessions.forEach(function (s) { cur[s.id] = ans(s.id, cid); });
+        var picker = mgr ? el('label', null, 'Answer for ', el('select', { onchange: function (e) { who = +e.target.value; drawMine(); } },
+          d.coaches.map(function (c) { var o = el('option', { value: c.id }, c.name); if (c.id === cid) o.selected = true; return o; }))) : null;
+        var rows = Object.keys(byDay).sort().map(function (day) {
+          return el('div', null, el('h4', null, dayName(day)), byDay[day].map(function (s) {
+            var group = el('div', { class: 'mc-seg', role: 'group', 'aria-label': s.label });
+            function paint() { Array.prototype.forEach.call(group.children, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-a') === cur[s.id] ? 'true' : 'false'); }); }
+            Object.keys(MC_ANS).forEach(function (a) { group.appendChild(el('button', { type: 'button', 'data-a': a, class: 'mc-' + a, onclick: function () { cur[s.id] = cur[s.id] === a ? '' : a; paint(); } }, MC_ANS[a])); });
+            paint();
+            return el('div', { class: 'cp-row' }, el('span', null, s.label), group);
+          }));
+        });
+        var hotel = el('select', null, [['', 'Not answered'], ['no', 'No'], ['yes', 'Yes']].map(function (h) { var o = el('option', { value: h[0] }, h[1]); if (info.hotel === h[0]) o.selected = true; return o; }));
+        var nightBoxes = el('div', { class: 'mc-nights' }, nights.map(function (n) { return el('label', { class: 'inline' }, el('input', { type: 'checkbox', value: n, checked: info.nights.indexOf(n) >= 0 }), ' Night of ' + dayName(n)); }));
+        function showNights() { nightBoxes.hidden = hotel.value !== 'yes'; }
+        hotel.addEventListener('change', showNights); showNights();
+        var note = el('input', { maxlength: 300, value: info.note || '', placeholder: 'Anything JP should know (optional)' });
+        var save = el('button', { class: 'btn', type: 'button', onclick: function () {
+          var picked = Array.prototype.filter.call(nightBoxes.querySelectorAll('input'), function (i) { return i.checked; }).map(function (i) { return i.value; });
+          if (hotel.value === 'yes' && nights.length && !picked.length) { out.replaceChildren(msg('err', 'Tick the nights you need a room.')); return; }
+          api('POST', '/coaching/' + id + '/answers', { coach_id: cid, answers: cur, hotel: hotel.value, nights: picked, note: note.value })
+            .then(function () { flash = 'Saved. Thank you.'; vCoaching(); }).catch(function (e) { out.replaceChildren(msg('err', e.message)); });
+        } }, 'Save my answers');
+        mineBox.replaceChildren(el('h3', null, mgr && cid !== d.mineId ? 'Availability' : 'My availability'), picker,
+          d.sessions.length ? el('div', { class: 'mc-days' }, rows) : el('p', { class: 'cp-empty' }, 'No sessions yet.'),
+          el('div', { class: 'cp-form' }, el('label', null, 'Do you need a hotel room?', hotel), nights.length ? nightBoxes : null, el('label', null, 'Note', note)), out, el('div', { class: 'cp-btns' }, save));
+        if (!mgr && !M.open) save.disabled = true;
+      }
+      if (d.mineId || mgr) drawMine();
+
+      // --- everyone's answers; managers assign here ---
+      var pick = {}; d.sessions.forEach(function (s) { pick[s.id] = d.coaches.filter(function (c) { return isAssigned(s.id, c.id); }).map(function (c) { return c.id; }); });
+      var grid = el('div', { class: 'scroll' }, el('table', { class: 'mc-grid' },
+        el('thead', null, el('tr', null, el('th', null, 'Session'), d.coaches.map(function (c) { return el('th', null, c.name.split(' ')[0]); }))),
+        el('tbody', null, d.sessions.map(function (s) {
+          return el('tr', null, el('th', { scope: 'row' }, dayName(s.day) + ' · ' + s.label), d.coaches.map(function (c) {
+            var a = ans(s.id, c.id), cell = el('td', { class: 'mc-' + (a || 'none') + (isAssigned(s.id, c.id) ? ' mc-on' : '') }, el('span', { title: a ? MC_ANS[a] : 'No answer' }, a ? MC_MARK[a] : '–'));
+            if (mgr) { var cb = el('input', { type: 'checkbox', 'aria-label': 'Assign ' + c.name + ' to ' + s.label, checked: isAssigned(s.id, c.id), onchange: function (e) {
+              var l = pick[s.id].filter(function (x) { return x !== c.id; }); if (e.target.checked) l.push(c.id); pick[s.id] = l; cell.classList.toggle('mc-on', e.target.checked); } }); cell.appendChild(cb); }
+            return cell;
+          }));
+        })),
+        el('tfoot', null, el('tr', null, el('th', null, 'Hotel room'), d.coaches.map(function (c) { var i = infoOf(c.id); return el('td', null, i.hotel === 'yes' ? (i.nights.length + ' night' + (i.nights.length === 1 ? '' : 's')) : i.hotel === 'no' ? 'No' : '–'); })))));
+      var notes = d.info.filter(function (i) { return i.note; }).map(function (i) { var c = d.coaches.find(function (x) { return x.id === i.coach_id; }); return el('p', { class: 'cp-small' }, (c ? c.name : '') + ': ' + i.note); });
+      var assignBox = el('div', { class: 'cp-panel' }, el('h3', null, 'Everyone'), el('p', { class: 'cp-small' }, '✓ yes · ? maybe · ✕ no · – no answer' + (mgr ? '. Tick a box to assign that coach; shaded cells are assigned.' : '. Shaded cells are JP’s assignments.')), grid, notes);
+      if (mgr) {
+        var out2 = el('div'), status = el('select', null, Object.keys(MC_STATUS).map(function (k) { var o = el('option', { value: k }, MC_STATUS[k]); if (k === M.status) o.selected = true; return o; }));
+        var exp = el('div');
+        assignBox.appendChild(el('div', { class: 'cp-form' }, el('label', null, 'Coaching schedule', status)));
+        assignBox.appendChild(out2);
+        assignBox.appendChild(el('div', { class: 'cp-btns' },
+          btn('Save assignments', function () { api('POST', '/coaching/' + id + '/assign', { assign: pick, status: status.value }).then(function () { flash = 'Assignments saved.'; vCoaching(); }).catch(function (e) { out2.replaceChildren(msg('err', e.message)); }); }),
+          btn('coaching.json', function () { api('GET', '/coaching/' + id + '/export').then(function (x) {
+            var t = el('textarea', { rows: 10, readonly: true, class: 'mc-json' }); t.value = JSON.stringify(x, null, 2);
+            exp.replaceChildren(el('p', { class: 'cp-small' }, 'Save as coaching.json in the meet folder (or ask Claude to). Saved assignments only.'), t, btn('Copy', function () { t.select(); if (navigator.clipboard) navigator.clipboard.writeText(t.value); }, 'ghost'));
+          }).catch(function (e) { out2.replaceChildren(msg('err', e.message)); }); }, 'ghost')), exp);
+      }
+
+      // --- manager: sessions and meet settings ---
+      var setup = null;
+      if (mgr) {
+        var list = d.sessions.map(function (s) { return { id: s.id, day: s.day, label: s.label }; });
+        var sBox = el('div'), out3 = el('div');
+        function drawSessions() {
+          sBox.replaceChildren.apply(sBox, d.days.map(function (day) {
+            var mine = list.filter(function (s) { return s.day === day; });
+            return el('div', { class: 'mc-day' }, el('h4', null, dayName(day)),
+              mine.map(function (s) { var i = el('input', { value: s.label, maxlength: 60, 'aria-label': 'Session name', oninput: function (e) { s.label = e.target.value; } });
+                return el('div', { class: 'cp-inline' }, i, btn('Remove', function () { list.splice(list.indexOf(s), 1); drawSessions(); }, 'ghost')); }),
+              el('div', { class: 'cp-btns' }, ['Prelims', 'Finals', 'Timed finals', '12 & Under', 'Session'].map(function (l) { return btn('+ ' + l, function () { list.push({ id: null, day: day, label: l }); drawSessions(); }, 'ghost'); })));
+          }));
+        }
+        drawSessions();
+        var open = el('input', { type: 'checkbox', checked: !!M.open }), travel = el('input', { type: 'checkbox', checked: !!M.travel });
+        var ev = el('input', { value: M.event_id || '', maxlength: 80 }), mnote = el('input', { value: M.note || '', maxlength: 500 });
+        setup = el('div', { class: 'cp-panel' }, el('h3', null, 'Sessions and settings'),
+          el('p', { class: 'cp-small' }, 'One line per session coaches can be assigned to. Renaming keeps the answers; removing hides them.'), sBox, out3,
+          el('div', { class: 'cp-btns' }, btn('Save sessions', function () { api('POST', '/coaching/' + id + '/sessions', { sessions: list.filter(function (s) { return s.label.trim(); }) }).then(function () { flash = 'Sessions saved.'; vCoaching(); }).catch(function (e) { out3.replaceChildren(msg('err', e.message)); }); })),
+          el('div', { class: 'cp-form' }, el('label', { class: 'inline' }, open, ' Open for answers'), el('label', { class: 'inline' }, travel, ' Away meet (mileage)'),
+            el('label', null, 'Events calendar id', ev), el('label', null, 'Note for coaches', mnote),
+            el('div', { class: 'cp-btns' }, btn('Save settings', function () { api('POST', '/coaching/' + id, { open: open.checked, travel: travel.checked, event_id: ev.value, note: mnote.value }).then(function () { flash = 'Saved.'; vCoaching(); }).catch(function (e) { out3.replaceChildren(msg('err', e.message)); }); }, 'ghost'))));
+      }
+      box.replaceChildren.apply(box, [back, head, d.mineId || mgr ? mineBox : null, assignBox, setup].filter(Boolean));
     }).catch(function (e) { fail(box, e); });
   }
 
