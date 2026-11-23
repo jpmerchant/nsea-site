@@ -338,3 +338,20 @@ main{padding:28px 0 64px;min-height:50vh}
 .sched-week h3{margin:0 0 6px}
 .sched-legend{font-size:13px;color:var(--gray);margin:4px 0 16px}
 .sched-legend span{background:var(--coral-light);color:#a02a17;font-weight:600;padding:1px 6px;border-radius:4px}
+
+/* Meet Coaching (admin console) */
+.mc-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mc-seg button{border:0;background:#fff;padding:8px 14px;min-height:40px;font:500 14px var(--f-body,inherit);cursor:pointer;border-left:1px solid var(--line)}
+.mc-seg button:first-child{border-left:0}
+.mc-seg button.mc-yes[aria-pressed=true]{background:#E6F4F1;color:var(--teal-dark);font-weight:700}
+.mc-seg button.mc-maybe[aria-pressed=true]{background:#FFF4DB;color:#8a5a00;font-weight:700}
+.mc-seg button.mc-no[aria-pressed=true]{background:var(--coral-light);color:#a02a17;font-weight:700}
+.mc-nights{display:flex;flex-wrap:wrap;gap:6px 14px}
+.mc-grid{border-collapse:collapse;font-size:14px;min-width:100%}
+.mc-grid th,.mc-grid td{border:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+.mc-grid th[scope=row],.mc-grid tfoot th{text-align:left}
+.mc-grid td.mc-yes span{color:var(--teal-dark);font-weight:700}.mc-grid td.mc-no span{color:#a02a17}.mc-grid td.mc-maybe span{color:#8a5a00;font-weight:700}
+.mc-grid td.mc-on{background:#E6F4F1;box-shadow:inset 0 0 0 2px var(--teal)}
+.mc-grid td input{margin-left:6px;width:18px;height:18px;vertical-align:middle}
+.mc-json{width:100%;font-family:var(--f-mono);font-size:12px}
+.mc-day{margin:0 0 14px}.mc-day .cp-inline{margin:0 0 6px}.mc-days h4{margin:14px 0 2px}
