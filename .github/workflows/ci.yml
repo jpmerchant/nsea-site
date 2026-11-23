@@ -1,0 +1,26 @@
+# Runs the test suite and the site build on every pull request and every push to main.
+# The "test-and-build" check is required before a pull request can merge into main
+# (Settings > Branches), so a failing test can't reach the live Cloudflare deploy.
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
