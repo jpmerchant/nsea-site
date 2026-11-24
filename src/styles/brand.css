@@ -196,6 +196,17 @@ main{padding:28px 0 64px;min-height:50vh}
 .cp-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
 .cp-row:first-of-type{border-top:0}
 .cp-row p{margin:2px 0}
+/* Families & Roster (admin) */
+.fam-row>div:first-child{flex:1 1 420px}
+.fam-chip{display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:999px;font-size:.85rem;border:1px solid var(--line);background:var(--gray-light)}
+.fam-chip.fam-active{border-color:var(--teal);background:#e6f5f4}
+.fam-chip.fam-alumni{border-color:var(--violet)}
+.fam-chip.fam-inactive,.fam-chip.fam-unknown{color:var(--gray)}
+.fam-ok{color:var(--teal-dark)}
+.fam-no{color:var(--coral)}
+.fam-picker{margin-top:6px;max-width:460px}
+.fam-picker input{width:100%}
+.fam-results .cp-row{padding:4px 0}
 .cp-btns{display:flex;gap:6px;flex-wrap:wrap}
 .cp .btn,.cp button.btn{display:inline-block;background:var(--coral);color:#fff;border:0;border-radius:6px;padding:10px 16px;font:600 13px var(--f-head);letter-spacing:.6px;text-transform:uppercase;cursor:pointer;text-decoration:none}
 .cp .btn.small{padding:6px 12px;font-size:12px}

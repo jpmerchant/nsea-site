@@ -9,8 +9,8 @@
 (function () {
   var root = document.getElementById('ac');
   var me = null, view = 'overview', flash = '', linkBox = null;
-  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own Coach’s Corner posts, Meet Day)', staff: 'Staff records (every coach’s profile and private details, approves coach changes)' };
-  var MODULE_LABEL = { carpool: 'Carpool', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner', staff: 'Staff Records', profile: 'My Coach Profile', coaching: 'Meet Coaching' };
+  var ROLE_LABEL = { owner: 'Owner (everything)', carpool: 'Carpool', families: 'Families & Roster (family sign-ins and swimmer links)', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports (coach-only results reports)', meetday: 'Meet Day (coaches’ meet app)', coach: 'Coach (own Coach’s Corner posts, Meet Day)', staff: 'Staff records (every coach’s profile and private details, approves coach changes)' };
+  var MODULE_LABEL = { carpool: 'Carpool', families: 'Families & Roster', events: 'Events & Calendar', schedule: 'Practice Schedule', content: 'Content', assessment: 'Assessments', reports: 'Reports', meetday: 'Meet Day', coach: 'Coach’s Corner', staff: 'Staff Records', profile: 'My Coach Profile', coaching: 'Meet Coaching' };
 
   function el(tag, attrs) {
     var n = document.createElement(tag);
@@ -57,7 +57,7 @@
   // The console is split: coaching tools first, club administration second. A heading shows only if its section has something you can open.
   var NAV = [['overview', 'Overview'],
     ['-', 'Coaching'], ['profile', 'My Coach Profile', 'profile'], ['meetday', 'Meet Day', 'meetday'], ['coaching', 'Meet Coaching', 'coaching'], ['coach', 'Coach’s Corner', 'coach'], ['reports', 'Reports', 'reports'],
-    ['-', 'Admin'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['schedule', 'Practice Schedule', 'schedule'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'],
+    ['-', 'Admin'], ['families', 'Families & Roster', 'families'], ['carpool', 'Carpool', 'carpool'], ['events', 'Events & Calendar', 'events'], ['schedule', 'Practice Schedule', 'schedule'], ['content', 'Content', 'content'], ['assessment', 'Assessments', 'assessment'],
     ['staff', 'Staff Records', 'staff'], ['admins', 'Admins', 'owner'], ['audit', 'Activity log', 'owner']];
   function allowed(n) { return n[0] === '-' || !n[2] || (n[2] === 'owner' ? me.owner : me.modules.indexOf(n[2]) >= 0); }
   function navItems() {
@@ -78,7 +78,7 @@
         el('nav', { class: 'ac-nav', 'aria-label': 'Admin sections' }, navItems()),
         el('div', { class: 'ac-main' }, msg('ok', flash), showLink(), content)));
   }
-  function go(v) { view = v; ({ overview: vOverview, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, coaching: vCoaching, staff: vStaff, profile: vProfile, admins: vAdmins, audit: vAudit })[v](); }
+  function go(v) { view = v; ({ overview: vOverview, families: vFamilies, carpool: vCarpool, events: vEvents, schedule: vSchedule, content: vContent, assessment: vAssessment, coach: vCoach, reports: vReports, meetday: vMeetday, coaching: vCoaching, staff: vStaff, profile: vProfile, admins: vAdmins, audit: vAudit })[v](); }
   function loading() { return el('p', { class: 'cp-empty' }, 'Loading…'); }
   function fail(box, e) { box.replaceChildren(msg('err', e.message)); }
 
@@ -102,6 +102,80 @@
     }).catch(function (e) { fail(box, e); });
   }
   function logLine(r) { return el('p', { class: 'cp-small' }, date(r.at) + ' UTC · ' + r.admin_email + ' · ' + r.module + ': ' + r.action + (r.detail ? ' — ' + r.detail : '')); }
+
+  // ---------- families & roster ----------
+  // A family may use gated tools when its sign-in email is linked to an Active or Alumni swimmer. Captyn links come from the
+  // roster import; links made here (requests, alumni not in Captyn) are kept across imports.
+  var STATUS_LABEL = { active: 'Active', alumni: 'Alumni', inactive: 'Inactive', unknown: 'Not on roster' };
+  function swChip(s, member) {
+    return el('span', { class: 'fam-chip fam-' + s.status }, s.name + ' · ' + STATUS_LABEL[s.status] + (s.source === 'manual' ? ' · added by hand' : ''),
+      member && s.source === 'manual' ? el('button', { class: 'cp-link', type: 'button', 'aria-label': 'Remove ' + s.name, onclick: function () {
+        api('POST', '/families/members/' + member.id + '/unlink', { usa_id: s.usa_id }).then(function () { go(view); }).catch(function (e) { alert(e.message); }); } }, ' ×') : null);
+  }
+  function linkPicker(member, hint) {
+    var out = el('div', { class: 'fam-results' });
+    var inp = el('input', { type: 'search', placeholder: 'Find a swimmer on the roster', 'aria-label': 'Find a swimmer to link to ' + member.family_name, value: hint || '' });
+    var t = null;
+    function run() {
+      var q = inp.value.trim(); if (q.length < 2) { out.replaceChildren(); return; }
+      api('GET', '/families/roster?q=' + encodeURIComponent(q)).then(function (r) {
+        out.replaceChildren.apply(out, r.swimmers.length ? r.swimmers.map(function (x) {
+          return el('div', { class: 'cp-row' }, el('span', null, x.name + ' · ' + STATUS_LABEL[x.status] + (x.grp ? ' · ' + x.grp : '')),
+            btn('Link', function () { api('POST', '/families/members/' + member.id + '/link', { usa_id: x.usa_id }).then(function () { go(view); }).catch(function (e) { alert(e.message); }); }, 'ghost'));
+        }) : [el('p', { class: 'cp-empty' }, 'No swimmer on the roster matches.')]);
+      }).catch(function (e) { out.replaceChildren(msg('err', e.message)); });
+    }
+    inp.addEventListener('input', function () { clearTimeout(t); t = setTimeout(run, 250); });
+    if (hint) setTimeout(run, 0);
+    return el('div', { class: 'fam-picker' }, inp, out);
+  }
+  function famRow(m, pending) {
+    var who = m.relation === 'alum' ? 'Alum' + (m.grad_year ? ' (class of ' + m.grad_year + ')' : '') : 'Family';
+    return el('div', { class: 'cp-row fam-row' },
+      el('div', null, el('strong', null, m.family_name), ' · ' + who, m.swimmers ? ' · says: ' + m.swimmers : '',
+        el('p', { class: 'cp-small' }, m.email + (m.phone ? ' · ' + m.phone : '') + (pending ? ' · requested ' + date(m.created_at).slice(0, 10) : '')),
+        el('p', null, m.linked.length ? m.linked.map(function (s) { return swChip(s, m); }) : el('span', { class: 'cp-small' }, 'No swimmers linked.'),
+          ' ', el('strong', { class: m.eligible ? 'fam-ok' : 'fam-no' }, m.eligible ? 'Can use team tools' : 'Not eligible yet')),
+        linkPicker(m, pending && !m.linked.length ? (m.swimmers || '').split(/[,(&]| and /)[0].trim() : '')),
+      pending ? el('div', { class: 'cp-btns' }, act('Approve', '/families/members/' + m.id + '/approve', m.eligible ? '' : 'ghost', m.family_name), act('Reject', '/families/members/' + m.id + '/reject', 'ghost')) : null);
+  }
+  function vFamilies() {
+    var box = el('div', null, loading()); shell(box);
+    api('GET', '/families').then(function (o) {
+      var pending = o.members.filter(function (m) { return m.status === 'pending'; });
+      var active = o.members.filter(function (m) { return m.status === 'active'; });
+      var notOk = active.filter(function (m) { return !m.eligible; });
+      var rc = o.roster || {};
+      var capOut = el('div', null), capQ = el('input', { type: 'search', placeholder: 'Filter by family or swimmer name', 'aria-label': 'Filter Captyn families' });
+      function loadCaptyn() {
+        api('GET', '/families/captyn?q=' + encodeURIComponent(capQ.value.trim())).then(function (r) {
+          capOut.replaceChildren.apply(capOut, r.families.length ? r.families.map(function (f) {
+            return el('div', { class: 'cp-row' }, el('div', null, el('strong', null, f.family_name || f.email), ' · ' + f.swimmers, el('p', { class: 'cp-small' }, f.email)),
+              el('div', { class: 'cp-btns' }, act('Make sign-in link', '/families/captyn-invite', 'ghost', f.family_name || f.email, { email: f.email })));
+          }) : [el('p', { class: 'cp-empty' }, 'No Captyn families waiting for a sign-in.')]);
+        }).catch(function (e) { capOut.replaceChildren(msg('err', e.message)); });
+      }
+      var ct = null; capQ.addEventListener('input', function () { clearTimeout(ct); ct = setTimeout(loadCaptyn, 250); });
+      box.replaceChildren(el('h2', null, 'Families & Roster'),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Roster'),
+          o.import ? el('p', null, 'From the Captyn export of ' + o.import.exported_at + ' and the results database (loaded ' + date(o.import.loaded_at).slice(0, 10) + '): ',
+            el('strong', null, String(rc.active || 0)), ' active, ', el('strong', null, String(rc.alumni || 0)), ' alumni, ', String(rc.inactive || 0) + ' inactive swimmers; ' + o.import.families + ' Captyn families.')
+            : el('p', { class: 'cp-empty' }, 'No roster loaded yet. Run import_captyn_roster.py in results-db and load roster/d1_roster.sql.'),
+          el('p', { class: 'cp-small' }, o.gate ? 'Team-families gate is ON: only families linked to an Active or Alumni swimmer can use family tools.'
+            : 'Team-families gate is OFF: every approved family can still use family tools. Eligibility is shown so you can check before it is switched on.')),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Requests waiting (' + pending.length + ')'),
+          el('p', { class: 'cp-small' }, 'Link each request to their swimmer(s) on the roster, then approve. Approving gives a one-time sign-in link to send privately.'),
+          pending.length ? pending.map(function (m) { return famRow(m, true); }) : el('p', { class: 'cp-empty' }, 'No requests waiting.')),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Roster families without a sign-in (' + o.unclaimed + ')'),
+          el('p', { class: 'cp-small' }, 'Captyn families (and alumni contacts you added) with an Active or Alumni swimmer. Send the link to their email yourself; nothing is sent automatically.'), capQ, capOut),
+        notOk.length ? el('div', { class: 'cp-panel' }, el('h3', null, 'Signed-in families not linked to an eligible swimmer (' + notOk.length + ')'),
+          el('p', { class: 'cp-small' }, 'They would lose access when the gate is switched on. Link their swimmer, or leave them if they have left the team.'),
+          notOk.map(function (m) { return famRow(m, false); })) : null,
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Families with a sign-in (' + active.length + ')'),
+          active.filter(function (m) { return m.eligible; }).map(function (m) { return famRow(m, false); })));
+      loadCaptyn();
+    }).catch(function (e) { fail(box, e); });
+  }
 
   // ---------- carpool ----------
   function vCarpool() {
