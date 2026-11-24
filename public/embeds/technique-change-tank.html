@@ -146,7 +146,8 @@ body.family .adv,body.family .coach{display:none}
     <p><strong>Tank size</strong> is anchored on Richard Schmidt's estimate, cited by Brent Rushall: about 300 trials make a habit and about 3,000 trials with meaningful feedback are needed to correct it. A 3-year habit is set at 3,000 reps for wall or length skills and 24,000 stroke cycles for stroke skills (Rod Havriluk: tens of thousands of repetitions). It grows with the square root of years, because older swimmers resist change more.</p>
     <p><strong>Deliberate focus</strong> is the share of focused reps done with full attention and feedback. Most of that feedback is the swimmer's own: what they feel, see and count. A coach, teammates, video or devices add to it. A focused rep without it counts about a fifth, as do unfocused reps done the new way. Rushall and Havriluk both find that reps without feedback rarely change technique.</p>
     <p><strong>Old-way reps</strong> practice the old habit. Each counts as a share of a deliberate rep (the weight setting). Leak and quality improve as the change takes hold; turn on <em>Pure physics</em> to hold them fixed.</p>
-    <p><strong>Race stress:</strong> a learned pattern is never erased, only suppressed, and it can return under fatigue or pressure. The dashed line is the practice share squared: it lags, and catches up only as the change becomes very strong.</p>
+    <p><strong>Race stress:</strong> a learned pattern is never erased, only suppressed, and it can return under fatigue or pressure. The dashed line lags the practice line: it is the practice share squared, and catches up only as the change becomes very strong.</p>
+    <p><strong>Practice design</strong> comes from the constraints-led approach and attention research. <em>Task design</em> (stroke-count or tempo targets, equipment, breathing patterns) makes reps cleaner and lets unfocused reps count up to twice as much (0.4 instead of 0.2). <em>Race-pace share</em> and <em>cue style</em> narrow the gap between practice and race stress: at 100% race pace with a simple image the two lines nearly meet. The sizes of these effects are illustrative choices, not measured values.</p>
     <p>The numbers are illustrative. They show the shape of change and which settings matter most, not a promise for any one swimmer.</p>
   </details>
   <p class="note">Illustrative model, NSEA Swim. Defaults are sample settings for a typical age group or senior swimmer. The research behind it: <a href="/training/same/education/technique-change-guide/" target="_top">Changing Technique: A Quick Guide</a> and <a href="/training/same/education/technique-change-research/" target="_top">The Research</a>.</p>
@@ -164,6 +165,10 @@ const CTLS=[
  {id:'ppw',l:'Practices per week',min:1,max:10,step:1,f:v=>v,h:'How often the cold tap runs.'},
  {id:'qual',l:'Rep quality',min:0,max:100,step:5,f:v=>v+'%',h:'How correct a new rep usually is. Half-right reps are lukewarm water.'},
  {id:'fb',l:'Deliberate focus',min:0,max:100,step:5,f:v=>v+'%',h:'Share of focused reps done with full attention and feedback. Most feedback is the swimmer\'s own: feel, what they see, counting. A coach, teammates, video or devices add to it. A rep on autopilot counts about a fifth.'},
+ {g:'Practice design (what the coach and swimmer can change)'},
+ {id:'td',l:'Task design',type:'select',opts:[['none','Instructions only'],['some','Some task design'],['full','Practice built around the change']],h:'Stroke-count or tempo targets, equipment, breathing patterns and distances that make the better movement the easy one. Cleaner reps, and unfocused reps drift toward the new way.'},
+ {id:'rp',l:'Race-pace share of focused reps',min:0,max:100,step:10,f:v=>v+'%',h:'Learn slow first, then build speed. Reps at race pace help the change hold under pressure.'},
+ {id:'cue',l:'Cue style',type:'select',opts:[['body','Body-part checklist'],['effect','Effect cue ("push the water back")'],['analogy','Simple image ("swim downhill")']],h:'Effect cues and simple images tend to hold up better under pressure than a list of body positions.'},
  {g:'Hot water (the old habit)'},
  {id:'leak',l:'Leak: other reps still done the old way',min:0,max:100,step:5,f:v=>v+'%',h:'Tired reps, unwatched sets and drills done the old way.'},
  {id:'oldw',l:'Weight of an old-way rep',min:0,max:100,step:5,adv:1,f:v=>v+'%',h:'How much an old-way rep strengthens the old habit, compared with one deliberate rep of the new technique.'},
@@ -174,10 +179,10 @@ const CTLS=[
  {id:'doneWhen',l:'Done means it holds',type:'select',adv:1,opts:[['practice','In practice'],['stress','Under race stress']],h:'The old pattern is never erased. Under fatigue or race pressure it can come back.'},
  {id:'physics',l:'Pure physics: leak and quality stay fixed',type:'check',adv:1}
 ];
-const BASE={unit:'wall',qual:70,fb:60,leak:70,oldw:50,meets:1,bump:'0.1',done:90,doneWhen:'practice',physics:false};
+const BASE={unit:'wall',qual:70,fb:60,leak:70,oldw:50,meets:1,bump:'0.1',done:90,doneWhen:'practice',physics:false,td:'none',rp:0,cue:'body'};
 const PRE={age:{years:3,yards:4000,focus:20,ppw:4},sen:{years:8,yards:25000,focus:30,ppw:8}};
 let p=Object.assign({},BASE,PRE.age),view='coach',preset='age',cur=0,res=null,timer=null;
-try{const s=JSON.parse(localStorage.getItem('nseaTank2')||'null');if(s){Object.assign(p,s.p);view=s.view||view;preset=s.preset||''}}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('nseaTank3')||'null');if(s){Object.assign(p,s.p);view=s.view||view;preset=s.preset||''}}catch(e){}
 const $=id=>document.getElementById(id);
 
 $('ctls').innerHTML=CTLS.map(c=>{
@@ -193,20 +198,22 @@ function syncInputs(){for(const c of CTLS){if(!c.id)continue;const el=$(c.id);if
 function sim(p){
  const div={wall:25,lcm:50,cycle:25/8}[p.unit], base=p.unit==='cycle'?24000:3000;
  const R=p.yards/div, V=base*Math.sqrt(p.years/3);
- const F=Math.min(p.focus*p.ppw,R), O=R-F, fb=p.fb/100, wNo=0.2, wOld=p.oldw/100;
+ const td={none:0,some:0.5,full:1}[p.td]||0, rp=p.rp/100, cueK={body:0,effect:0.15,analogy:0.3}[p.cue]||0;
+ const k=Math.max(1,2-0.7*rp-cueK);
+ const F=Math.min(p.focus*p.ppw,R), O=R-F, fb=p.fb/100, wNo=0.2+0.2*td, wOld=p.oldw/100;
  const L0=p.leak/100, q0=p.qual/100, D=p.done/100, bump=+p.bump, stress=p.doneWhen==='stress';
  const every=p.meets>0?Math.max(1,Math.round(4.33/p.meets)):0;
  let H=1;const c=[0],sx=[0],cold=[0],hot=[0],qa=[q0],lk=[L0];let pWk=null,sWk=null;
  for(let t=1;t<=520;t++){
-  const L=p.physics?L0:L0*H, q=p.physics?q0:q0+(1-q0)*(1-H);
+  const L=p.physics?L0:L0*H, qb=p.physics?q0:q0+(1-q0)*(1-H), q=qb+(1-qb)*0.25*td;
   const Fe=F*(fb+wNo*(1-fb)), unf=O*(1-L)*wNo;
   let hotV=O*L*wOld;
   if(every&&t%every===0)hotV+=bump*R*wOld*(p.physics?1:H);
   const Q=Fe+unf+hotV;
   if(Q>0){const hin=((Fe+unf)*(1-q)+hotV)/Q;H=hin+(H-hin)*Math.exp(-Q/V)}
-  const v=1-H;c.push(v);sx.push(v*v);cold.push(Q?(Fe+unf)/Q:0);hot.push(Q?hotV/Q:0);qa.push(q);lk.push(L);
+  const v=1-H,vs=v**k;c.push(v);sx.push(vs);cold.push(Q?(Fe+unf)/Q:0);hot.push(Q?hotV/Q:0);qa.push(q);lk.push(L);
   if(pWk===null&&v>=D)pWk=t;
-  if(sWk===null&&v*v>=D)sWk=t;
+  if(sWk===null&&vs>=D)sWk=t;
  }
  const doneWk=stress?sWk:pWk, tgt=stress?sx:c;
  let span;
@@ -260,7 +267,7 @@ function run(keepWeek){
  cur=Math.min(cur,res.span);
  $('status').textContent=statusText();
  paint();
- try{localStorage.setItem('nseaTank2',JSON.stringify({p,view,preset}))}catch(e){}
+ try{localStorage.setItem('nseaTank3',JSON.stringify({p,view,preset}))}catch(e){}
 }
 
 const svg=$('chart');
