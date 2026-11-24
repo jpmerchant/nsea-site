@@ -5,6 +5,7 @@ import { DEFAULT_CUTS } from './lib/flags.mjs';
 import { derive, sessionSummary, meetSummary, parseTyped, notesFor, blocksOf, blockOf, blockFlow, nowInPools, poolName, ttEvent, MOTIVATIONAL, GROUPS, inGroup } from './lib/model.mjs';
 import { guessSession, heatSheetRows, photoHeatRows, ttPhotoRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
+import { dqGroups, DQ_BY_CODE, dqCall, dqCallLabel } from './lib/dqcodes.mjs';
 
 const CDN = {
   pdf: new URL('vendor/pdf.min.mjs', import.meta.url).href,
@@ -14,24 +15,18 @@ const CDN = {
   tessCore: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',
   tessLang: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int',
 };
-const TAGS = ['Great start', 'Breakouts', 'Underwaters', 'Turns', 'Finish', 'Pacing', 'Went out fast', 'Faded', 'Stroke count', 'Talk after', 'DQ review'];
-const tagList = () => (S.model && S.model.tags) || S.settings.tags || TAGS;
+const TAGS = ['Great start', 'Breakouts', 'Underwaters', 'Turns', 'Finish', 'Pacing', 'Went out fast', 'Faded', 'Stroke count', 'Talk after'];
+// DQ is not a tag: it has its own button and record (codes + details), so any old "DQ…" tag is left out.
+const tagList = () => ((S.model && S.model.tags) || S.settings.tags || TAGS).filter((t) => !/^DQ\b/i.test(t));
 const TIER_TXT = { hit: 'Got it', under: 'Seed under', 1: '≤1%', 3: '≤3%' };
 const KIND_TXT = { record: 'REC', top10: 'T10', cut: 'CUT' };
-// DQ quick picks by stroke (coaches can also type the reason, and edit it later from the wrap-up).
-const DQ_BY = {
-  Free: ['No touch on the turn', 'Walked on the bottom', 'Pulled on the lane line'],
-  Back: ['Shoulders past vertical', 'Non-continuous turn', 'Not on back off the wall', 'Past 15 m', 'Finish not on back'],
-  Breast: ['One-hand touch', 'Non-simultaneous kick', 'Alternating kick', 'Scissors kick', 'Downward fly kick', 'Hands past hips', 'Two strokes under water', 'Head not up each cycle'],
-  Fly: ['One-hand touch', 'Non-simultaneous arms', 'Alternating kick', 'Breaststroke kick', 'Arms not over water', 'Past 15 m'],
-};
-DQ_BY.IM = ['Out of order', ...new Set([...DQ_BY.Back, ...DQ_BY.Breast, ...DQ_BY.Fly])];
-function dqPicks(r) {
-  const st = String((r.ev && r.ev.stroke) || '');
-  const k = /IM|Medley/i.test(st) ? 'IM' : /Back/i.test(st) ? 'Back' : /Breast/i.test(st) ? 'Breast' : /Fly|Butter/i.test(st) ? 'Fly' : 'Free';
-  return [...(r.relay ? ['Early takeoff', 'Out of order'] : []), 'False start', ...DQ_BY[k], 'Did not finish'];
-}
-const dqText = (q) => (q ? [...(q.codes || []), q.text].filter(Boolean).join(' · ') : '');
+// A DQ as text: "3A Alternating kick · 2nd length". Short form (codes only) for the swim card button.
+const dqText = (q) => (q ? [...(q.calls || []).map(dqCallLabel), q.text].filter(Boolean).join(' · ') : '');
+// Results that aren't a time. NS is a no show, DFS a declared false start (usually a final or a
+// positive check-in event), DNF did not finish; DQ has its own button and call.
+const STATUS_TXT = { DQ: 'Disqualified', NS: 'No show', DFS: 'Declared false start', DNF: 'Did not finish', SCR: 'Scratched' };
+const statusHead = (list) => { const have = new Set(list.map((r) => r.result.status)); return ['DQ', 'NS', 'DFS', 'DNF', 'SCR'].filter((k) => have.has(k)).join(' / ') || 'DQ / NS'; };
+const dqShort = (q) => (q && q.calls && q.calls.length ? q.calls.map((c) => c.code || '✎').join(' ') : '');
 const delta = (d, lbl, cls = '') => (d == null ? '' : `<small class="${d < 0 ? 'drop' : 'add'} ${cls}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}${lbl ? ' ' + lbl : ''}</small>`);
 const sgn = (d) => (d == null ? '' : (d < 0 ? '−' : '+') + fmt(Math.abs(d)));
 
@@ -349,7 +344,8 @@ function rowHtml(r, showHeat = true, quick = false) {
   const tier = top ? top.tier : '';
   const chips = flags.slice(0, 4).map((f) => `<span class="pill t-${f.tier}" title="${esc(f.label + ' ' + (f.sub || ''))}">${KIND_TXT[f.kind]} ${esc(shortLabel(f))}</span>`).join('');
   const seedLine = r.isFinal ? `prelims ${r.prelim ? (r.prelim.time != null ? fmt(r.prelim.time) : esc(r.prelim.status)) : fmt(r.seed)} · entry ${fmt(r.entryTime)}` : `seed ${fmt(r.seed)}`;
-  const dqLine = res && res.status === 'DQ' ? `<div class="small dqwhy">DQ${r.dq ? ': ' + esc(dqText(r.dq)) : ' · <i>reason?</i>'}</div>` : '';
+  const dqLine = res && res.status === 'DQ' ? `<div class="small dqwhy">DQ${r.dq ? ': ' + esc(dqText(r.dq)) : ' · <i>reason?</i>'}</div>`
+    : res && STATUS_TXT[res.status] ? `<div class="small dqwhy">${esc(STATUS_TXT[res.status])}${r.dq && r.dq.text ? ' · ' + esc(r.dq.text) : ''}</div>` : '';
   return `<div class="row tier-${esc(tier)} ${r.scratched ? 'scr' : ''}" data-act="entry" data-id="${esc(r.id)}">
     ${showHeat ? `<div class="hl ${r.heat ? '' : 'tbd'}">${r.heat ? `H${r.heat}<br>L${r.lane ?? '?'}` : 'TBD'}</div>`
       : `<div class="hl lane ${r.lane ? '' : 'tbd'}"><small>Lane</small>${r.lane ?? '?'}</div>`}
@@ -357,13 +353,17 @@ function rowHtml(r, showHeat = true, quick = false) {
       ${r.relay ? legsLine(r) : ''}
       <div class="seed">${seedLine}${r.sessOut ? ' · ABSENT' : r.scratched ? ' · SCRATCHED' : ''}</div>${dqLine}<div>${chips}</div></div>
     <div class="res">${res ? `<b>${res.time != null ? fmt(res.time) : esc(res.status)}</b>${r.isFinal ? delta(r.dPrelim, 'pre', 'blk') + delta(r.dEntry, 'entry', 'blk') : delta(r.delta)}${r.isFinal ? '' : '<br>'}${r.official ? '<span class="pill ok">official</span>' : '<span class="pill off">unofficial</span>'}` : '<span class="muted small">tap to add</span>'}</div>
-  </div>${quick && !r.scratched && S.settings.quick !== false ? quickBar(r) : ''}`;
+  </div>${quick && !r.scratched ? quickBar(r) : ''}`;
 }
-// One-tap tags and a star right on the swim card: no typing during the session.
+// Star, DQ and one-tap tags right on the swim card: no typing during the session.
+// DQ has its own button (not a tag): one tap opens the calls for that stroke.
 function quickBar(r) {
   const has = new Set(r.notes.flatMap((n) => n.tags || []));
+  const isDq = r.result && r.result.status === 'DQ';
+  const tags = S.settings.quick !== false;
   return `<div class="quick noprint"><button class="qstar" data-act="star" data-id="${esc(r.id)}" aria-pressed="${r.starred}" aria-label="${r.starred ? 'Unstar' : 'Star for the wrap-up'}">${r.starred ? '★' : '☆'}</button>
-    <div class="chips">${tagList().map((t) => `<button class="chip qt" data-act="qtag" data-id="${esc(r.id)}" data-t="${esc(t)}" aria-pressed="${has.has(t)}">${esc(t)}</button>`).join('')}</div></div>`;
+    <button class="qdq" data-act="dq-open" data-id="${esc(r.id)}" aria-pressed="${!!isDq}" aria-label="${isDq ? 'DQ: change the call' : 'Mark DQ'}">DQ${isDq && r.dq ? ` <small>${esc(dqShort(r.dq))}</small>` : isDq ? ' <small>?</small>' : ''}</button>
+    ${tags ? `<div class="chips">${tagList().map((t) => `<button class="chip qt" data-act="qtag" data-id="${esc(r.id)}" data-t="${esc(t)}" aria-pressed="${has.has(t)}">${esc(t)}</button>`).join('')}</div>` : ''}</div>`;
 }
 function sessNav(B, cur) {
   return `<div class="chips stepnav noprint">${[['setup', '1 · Setup', `#/setup/${B.n}`], ['live', '2 · Events', `#/day/${B.day}/${B.n}`], ['wrap', '3 · Wrap-up', `#/summary/${B.n}`]].map(([k, t, h]) => `<a class="chip" href="${h}" aria-pressed="${k === cur}">${t}</a>`).join('')}</div>`;
@@ -399,12 +399,12 @@ function openEntry(id) {
     <p class="small muted" style="margin-top:0">${r.heat ? `Heat ${r.heat}${r.heats ? ' of ' + r.heats : ''} · Lane ${r.lane}` : 'Heat/lane not set'}${r.start ? ' · ~' + esc(r.start) : ''} · ${r.isFinal ? `Prelims <b class="mono">${r.prelim ? (r.prelim.time != null ? fmt(r.prelim.time) : esc(r.prelim.status)) : fmt(r.seed)}</b> · Entry <b class="mono">${fmt(r.entryTime)}</b>` : `Seed <b class="mono">${fmt(r.seed)}</b>${r.entryTime != null && r.entryTime !== r.seed ? ` · Entry <b class="mono">${fmt(r.entryTime)}</b>` : ''}`}</p>
     ${res && res.time != null && (r.isFinal || r.dEntry != null) ? `<p class="small" style="margin-top:-6px">${r.isFinal ? `${esc(sgn(r.dPrelim) || '—')} vs prelims · ` : ''}${esc(sgn(r.dEntry) || '—')} vs entry${r.best ? ' · <b class="drop">best time</b>' : ''}</p>` : ''}
     <label class="f" for="t">Time ${res ? `<span class="muted">(now ${res.time != null ? fmt(res.time) : esc(res.status)}, ${esc(res.source || 'manual')}${r.official ? ', official' : ', unofficial'})</span>` : ''}</label>
-    <div class="timein"><input id="t" inputmode="decimal" autocomplete="off" placeholder="e.g. 5912 or 2:15.33" value="${res && res.time != null ? fmt(res.time) : ''}"><button class="btn solid" data-act="save-time" data-id="${esc(id)}">Save</button></div>
-    <div class="btns" style="margin-top:8px"><button class="btn sm ghost" data-act="dq-open" data-id="${esc(id)}">DQ…</button><button class="btn sm ghost" data-act="status" data-s="NS" data-id="${esc(id)}">NS</button>
+    <div class="timein"><input id="t" inputmode="decimal" autocomplete="off" placeholder="5912 · 2:15.33 · NS" value="${res && res.time != null ? fmt(res.time) : ''}"><button class="btn solid" data-act="save-time" data-id="${esc(id)}">Save</button><button class="btn dqbtn" data-act="dq-open" data-id="${esc(id)}">DQ</button></div>
+    <div class="btns" style="margin-top:8px">${['NS', 'DFS', 'DNF'].map((k) => `<button class="btn sm ${res && res.status === k ? 'solid' : 'ghost'}" data-act="status" data-s="${k}" data-id="${esc(id)}" title="${esc(STATUS_TXT[k])}">${k}</button>`).join('')}
       <button class="btn sm ${r.starred ? 'solid' : 'ghost'}" data-act="star" data-id="${esc(id)}">${r.starred ? '★ Starred' : '☆ Star'}</button>
       ${res ? `<button class="btn sm ghost" data-act="clear-time" data-id="${esc(id)}">Clear time</button>` : ''}
       ${r.meetOut ? '' : `<button class="btn sm ghost" data-act="scratch" data-id="${esc(id)}">${r.scratched ? 'Un-scratch' : 'Scratch'}</button>`}</div>
-    ${res && res.status === 'DQ' ? `<div class="banner warn" style="margin-top:10px"><b>DQ</b>${r.dq ? `: ${esc(dqText(r.dq))} <span class="small">(${esc(r.dq.by)})</span>` : ' · no reason yet'} · <a href="#" data-act="dq-open" data-id="${esc(id)}">${r.dq ? 'Edit reason' : 'Add reason'}</a></div>` : ''}
+    ${res && res.status === 'DQ' ? `<div class="banner warn" style="margin-top:10px"><b>DQ</b>${r.dq ? `: ${esc(dqText(r.dq))} <span class="small">(${esc(r.dq.by)})</span>` : ' · no reason yet'}${r.dqOfficial && !r.dq.official ? `<div class="small">Official results: ${esc(r.dqOfficial.call ? dqCallLabel(r.dqOfficial.call) : r.dqOfficial.desc)}</div>` : ''} · <a href="#" data-act="dq-open" data-id="${esc(id)}">${r.dq && !r.dq.official ? 'Edit the call' : 'Add the call'}</a></div>` : ''}
     ${r.sessOut ? `<p class="small" style="color:var(--coral)">Marked absent for this session. <a href="#/setup/${r.session}" data-act="close-go">Check-in</a></p>` : ''}
     ${r.meetOut ? `<p class="small" style="color:var(--coral)">Scratched from the whole meet. <a href="#/swimmer/${r.swimmerId}" data-act="close-go">Change on ${esc(r.swimmer.first || 'their')} page</a></p>` : ''}
     <details style="margin-top:10px"><summary class="small" style="cursor:pointer;color:var(--teal-dark)">Change heat / lane${r.heat ? '' : ' (not set yet)'}</summary>
@@ -420,19 +420,36 @@ function openEntry(id) {
     ${r.relay ? '' : `<p class="small muted" style="margin-top:10px"><a href="#/swimmer/${r.swimmerId}" data-act="close-go">All of ${esc(r.swimmer.first || r.swimmer.name)}'s swims →</a></p>`}`);
   setTimeout(() => { const t = $('#t'); if (t && !res) t.focus(); }, 60);
 }
-// DQ with its reason: quick picks for the stroke plus free text. The reason is its own record, so an official
-// DQ loaded later keeps it, and it can be added or changed after the session (wrap-up).
+// DQ with its call: the USA Swimming DQ codes for the stroke (code + description, as on the DQ slip and in
+// Meet Manager), plus details. The call is its own record, so an official DQ loaded later keeps it, and it can
+// be added or changed after the session (wrap-up). Official results' printed reason shows when there is one.
 function openDq(id) {
   const r = S.model.rows.find((x) => x.id === id);
   if (!r) return;
-  const cur = r.dq || { codes: [], text: '' };
-  sheet(`<p class="kicker">${evNo(r.event)} ${esc(r.ev.title || '')} · ${esc(r.round)}</p>
+  const cur = r.dq && !r.dq.official ? r.dq : { calls: [], text: '' };
+  const on = new Set(cur.calls.map((c) => c.code).filter(Boolean));
+  const extra = cur.calls.filter((c) => !c.code); // older calls saved as words only
+  const chip = (c) => `<button class="chip dqc" data-act="tag" data-code="${esc(c.code)}" aria-pressed="${on.has(c.code)}"><b>${esc(c.code)}</b> ${esc(c.desc)}</button>`;
+  const groups = dqGroups(r.ev && r.ev.stroke, !!r.relay);
+  sheet(`<p class="kicker">${evNo(r.event)} ${esc(r.ev.title || '')} · ${esc(r.round)}${r.heat ? ` · H${r.heat} L${r.lane ?? '?'}` : ''}</p>
     <h2 style="margin-bottom:2px">DQ · ${esc(r.swimmer.name)}</h2>
-    <p class="small muted" style="margin-top:0">Pick the call (or type it). Not sure yet? Save it and add the reason in the wrap-up.</p>
-    <div class="tags">${[...new Set([...dqPicks(r), ...cur.codes])].map((c) => `<button class="chip dqc" data-act="tag" aria-pressed="${cur.codes.includes(c)}">${esc(c)}</button>`).join('')}</div>
-    <textarea id="dqtext" placeholder="Details: which length, what the official said…">${esc(cur.text)}</textarea>
+    ${r.dqOfficial ? `<p class="small dqwhy" style="margin-top:0">Official results: ${esc(r.dqOfficial.call ? dqCallLabel(r.dqOfficial.call) : r.dqOfficial.desc)}</p>` : ''}
+    <p class="small muted" style="margin-top:0">Tap the call from the DQ slip (more than one is fine). Not sure yet? Save the DQ and add the call in the wrap-up.</p>
+    <input id="dqfind" type="search" placeholder="Find a call (e.g. kick, 15, touch)…" autocomplete="off" style="margin-bottom:6px">
+    ${extra.length ? `<div class="tags dqg">${extra.map((c) => `<button class="chip dqc" data-act="tag" data-desc="${esc(c.desc)}" aria-pressed="true">${esc(c.desc)}</button>`).join('')}</div>` : ''}
+    ${groups.map((g, i) => `<details class="dqg" ${i < (groups.length > 2 ? 2 : 1) || g.codes.some((c) => on.has(c.code)) ? 'open' : ''}><summary class="kicker">${esc(g.name)}</summary><div class="tags">${g.codes.map(chip).join('')}</div></details>`).join('')}
+    <textarea id="dqtext" placeholder="Details: which length or leg, what the official said…">${esc(cur.text)}</textarea>
     <div class="btns" style="margin-top:8px"><button class="btn solid" data-act="dq-save" data-id="${esc(id)}">Save DQ</button>${micBtn('dqtext')}
       ${r.result && r.result.status === 'DQ' ? '' : '<button class="btn ghost" data-act="entry" data-id="' + esc(id) + '">Back</button>'}<button class="btn ghost" data-act="close">Close</button></div>`);
+  const f = $('#dqfind');
+  if (f) f.oninput = () => {
+    const q = f.value.trim().toLowerCase();
+    document.querySelectorAll('#sheet details.dqg').forEach((d) => {
+      let any = false;
+      d.querySelectorAll('.dqc').forEach((b) => { const hit = !q || b.textContent.toLowerCase().includes(q); b.hidden = !hit; any = any || hit; });
+      d.hidden = !any; if (q && any) d.open = true;
+    });
+  };
 }
 
 // ---------- session setup: who's here, which coach is where, which cuts to watch ----------
@@ -528,7 +545,7 @@ function renderSummary(n) {
   ${X.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(X.top10)}</ul></div>` : ''}
   ${finalsBack.length ? `<div class="card"><h3>Back for finals (top 40)${tag}</h3><ul class="sumlist">${finalsBack.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${r.result.place}${ordinal(r.result.place)} <span class="mono">${fmt(r.result.time)}</span></li>`).join('')}</ul></div>` : ''}
   ${X.close.length ? `<div class="card"><h3>Just missed (within 1%)</h3><ul class="sumlist">${X.close.map(({ r, f, miss }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} by <span class="mono">${fmt(miss)}</span></li>`).join('')}</ul></div>` : ''}
-  ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status === 'DQ' ? (r.dq ? `: ${esc(dqText(r.dq))} <a href="#" class="small" data-act="dq-open" data-id="${esc(r.id)}">edit</a>` : ` · <a href="#" data-act="dq-open" data-id="${esc(r.id)}">add reason</a>`) : ''}</li>`).join('')}</ul></div>` : ''}
+  ${X.dq.length ? `<div class="card"><h3>${statusHead(X.dq)}</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status !== 'DQ' && STATUS_TXT[r.result.status] ? ` <span class="muted small">${esc(STATUS_TXT[r.result.status].toLowerCase())}</span>` : ''}${r.result.status === 'DQ' ? (r.dq ? `: ${esc(dqText(r.dq))} <a href="#" class="small" data-act="dq-open" data-id="${esc(r.id)}">edit</a>` : ` · <a href="#" data-act="dq-open" data-id="${esc(r.id)}">add reason</a>`) : ''}</li>`).join('')}</ul></div>` : ''}
   <h2>Session thoughts</h2>
   ${notesCard(s)}
   ${X.relays.length ? `<div class="card"><h3>Relays</h3><table class="t"><tbody>${X.relays.map((r) => `<tr><td>${evNo(r.event)} ${esc(r.ev.title || '')} <b>${esc(r.relay)}</b><div class="small muted">${r.legSw.map((w, i) => `${i + 1} ${w ? esc(shortName(w)) : '?'}`).join(' · ')}</div></td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
@@ -543,7 +560,7 @@ const noteLine = (n) => [...(n.tags || []), n.text].filter(Boolean).join(' · ')
 function textBlocks(L, X) {
   const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${who(r)} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
   sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
-  if (X.dq.length) { L.push('', 'DQ / NS'); X.dq.forEach((r) => L.push(`• ${who(r)} – ${r.ev.title}: ${r.result.status}${r.dq ? ' – ' + dqText(r.dq) : ''}`)); }
+  if (X.dq.length) { L.push('', statusHead(X.dq)); X.dq.forEach((r) => L.push(`• ${who(r)} – ${r.ev.title}: ${r.result.status}${r.result.status !== 'DQ' && STATUS_TXT[r.result.status] ? ` (${STATUS_TXT[r.result.status].toLowerCase()})` : ''}${r.result.status === 'DQ' && r.dq ? ' – ' + dqText(r.dq) : r.dq && r.dq.text ? ' – ' + r.dq.text : ''}`)); }
 }
 function summaryText(n) {
   const B = blockOf(SS(), n), s = B.lead, X = sessionSummary(S.model, B.sessions.map((x) => x.n));
@@ -572,7 +589,7 @@ function renderWrapup() {
   ${W.records.length ? `<div class="card"><h3>Team records${tag}</h3><ul class="sumlist">${li(W.records)}</ul></div>` : ''}
   ${W.cuts.length ? `<div class="card"><h3>New championship cuts${tag}</h3><ul class="sumlist">${li(W.cuts)}</ul></div>` : ''}
   ${W.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(W.top10)}</ul></div>` : ''}
-  ${W.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${W.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.dq ? ': ' + esc(dqText(r.dq)) : ''}</li>`).join('')}</ul></div>` : ''}
+  ${W.dq.length ? `<div class="card"><h3>${statusHead(W.dq)}</h3><ul class="sumlist">${W.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status !== 'DQ' && STATUS_TXT[r.result.status] ? ` <span class="muted small">${esc(STATUS_TXT[r.result.status].toLowerCase())}</span>` : ''}${r.result.status === 'DQ' && r.dq ? ': ' + esc(dqText(r.dq)) : r.dq && r.dq.text ? ': ' + esc(r.dq.text) : ''}</li>`).join('')}</ul></div>` : ''}
   ${W.tags.length ? `<div class="card"><h3>Notes by tag</h3><p class="small muted">Every swim note and coach note this meet, grouped by its tags. Useful for planning practice.</p>
     ${W.tags.map((g) => `<details><summary><b>${esc(g.tag)}</b> <span class="muted small">${g.list.length}</span></summary><ul class="sumlist">${g.list.map(nl).join('')}</ul></details>`).join('')}</div>` : ''}
   ${W.starred.length ? `<div class="card"><h3>Starred swims</h3><ul class="sumlist">${W.starred.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc(noteLine(n))).join('<br>')}</div>` : ''}</li>`).join('')}</ul></div>` : ''}
@@ -669,7 +686,7 @@ function renderTools() {
   ${S.pkg ? (() => { const cur = S.model.meetCuts || S.settings.cuts, names = S.pkg.refs.cutNames || [], mot = MOTIVATIONAL.every((c) => cur.includes(c));
     return `<div class="card"><h3>Cuts to flag (meet default)</h3><p class="small muted">Shared with every coach for this meet. Team records and Top 10 are always tracked. Each session or pool can pick its own on its Setup page; 12 &amp; Under pools start with B–AAAA and NC AG.</p>
     <div class="tags">${MOTIVATIONAL.some((c) => names.includes(c)) ? `<button class="chip" data-act="cut" data-c="__mot" aria-pressed="${mot}">B–AAAA</button>` : ''}${cutOrder(names).filter((c) => !MOTIVATIONAL.includes(c)).map((c) => `<button class="chip" data-act="cut" data-c="${esc(c)}" aria-pressed="${cur.includes(c)}">${esc(c)}</button>`).join('')}</div></div>
-  <div class="card"><h3>Swim cards</h3><label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-act="quick-toggle" ${S.settings.quick !== false ? 'checked' : ''} style="width:auto"> Show the star and one-tap tags under each swim (this phone)</label></div>`; })() : ''}
+  <div class="card"><h3>Swim cards</h3><label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-act="quick-toggle" ${S.settings.quick !== false ? 'checked' : ''} style="width:auto"> Show the one-tap tags under each swim (this phone; the ☆ and DQ buttons always show)</label></div>`; })() : ''}
 
   ${S.pkg ? `<div class="card"><h3>Note tags</h3><p class="small muted">The quick tags on swim and coach notes. Changes sync to every coach for this meet; renaming a tag also relabels notes that already use it.</p>
     <div id="tag-list">${tagList().map((t, i) => `<div class="timein" style="margin-top:6px"><input data-tag-i="${i}" value="${esc(t)}" aria-label="Tag ${i + 1}"><button class="btn sm" data-act="tag-save" data-i="${i}">Save</button><button class="btn sm ghost" data-act="tag-del" data-i="${i}" aria-label="Delete ${esc(t)}">✕</button></div>`).join('')}</div>
@@ -863,12 +880,12 @@ async function shotUpload(files, el) {
 function reviewResults(el, list, source, official) {
   if (!list.length) return out(el, `<p class="small">No new times for our swimmers.</p>`);
   out(el, `<table class="t review"><thead><tr><th>Swimmer</th><th>Ev</th><th>Time</th></tr></thead><tbody>
-    ${list.map((r, i) => `<tr><td>${esc(r.swimmer)}${r.fuzzy ? ' <span class="pill t-3">check name</span>' : ''}</td><td>#${r.event}</td><td><input data-i="${i}" style="width:90px" value="${r.time != null ? fmt(r.time) : esc(r.status)}"></td></tr>`).join('')}</tbody></table>
+    ${list.map((r, i) => `<tr><td>${esc(r.swimmer)}${r.fuzzy ? ' <span class="pill t-3">check name</span>' : ''}${r.dqWhy ? `<div class="small dqwhy">${esc(r.dqWhy)}</div>` : ''}</td><td>#${r.event}</td><td><input data-i="${i}" style="width:90px" value="${r.time != null ? fmt(r.time) : esc(r.status)}"></td></tr>`).join('')}</tbody></table>
     <div class="btns" style="margin-top:8px"><button class="btn solid" id="apply">Save ${list.length} time${list.length > 1 ? 's' : ''}${official ? ' (official)' : ''}</button><button class="btn ghost" id="cancel">Cancel</button></div>`);
   $('#cancel', el).onclick = () => out(el, '');
   $('#apply', el).onclick = async () => {
     el.querySelectorAll('input[data-i]').forEach((inp) => { const r = list[+inp.dataset.i]; const v = inp.value.trim().toUpperCase(); if (/^(DQ|NS|SCR|DFS|DNF)$/.test(v)) { r.time = null; r.status = v; } else { const t = parseTyped(v); if (t != null) { r.time = t; r.status = 'OK'; } } });
-    for (const r of list) await addOp('result', { entry: r.entry, time: r.time, status: r.status, place: r.place ?? null, source, official: !!official });
+    for (const r of list) await addOp('result', { entry: r.entry, time: r.time, status: r.status, place: r.place ?? null, ...(r.status === 'DQ' && r.dqWhy ? { dqWhy: r.dqWhy } : {}), source, official: !!official });
     out(el, `<p class="small" style="color:var(--teal-dark)">Saved ${list.length} result${list.length > 1 ? 's' : ''}.</p>`);
   };
 }
@@ -903,7 +920,7 @@ async function liveCheck(quiet) {
     for (const l of links) { try { const p = await api('POST', '/meetday/fetch', { url: l.href }); text += '\n' + (p.type === 'text' ? htmlToText(p.text) : ''); } catch { /* one page failing shouldn't stop the rest */ } }
   }
   const list = resultsFromText(PK(), S.model, text, { source: 'live results', official: false, session });
-  for (const r of list) await addOp('result', { entry: r.entry, time: r.time, status: r.status, place: r.place ?? null, source: 'live results', official: false });
+  for (const r of list) await addOp('result', { entry: r.entry, time: r.time, status: r.status, place: r.place ?? null, ...(r.status === 'DQ' && r.dqWhy ? { dqWhy: r.dqWhy } : {}), source: 'live results', official: false });
   if (!S.model.sources.some((x) => x.url === url)) await addOp('source', { kind: 'live', url });
   if (el) out(el, `<p class="small">${list.length ? `Added ${list.length} new time${list.length > 1 ? 's' : ''}` : 'No new times yet'} · ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} (unofficial)</p>`);
   if (list.length && quiet) toast(`${list.length} new live result${list.length > 1 ? 's' : ''}`);
@@ -983,7 +1000,11 @@ document.addEventListener('click', async (ev) => {
       toast(data.shift ? `Session moved ${data.shift > 0 ? '+' : ''}${data.shift} min` : 'Warm-up updated'); render(); return;
     }
     if (a === 'save-time') {
-      const v = $('#t').value; const cs = parseTyped(v);
+      const v = $('#t').value;
+      if (/^\s*dq\s*$/i.test(v)) { openDq(t.dataset.id); return; }
+      const st = v.trim().toUpperCase();
+      if (['NS', 'DFS', 'DNF'].includes(st)) { await addOp('result', { entry: t.dataset.id, time: null, status: st, source: 'manual', official: false }); closeSheet(); toast(`${st} · ${STATUS_TXT[st]}`); return; }
+      const cs = parseTyped(v);
       if (cs == null) { toast('Type a time like 5912 or 1:02.45'); return; }
       await addOp('result', { entry: t.dataset.id, time: cs, status: 'OK', source: 'manual', official: false });
       closeSheet(); toast('Saved'); return;
@@ -995,7 +1016,7 @@ document.addEventListener('click', async (ev) => {
       await addOp('entries', { session: r.session, mode: 'merge', source: 'typed heat/lane', rows: [{ event: r.event, round: r.round, swimmerId: r.swimmerId, name: r.swimmer.name, heat, heats: r.heats, lane, seed: r.seed, start: r.start }] });
       closeSheet(); toast(`Heat ${heat}, lane ${lane}`); return;
     }
-    if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); return; }
+    if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); toast(`${t.dataset.s} · ${STATUS_TXT[t.dataset.s] || ''}`, 1600); return; }
     if (a === 'clear-time') { const r = S.model.rows.find((x) => x.id === t.dataset.id); if (r && r.result) await addOp('undo', { op: r.result.op }); closeSheet(); return; }
     if (a === 'scratch') { const r = S.model.rows.find((x) => x.id === t.dataset.id); await addOp('scratch', { entry: t.dataset.id, on: !r.scratched }); closeSheet(); return; }
     if (a === 'tt-new') {
@@ -1076,10 +1097,12 @@ document.addEventListener('click', async (ev) => {
     if (a === 'dq-open') { ev.preventDefault(); openDq(t.dataset.id); return; }
     if (a === 'dq-save') {
       const r = S.model.rows.find((x) => x.id === t.dataset.id); if (!r) return;
-      const codes = [...document.querySelectorAll('#sheet .dqc[aria-pressed=true]')].map((x) => x.textContent), text = $('#dqtext').value.trim();
+      const calls = [...document.querySelectorAll('#sheet .dqc[aria-pressed=true]')].map((x) => (x.dataset.code ? dqCall(DQ_BY_CODE.get(x.dataset.code)) : { code: '', slip: '', desc: x.dataset.desc || x.textContent }));
+      const codes = calls.map((c) => c.code).filter(Boolean), text = $('#dqtext').value.trim();
       if (!(r.result && r.result.status === 'DQ')) await addOp('result', { entry: r.id, time: null, status: 'DQ', source: 'manual', official: false });
-      if (codes.length || text || r.dq) await addOp('dq', { entry: r.id, codes, text });
-      closeSheet(); toast(codes.length || text ? 'DQ saved with the reason' : 'DQ saved · add the reason in the wrap-up'); return;
+      if (calls.length || text || (r.dq && !r.dq.official)) await addOp('dq', { entry: r.id, calls, codes, text });
+      const as = codes.length && codes.every((c) => c === '7C') ? 'DNF' : codes.length && codes.every((c) => c === '7D') ? 'DFS' : null;
+      closeSheet(); toast(as ? `Saved as ${as} · ${STATUS_TXT[as]}` : calls.length || text ? `DQ saved${codes.length ? ' · ' + codes.join(' ') : ''}` : 'DQ saved · add the call in the wrap-up'); return;
     }
     if (a === 'checkin') {
       const B = blockOf(SS(), +t.dataset.b), on = t.dataset.on === '1';

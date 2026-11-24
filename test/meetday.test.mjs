@@ -521,6 +521,8 @@ test('DQ reasons, stars, session check-in, coach assignments, per-session cuts',
   op('star', { entry: '11-P-2', on: true });
   M = derive(P, ops); X = sessionSummary(M, 2);
   assert.equal(X.dqNoReason.length, 0); assert.deepEqual(M.rows.find((r) => r.id === '11-P-1').dq.codes, ['Shoulders past vertical']);
+  // an older label-only call is read as its USA Swimming code
+  assert.deepEqual(M.rows.find((r) => r.id === '11-P-1').dq.calls.map((c) => c.code), ['2H']);
   assert.equal(X.starred.length, 1); assert.equal(X.starred[0].id, '11-P-2');
   // an official DQ loaded later keeps the coach's reason
   op('result', { entry: '11-P-1', time: null, status: 'DQ', official: true, source: 'official' });
@@ -565,4 +567,58 @@ test('12 & under pools default to B–AAAA and age group champs', () => {
   const M = derive(P, []);
   assert.deepEqual(M.cutsOf(6), [...MOTIVATIONAL, 'NC AG']); assert.equal(M.cutsInfo(6).how, 'auto');
   assert.notDeepEqual(M.cutsOf(2), M.cutsOf(6));
+});
+
+test('DQ codes: groups by stroke, matching written reasons, stored calls', async () => {
+  const { dqGroups, matchDq, dqCalls, DQ_BY_CODE } = await import('../public/admin/meet/lib/dqcodes.mjs');
+  assert.deepEqual(dqGroups('Breast').map((g) => g.group), ['Breast', 'Misc']);
+  assert.deepEqual(dqGroups('IM').map((g) => g.group), ['IM', 'Fly', 'Back', 'Breast', 'Free', 'Misc']);
+  assert.deepEqual(dqGroups('Medley', true).map((g) => g.group), ['Relay', 'Back', 'Breast', 'Fly', 'Free', 'Misc']);
+  assert.equal(DQ_BY_CODE.get('3A').slip, '10');
+  // the event's stroke breaks ties; a "- fly" tail wins over it
+  assert.equal(matchDq('Scissors kick', 'Breast').code, '3C');
+  assert.equal(matchDq('Scissors kick', 'Fly').code, '1C');
+  assert.equal(matchDq('Non-simultaneous arms - fly', 'IM').code, '1D');
+  assert.equal(matchDq('Shoulders past vertical toward breast - back').code, '2H');
+  assert.equal(matchDq('Hands brought beyond the hipline during stroke', 'Breast').code, '3G');
+  assert.equal(matchDq('Head did not break the surface by 15 meters', 'Free').code, '4N');
+  assert.equal(matchDq('Something the official made up'), null);
+  assert.deepEqual(dqCalls({ calls: [{ code: '7A', slip: '60', desc: 'False start' }] }).map((c) => c.code), ['7A']);
+  assert.deepEqual(dqCalls({ codes: ['Wandered off'] }), [{ code: '', slip: '', desc: 'Wandered off' }]);
+});
+
+test('results: DQ reason printed under the swim is kept and stands in for a missing coach call', () => {
+  const lines = ['Event 11 Girls 13 & Over 100 Yard Backstroke', '--- Pond, Coral A 13 Nsea Swim-NC 1:10.00 DQ', '35.46 DQ (48.58)', 'Shoulders past vertical toward breast',
+    '--- Lake, Penny 14 Other Team-NC 1:12.00 NS'];
+  const R = parseResults(lines);
+  assert.equal(R[0].status, 'DQ'); assert.equal(R[0].dqWhy, 'Shoulders past vertical toward breast');
+  assert.equal(R[1].dqWhy, undefined);
+  const P = pkg();
+  const ops = [{ id: 'opA1234567', at: '2026-11-14T10:00:00.000Z', by: 'Official', type: 'result', data: { entry: '11-P-1', time: null, status: 'DQ', official: true, dqWhy: R[0].dqWhy } }];
+  let row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
+  assert.equal(row.dq.official, true); assert.equal(row.dq.calls[0].code, '2H'); assert.equal(row.dqOfficial.call.code, '2H');
+  assert.equal(sessionSummary(derive(P, ops), 2).dqNoReason.length, 0);
+  // the coach's own call wins; the official reason stays alongside it
+  ops.push({ id: 'opB1234567', at: '2026-11-14T10:05:00.000Z', by: 'Coach', type: 'dq', data: { entry: '11-P-1', calls: [{ code: '2C', slip: '32', desc: 'Shoulders not at or past vertical toward back off the wall' }], codes: ['2C'], text: '2nd wall' } });
+  row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
+  assert.equal(row.dq.calls[0].code, '2C'); assert.equal(row.dq.text, '2nd wall'); assert.equal(row.dqOfficial.call.code, '2H');
+});
+
+test('NS, DFS and DNF: their own results; a DQ called only 7C / 7D reads as DNF / DFS', () => {
+  const R = parseResults(['Event 11 Girls 13 & Over 100 Yard Backstroke', '--- Pond, Coral A 13 Nsea Swim-NC 1:10.00 DFS', '--- Lake, Penny 14 Nsea Swim-NC 1:12.00 DNF']);
+  assert.deepEqual(R.map((r) => r.status), ['DFS', 'DNF']);
+  const P = pkg(); const ops = [];
+  const op = (type, data) => ops.push({ id: 'op' + ops.length + 'xxxxxxx', at: `2026-11-14T1${ops.length}:00:00.000Z`, by: 'Coach', type, data });
+  op('result', { entry: '11-P-1', time: null, status: 'DQ' });
+  op('dq', { entry: '11-P-1', calls: [{ code: '7C', slip: '62', desc: 'Did not finish' }], codes: ['7C'], text: 'cramp' });
+  let row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
+  assert.equal(row.result.status, 'DNF'); assert.equal(row.dq.text, 'cramp');
+  op('dq', { entry: '11-P-1', calls: [{ code: '7D', slip: '63', desc: 'Declared false start' }], codes: ['7D'], text: '' });
+  assert.equal(derive(P, ops).rows.find((r) => r.id === '11-P-1').result.status, 'DFS');
+  // a real DQ call plus anything else stays a DQ
+  op('dq', { entry: '11-P-1', calls: [{ code: '7A', slip: '60', desc: 'False start' }], codes: ['7A'], text: '' });
+  row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
+  assert.equal(row.result.status, 'DQ');
+  const X = sessionSummary(derive(P, ops), 2);
+  assert.equal(X.dq.length, 1);
 });
