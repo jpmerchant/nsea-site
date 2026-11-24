@@ -191,3 +191,13 @@ tr.ci-out td{background:var(--coral-light)}
 tr.ci-out b{text-decoration:line-through;color:#8a1f0b}
 .ci-word{color:var(--coral);font-weight:700;text-transform:uppercase;font-size:11px}
 .times{margin:-4px 0 10px}
+/* DQ: its own button on the swim card and the entry sheet (not a tag) */
+.qdq{flex:none;border:1px solid var(--coral);background:#fff;color:var(--coral);border-radius:999px;height:28px;padding:0 10px;font-size:12px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap}
+.qdq small{font-weight:600;font-size:11px}
+.qdq[aria-pressed=true]{background:var(--coral);color:#fff}
+.btn.dqbtn{border-color:var(--coral);color:var(--coral);font-weight:700}
+details.dqg{margin:4px 0}
+details.dqg summary{cursor:pointer;margin:6px 0 4px}
+.chip.dqc{text-align:left;white-space:normal;max-width:100%}
+.chip.dqc b{margin-right:4px}
+.chip.dqc[aria-pressed=true]{background:var(--coral);border-color:var(--coral);color:#fff}

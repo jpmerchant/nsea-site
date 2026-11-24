@@ -1,6 +1,7 @@
 // Meet Day model: package + ops -> what the screens show. Pure functions (tested in test/meetday.test.mjs).
 import { flagsFor, DEFAULT_CUTS } from './flags.mjs';
 import { sameSwimmer, clockMin, minClock, parseMmNotify } from './parse.mjs';
+import { dqCalls, matchDq, dqCall } from './dqcodes.mjs';
 
 export const relayKey = (event, round, letter) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-R${letter}`;
 export const entryKey = (event, round, swimmerId) => `${event}-${String(round || 'F')[0]}${/2$/.test(round || '') ? '2' : ''}-${swimmerId}`;
@@ -33,6 +34,15 @@ export function inGroup(group, sw) {
     case 'F': case 'M': return sw.sex === group;
     default: return true;
   }
+}
+
+// A swim's DQ: the coach's call (codes + descriptions + details) and, when official results printed a reason,
+// that reason too (`dqOfficial`). With no coach call, the official reason stands in as the DQ's reason.
+function dqOf(q, r, ev, relay) {
+  const off = r && r.status === 'DQ' && r.dqWhy ? (() => { const c = matchDq(r.dqWhy, ev && ev.stroke, relay); return { desc: r.dqWhy, call: c ? dqCall(c) : null }; })() : null;
+  if (q) return { dq: { ...q, calls: dqCalls(q, ev && ev.stroke, relay) }, dqOfficial: off };
+  if (off) return { dq: { calls: [off.call || { code: '', slip: '', desc: off.desc }], codes: off.call ? [off.call.code] : [], text: '', by: 'official results', official: true }, dqOfficial: off };
+  return { dq: null, dqOfficial: null };
 }
 
 export function derive(pkg, ops, settings = {}) {
@@ -70,7 +80,7 @@ export function derive(pkg, ops, settings = {}) {
     else if (o.type === 'mscratch') { if (d.on) meetOut.set(d.swimmer, { by: o.by, at: o.at, why: d.why || '' }); else meetOut.delete(d.swimmer); }
     else if (o.type === 'gnote') gnotes.push({ scope: d.scope, key: d.key ?? null, text: d.text || '', tags: d.tags || [], by: o.by, at: o.at, op: o.id });
     else if (o.type === 'tags') { if (Array.isArray(d.list)) tags = d.list.filter(Boolean); if (d.rename && d.rename.from && d.rename.to) renames.push(d.rename); }
-    else if (o.type === 'dq') { if ((d.codes && d.codes.length) || d.text) dqs.set(d.entry, { codes: d.codes || [], text: d.text || '', by: o.by, at: o.at, op: o.id }); else dqs.delete(d.entry); }
+    else if (o.type === 'dq') { if ((d.calls && d.calls.length) || (d.codes && d.codes.length) || d.text) dqs.set(d.entry, { calls: d.calls || null, codes: d.codes || [], text: d.text || '', by: o.by, at: o.at, op: o.id }); else dqs.delete(d.entry); }
     else if (o.type === 'star') { if (d.on) stars.set(d.entry, { by: o.by, at: o.at }); else stars.delete(d.entry); }
     else if (o.type === 'sscratch') for (const n of [].concat(d.sessions ?? d.session)) { const k = `${n}|${d.swimmer}`; if (d.on) sessOut.set(k, { by: o.by, at: o.at, why: d.why || '' }); else sessOut.delete(k); }
     else if (o.type === 'assign') { const k = `${d.block}|${d.coach}`; if (d.on === false) assigns.delete(k); else if (d.coach) assigns.set(k, { block: d.block, coach: d.coach, pools: d.pools || [], group: d.group || 'all', by: o.by, at: o.at }); }
@@ -105,7 +115,7 @@ export function derive(pkg, ops, settings = {}) {
       const r = results.get(e.id) || null, off = official.get(e.session);
       rows.push({
         ...e, swimmer: { id: `R${e.relay}`, name: `${pkg.teamName || 'NSEA'} ${e.relay} relay`, first: `${e.relay} relay`, relay: true, sex: ev.sex }, ev, result: r,
-        notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id), meetOut: false, legs, legSw, dq: dqs.get(e.id) || null, starred: stars.has(e.id),
+        notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id), meetOut: false, legs, legSw, ...dqOf(dqs.get(e.id), r, ev, true), starred: stars.has(e.id),
         legOut: legs.filter((x) => meetOut.has(x)).map((x) => swimmers.get(x)?.name).filter(Boolean),
         official: !!(off && off.on) || !!(r && r.official), pre: [], post: [],
         delta: r && r.time != null && e.seed != null ? r.time - e.seed : null, startMin: clockMin(e.start || ''),
@@ -123,7 +133,7 @@ export function derive(pkg, ops, settings = {}) {
     const so = sessOut.get(`${e.session}|${e.swimmerId}`) || null;
     rows.push({
       ...e, swimmer: s, ev, result: r, notes: notes.get(e.id) || [], scratched: !!scratch.get(e.id) || meetOut.has(e.swimmerId) || !!so, meetOut: meetOut.has(e.swimmerId), sessOut: so,
-      dq: dqs.get(e.id) || null, starred: stars.has(e.id),
+      ...dqOf(dqs.get(e.id), r, ev, false), starred: stars.has(e.id),
       official: !!(off && off.on) || !!(r && r.official), pre, post,
       delta: r && r.time != null && e.seed != null ? r.time - e.seed : null,
       startMin: clockMin(e.start || ''),

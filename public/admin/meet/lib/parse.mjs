@@ -194,12 +194,21 @@ export function teamEntries(parsed, teamMatch) {
 // ---------- Layer 2: results (Hy-Tek results pages, results PDFs, live results) ----------
 // Returns [{ event, name, age, team, place, time, status, round }] for every swim found.
 const RES_RE = new RegExp(String.raw`^(\*?\d{1,3}|---|--)\s+([A-Za-zÀ-ÿ'’.\- ]+?,\s*[A-Za-zÀ-ÿ'’.\- ]+?)\s+(\d{1,2})\s+(.+?)\s+((?:NT|${TIME})[A-Za-z]?)\s+((?:${TIME})[A-Za-z]?|DQ|DFS|NS|SCR|DNF|X${TIME})(.*)$`);
+// Hy-Tek prints a DQ's reason on the line under the swim ("Shoulders past vertical toward breast",
+// "Non-simultaneous arms - fly"), sometimes after a splits line. Kept as `dqWhy`.
+const TIME_ANY = new RegExp(TIME);
+const isDqWhy = (t) => /^[A-Za-z]/.test(t) && /[a-z]{3}/.test(t) && t.length <= 90 && !TIME_ANY.test(t) && !/-[A-Z]{2}\b/.test(t)
+  && !/HY-TEK|Meet Manager|License|Office Use|\bName\b.*\bAge\b|Seed Time|Finals Time|Prelim Time|^Event\b|^Heat\b|^Team\b|Results|Records?\b|^Page\b/i.test(t);
 export function parseResults(lines) {
   const out = [];
-  let ev = null, round = 'Finals';
+  let ev = null, round = 'Finals', dqWait = null, dqLook = 0;
   for (const raw of lines) {
     const t = (typeof raw === 'string' ? raw : raw.text).replace(/\s+/g, ' ').trim();
-    if (!t) continue;
+    if (!t || (raw && raw.header)) continue;
+    if (dqWait) {
+      if (dqLook-- > 0 && !RES_RE.test(t) && isDqWhy(t)) { dqWait.dqWhy = t.replace(/\s+-\s+ly$/i, ' - fly'); dqWait = null; continue; }
+      if (dqLook < 0 || RES_RE.test(t) || !/^[\d\s:.()DQ]+$/.test(t)) dqWait = null;
+    }
     const e = parseEventTitle(t);
     if (e) { ev = e; round = 'Finals'; continue; }
     if (/^(Preliminaries|Prelims)\b/i.test(t)) { round = 'Prelims'; continue; }
@@ -214,6 +223,7 @@ export function parseResults(lines) {
       seed: toCs(m[5]), time, status: time != null ? 'OK' : res.toUpperCase(), round,
       qualified: time != null && /[qQ]\s*$/.test(m[6]),
     });
+    if (out[out.length - 1].status === 'DQ') { dqWait = out[out.length - 1]; dqLook = 3; }
   }
   return out;
 }

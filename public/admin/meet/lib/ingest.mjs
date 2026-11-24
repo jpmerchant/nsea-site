@@ -115,7 +115,7 @@ export function resultOps(pkg, model, swims, { source, official = false, session
     const prev = r.result;
     if (prev && prev.time === w.time && prev.status === w.status && (prev.official || !official)) continue;
     if (prev && prev.official && !official) continue;
-    out.push({ entry: r.id, time: w.time, status: w.status, place: w.place, source, official, swimmer: r.swimmer.name, event: r.event });
+    out.push({ entry: r.id, time: w.time, status: w.status, place: w.place, ...(w.dqWhy ? { dqWhy: w.dqWhy } : {}), source, official, swimmer: r.swimmer.name, event: r.event });
   }
   return out;
 }
