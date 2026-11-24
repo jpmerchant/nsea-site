@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changing Technique: A Quick Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a coach talking to swimmers and parents on deck: plain, warm, honest about effort.
+   IDEA: the practice loop a swimmer runs on every good rep (attend, swim, notice, adjust), set inside the practice the coach designs.
+   PICTURE: one loop diagram in NSEA teal with coral for the old habit pulling back.
+   COLOUR and TYPE: NSEA teal leads, coral for the old habit; Oswald headings, Inter body.
+   LAYOUT: one reading column inside the 1200px frame; picture near the top; short sections; no header or footer chrome. */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#0f1716);--ink:light-dark(#1d2426,#e8eeed);--muted:light-dark(#5f6669,#a3abad);
+--teal:light-dark(#008675,#2bb3a1);--teal-d:light-dark(#006A5C,#5fd0bf);--teal-l:light-dark(#e6f3f1,#14302b);--coral:#ee492f;--coral-l:light-dark(#FCE7E3,#3a1f1a);--line:light-dark(#dde3e2,#2a3533)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Inter,Arial,sans-serif;overflow-x:clip}
+.wrap{max-width:1200px;margin:0 auto;padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.col{max-width:760px;margin:0 auto}
+h1,h2{font-family:Oswald,"Arial Narrow",Arial,sans-serif;font-weight:600;line-height:1.1;text-wrap:balance}
+h1{font-size:clamp(30px,4vw,42px);margin:0 0 10px}
+h2{font-size:25px;margin:34px 0 10px;color:var(--teal-d)}
+p{margin:0 0 14px}
+.lede{font-size:19px}
+.fig{margin:22px 0 8px;background:var(--teal-l);border-radius:16px;padding:14px}
+.fig svg{display:block;width:100%;height:auto}
+.figcap{font-size:14px;color:var(--muted);margin:6px 2px 0}
+ul{padding-left:1.2em;margin:0 0 14px}li{margin:4px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:12px;margin:12px 0 16px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card b{display:block;font-family:Oswald,"Arial Narrow",sans-serif;font-weight:600;font-size:18px;color:var(--teal-d);margin-bottom:2px}
+.card p{margin:0;font-size:15.5px}
+.next{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 6px}
+.next a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:10px;background:var(--teal);color:#fff;font-weight:600;text-decoration:none}
+.next a.alt{background:transparent;color:var(--teal-d);border:2px solid var(--teal)}
+a{color:var(--teal-d)}
+a:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.note{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="col">
+  <h1>Changing technique: a quick guide</h1>
+  <p class="lede">A new technique doesn't replace the old one just because a swimmer understands it. Habits change through thousands of reps done with attention, in practice that makes the right movement easy to find, and then they have to hold up when the swimmer is tired and racing.</p>
+
+  <div class="fig" role="img" aria-label="The practice loop: aim, swim, notice, adjust, inside a practice designed by the coach, with the old habit pulling back">
+    <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Arial, sans-serif">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#008675"/></marker>
+        <marker id="arc" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ee492f"/></marker>
+      </defs>
+      <rect x="6" y="6" width="588" height="328" rx="18" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="6 6"/>
+      <text x="22" y="34" font-size="15" font-weight="600" fill="currentColor" opacity=".7">Inside the practice the coach designs</text>
+      <g fill="none" stroke="#008675" stroke-width="5" stroke-linecap="round">
+        <path d="M255 97 A95 95 0 0 1 345 180" marker-end="url(#ar)"/>
+        <path d="M345 205 A95 95 0 0 1 255 287" marker-end="url(#ar)"/>
+        <path d="M225 287 A95 95 0 0 1 145 205" marker-end="url(#ar)"/>
+        <path d="M145 180 A95 95 0 0 1 225 97" marker-end="url(#ar)"/>
+      </g>
+      <g font-size="21" font-weight="700" fill="#008675" text-anchor="middle">
+        <text x="240" y="84">1. Aim</text>
+        <text x="398" y="200">2. Swim</text>
+        <text x="240" y="322">3. Notice</text>
+        <text x="80" y="200">4. Adjust</text>
+      </g>
+      <g font-size="16" fill="currentColor" opacity=".85" text-anchor="middle">
+        <text x="240" y="178">one focus</text>
+        <text x="240" y="206">feel · see · count</text>
+      </g>
+      <path d="M482 256 C455 252 425 242 392 226" fill="none" stroke="#ee492f" stroke-width="3.5" stroke-dasharray="8 6" marker-end="url(#arc)"/>
+      <g font-size="17" fill="#ee492f" text-anchor="end">
+        <text x="580" y="262" font-weight="700">Old habit</text>
+        <text x="580" y="284">pulls back when</text>
+        <text x="580" y="306">tired or racing</text>
+      </g>
+    </svg>
+  </div>
+  <p class="figcap">Every good rep runs this loop. The coach shapes the practice around it; the swimmer runs it.</p>
+
+  <h2>Why old habits stick</h2>
+  <p>A movement repeated for years is stored deeply. One estimate, cited by swim scientist Brent Rushall, is that it takes about 300 reps to build a habit and about 3,000 reps with real feedback to replace one. Rod Havriluk, who measures swimmers' hand forces, describes some changes taking weeks and others months or seasons.</p>
+  <p>The old habit is never fully erased, only overpowered. That's why a stroke can look great at easy speed and then fall apart at the end of a hard set or in a race.</p>
+
+  <h2>What makes a rep count</h2>
+  <p>Researcher Anders Ericsson called it <strong>deliberate practice</strong>: practice aimed at one specific improvement, just beyond what a swimmer can do now, with feedback on every attempt. Mindless laps build fitness, but they mostly practice the habit the swimmer already has.</p>
+  <div class="cards">
+    <div class="card"><b>One focus</b><p>One cue per swim, for example "push the water back," not five things at once.</p></div>
+    <div class="card"><b>Your own feedback</b><p>Most feedback comes from the swimmer: what it felt like, what they saw, stroke counts, the clock. A coach, teammates and video add to it.</p></div>
+    <div class="card"><b>Slow first</b><p>Learn the change at a speed you can control, then build toward race pace.</p></div>
+    <div class="card"><b>Every rep, not some</b><p>The change has to show up on every wall and every length, not just the drill set.</p></div>
+  </div>
+  <p>Where the swimmer points their attention matters. In swimming studies, thinking about the effect ("push the water back") has helped swimmers go as fast or faster than thinking about body parts ("pull your hands back").</p>
+
+  <h2>How coaches shape practice</h2>
+  <p>A second line of research, the <strong>constraints-led approach</strong>, says the coach's job is also to design practice so the right movement is the easiest one to find. Coaches change the task, not just the instructions:</p>
+  <ul>
+    <li>a stroke-count or tempo target that rewards a longer, smoother stroke</li>
+    <li>fins, paddles or a snorkel to take one problem away while another is learned</li>
+    <li>a breathing pattern or a set distance that makes a good streamline pay off</li>
+    <li>race-pace swims, so the new technique is learned at the speed it has to work</li>
+  </ul>
+  <p>The same research shows that even top swimmers never swim two strokes exactly alike. Some variety in practice, "repetition without repetition," helps a stroke adapt to speed, fatigue and race conditions.</p>
+
+  <h2>Making it hold under pressure</h2>
+  <p>A change isn't finished when it works in practice. It's finished when it shows up tired and in a race. That means practicing the new technique with gradually more speed and fatigue, and coming back to it in "booster" sessions after it seems learned. Simple images, like "swim downhill," also tend to hold up better under pressure than a long checklist.</p>
+
+  <h2>How families can help</h2>
+  <ul>
+    <li>Ask "What was your focus today, and how did it feel?" rather than "How far did you go?"</li>
+    <li>Expect progress to look uneven. A new technique is learned at slower speeds first, so times may not improve right away.</li>
+    <li>Be patient through meets: the old habit may show up under pressure for a while. That is normal.</li>
+  </ul>
+
+  <div class="next">
+    <a href="/training/technique-change/" target="_top">See it in the tank model</a>
+    <a class="alt" href="/training/same/education/technique-change-research/" target="_top">Read the research</a>
+  </div>
+
+  <p class="note">NSEA Swim education. Based on the work of K. Anders Ericsson, Brent Rushall, Rod Havriluk and constraints-led researchers including Karl Newell, Keith Davids, Ian Renshaw and Ludovic Seifert. Sources are listed on the research page.</p>
+</div></div>
+</body>
+</html>

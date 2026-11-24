@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changing Technique: The Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a coaching research brief: careful, sourced, fair to each camp; conclusion first.
+   IDEA: a coach's annotated reading file: what each body of research says, where it agrees, where it fights.
+   PICTURE: a side-by-side comparison table of deliberate practice vs constraints-led, plus one timeline-free summary graphic of the shared ground.
+   COLOUR and TYPE: NSEA teal leads, coral marks the disagreements; Oswald headings, Inter body.
+   LAYOUT: reading column with a row of section links; tables scroll on phones; sources at the end; no header or footer chrome. */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#0f1716);--ink:light-dark(#1d2426,#e8eeed);--muted:light-dark(#5f6669,#a3abad);
+--teal:light-dark(#008675,#2bb3a1);--teal-d:light-dark(#006A5C,#5fd0bf);--teal-l:light-dark(#e6f3f1,#14302b);--coral:#ee492f;--coral-d:light-dark(#b8321c,#ff8a73);--coral-l:light-dark(#FCE7E3,#3a1f1a);--line:light-dark(#dde3e2,#2a3533)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Inter,Arial,sans-serif;overflow-x:clip}
+html{scroll-padding-top:20px}
+.wrap{max-width:1200px;margin:0 auto;padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.col{max-width:800px;margin:0 auto}
+h1,h2,h3{font-family:Oswald,"Arial Narrow",Arial,sans-serif;font-weight:600;line-height:1.12;text-wrap:balance}
+h1{font-size:clamp(30px,4vw,42px);margin:0 0 10px}
+h2{font-size:26px;margin:40px 0 10px;color:var(--teal-d)}
+h3{font-size:19px;margin:22px 0 6px}
+p{margin:0 0 14px}
+.lede{font-size:19px}
+.toc{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;margin:14px 0 6px;border-bottom:1px solid var(--line)}
+.toc a{flex:none;font-size:14px;font-weight:600;padding:8px 12px;border-radius:999px;background:var(--teal-l);color:var(--teal-d);text-decoration:none;min-height:36px;display:inline-flex;align-items:center}
+.key{background:var(--teal-l);border-radius:14px;padding:16px 18px;margin:18px 0}
+.key h3{margin-top:0}
+.key ol{margin:0;padding-left:1.3em}.key li{margin:6px 0}
+ul{padding-left:1.2em;margin:0 0 14px}li{margin:4px 0}
+.scroll{overflow-x:auto;margin:12px 0 18px}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{font-family:Oswald,"Arial Narrow",sans-serif;font-weight:600;font-size:16px;color:var(--teal-d);border-bottom:2px solid var(--teal)}
+td:first-child{font-weight:600;width:22%}
+.tension{border-left:4px solid var(--coral);background:var(--coral-l);padding:10px 14px;border-radius:0 10px 10px 0;margin:14px 0}
+.tension b{color:var(--coral-d)}
+.src{font-size:14.5px}.src li{margin:6px 0}
+a{color:var(--teal-d)}a:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.next{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 6px}
+.next a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:10px;background:var(--teal);color:#fff;font-weight:600;text-decoration:none}
+.next a.alt{background:transparent;color:var(--teal-d);border:2px solid var(--teal)}
+.note{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:28px}
+@media(min-width:900px){.toc{position:sticky;top:0;background:var(--bg);z-index:2}}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="col">
+  <h1>Changing technique: the research</h1>
+  <p class="lede">Two bodies of research explain how swimmers change technique. Deliberate practice says change comes from large amounts of focused, feedback-rich repetition. The constraints-led approach says it comes from designing practice so the better movement emerges. They disagree on emphasis, but for a swimmer changing a habit they point to the same few things.</p>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#agree">Where they agree</a><a href="#dp">Deliberate practice</a><a href="#swim">Swimming studies</a><a href="#cla">Constraints-led</a><a href="#attention">Attention and pressure</a><a href="#compare">Side by side</a><a href="#apply">In practice</a><a href="#sources">Sources</a>
+  </nav>
+
+  <div class="key" id="agree">
+    <h3>Where the research agrees</h3>
+    <ol>
+      <li><strong>Volume alone doesn't change technique.</strong> Training yards with no technique focus left teenage swimmers' drag coefficient unchanged; short, focused interventions changed it.</li>
+      <li><strong>Attention and information drive change.</strong> Whether it comes from a coach's feedback or from what the swimmer feels and sees, the learner has to be engaged with each attempt.</li>
+      <li><strong>Old patterns persist.</strong> They return under fatigue and pressure, so a change has to be practiced under those conditions before it is finished.</li>
+      <li><strong>Practice should look like the race.</strong> Technique learned only at slow speed or in drills may not transfer to race pace.</li>
+      <li><strong>Swimmers differ.</strong> There is no single template stroke that every swimmer must copy, and timelines vary widely between individuals.</li>
+    </ol>
+  </div>
+
+  <h2 id="dp">Deliberate practice (Ericsson)</h2>
+  <p>K. Anders Ericsson and colleagues introduced deliberate practice in a 1993 study of musicians. At an international music academy, the best violinists had spent more time in solitary practice set by their teachers than less accomplished peers. Ericsson defined deliberate practice as activities designed to improve a specific aspect of current performance, usually guided by a teacher, with clear goals, full concentration and immediate feedback.</p>
+  <h3>Three kinds of practice</h3>
+  <ul>
+    <li><strong>Naive practice:</strong> doing the activity repeatedly. It maintains a skill but rarely improves it.</li>
+    <li><strong>Purposeful practice:</strong> self-directed, with specific goals, focus, feedback and working just outside the comfort zone.</li>
+    <li><strong>Deliberate practice:</strong> purposeful practice built on what a field already knows about how experts develop, usually designed by a coach or teacher.</li>
+  </ul>
+  <h3>Mental representations and automaticity</h3>
+  <p>Ericsson argued that experts differ mainly in their <strong>mental representations</strong>: detailed internal models of what good performance looks and feels like, used to plan, monitor and correct. Most people let a skill become automatic and stop improving. Experts counteract automaticity by building more refined representations that give them more control. For a swimmer, this is the ability to feel and describe what the stroke is doing, which is why internal, self-generated feedback matters so much.</p>
+  <h3>How much does practice explain?</h3>
+  <p>Ericsson's view has been strongly challenged. A 2016 meta-analysis by Macnamara, Moreau and Hambrick of sports studies, including swimming, found deliberate practice explained about 18% of the differences in performance overall, and only about 1% among elite athletes. Ericsson and Harwell replied that many of the studies measured hours of structured training rather than deliberate practice as defined. Re-analysing only studies that met their criteria, they estimated practice explained about 29% to 61% of differences after correcting for measurement error.</p>
+  <div class="tension"><b>Open debate:</b> how much of expert performance comes from practice versus other factors (body size, physiology, psychology, environment) is unresolved. For technique change in one swimmer, the question is narrower and better supported: focused practice with feedback changes technique; unfocused volume mostly does not.</div>
+
+  <h2 id="swim">What swimming studies show</h2>
+  <h3>Technique and practice type</h3>
+  <ul>
+    <li><strong>Havriluk (2003, 2006, 2014):</strong> teenage swimmers in traditional training did not improve their active drag coefficient, an overall measure of technique. Younger teens did improve after a one-week deliberate-practice intervention. A 2014 study tested the same approach with older, national-caliber teens, whose habits were expected to be more resistant to change.</li>
+    <li><strong>Marinho and colleagues (2010):</strong> eight weeks of normal training in young swimmers produced no significant change in active drag.</li>
+    <li>Havriluk's components of deliberate practice for swimming: clear instructions, appropriate task difficulty, enough repetitions, immediate feedback, individual supervision, a variety of learning strategies, and keeping focus during learning.</li>
+  </ul>
+  <h3>How many repetitions</h3>
+  <ul>
+    <li><strong>Rushall</strong> cites motor-learning researcher Richard Schmidt: about 300 trials to build a bad habit and about 3,000 to correct it, and these are trials with meaningful feedback, not just strokes. He recommends one technique element per week, worked on at every practice (8 to 10 sessions), with at least five uninterrupted days and later "booster" sessions.</li>
+    <li><strong>Havriluk</strong> writes that permanency takes tens of thousands of repetitions at a slow stroke rate before a skill holds at speed, and that some skills change within weeks while others take months or seasons.</li>
+    <li><strong>Rushall's case study</strong> with Sherman (1993) used reverse shaping, teaching the end of the stroke first, and required four error-free 25s before adding the next step. An elite 16-year-old's freestyle faults were corrected in three 40-minute sessions, though Rushall stresses that quick changes are short-lived without many reinforced repetitions afterward.</li>
+  </ul>
+  <h3>Practice histories of swimmers</h3>
+  <p>Studies of swimmers' backgrounds are more mixed. Johnson, Tenenbaum and Edmonds (2006) found that different practice regimens could lead to elite level, and that similar developmental histories did not always separate elite from sub-elite swimmers. Hodges and colleagues (2004) found practice hours predicted triathletes' times but not sprint swimmers', where sex was a stronger predictor.</p>
+
+  <h2 id="cla">The constraints-led approach</h2>
+  <p>The constraints-led approach grows from Karl Newell's 1986 model and the wider field of ecological dynamics (Keith Davids, Ian Renshaw, Jia Yi Chow, Duarte Araújo and others). Movement emerges from the interaction of three kinds of constraint:</p>
+  <ul>
+    <li><strong>Individual:</strong> the swimmer's body, strength, flexibility, fatigue, emotions and intentions</li>
+    <li><strong>Task:</strong> the goal, rules, equipment, distance, pace, stroke count</li>
+    <li><strong>Environment:</strong> the pool, water, lane conditions, other swimmers, the meet setting</li>
+  </ul>
+  <p>Rather than prescribing one correct movement, the coach changes these constraints so that the swimmer self-organizes toward a better solution. Learning is seen as searching and exploring, not copying a template.</p>
+  <h3>Key ideas</h3>
+  <ul>
+    <li><strong>Representative learning design</strong> (Pinder, Davids, Renshaw and Araújo, 2011): practice should keep the key information and demands of competition so learning transfers to it.</li>
+    <li><strong>Repetition without repetition</strong> (Bernstein, 1967): even well-learned skills vary from attempt to attempt, and practice should develop the ability to reach the same goal in slightly different ways.</li>
+    <li><strong>Variability can be functional.</strong> Seifert and colleagues' 2014 review of swimming coordination found skilled swimmers balance stability and variability in how their limbs coordinate, so there is no single ideal pattern every swimmer must copy. In another study, expert swimmers' freely chosen coordination had the lowest energy cost compared with coordination imposed on them.</li>
+  </ul>
+  <h3>Swimming studies</h3>
+  <ul>
+    <li><strong>Komar, Chow, Chollet and Seifert:</strong> in breaststroke learners over 20 lessons, an analogy instruction improved arm-leg coordination more than the goal alone.</li>
+    <li><strong>Komar, Seifert, Vergne and Newell (2023):</strong> narrowing the coordination options during 16 breaststroke lessons made learners search more alike but made their learning rates more different, a reminder that the same constraint affects swimmers differently.</li>
+    <li><strong>Schnitzler, Seifert and Button (2021):</strong> highly skilled swimmers adapted their propulsive actions more broadly across speeds than less skilled ones.</li>
+  </ul>
+  <div class="tension"><b>Open debate:</b> evidence for the constraints-led approach is still building. A 2019 systematic review of interceptive sports found only 57% of included studies supported it over traditional methods. A 2025 critical appraisal by Collins and colleagues argued ecological dynamics is useful in parts but not sufficient on its own to guide coaching, and that coaches should draw on several theories.</div>
+
+  <h2 id="attention">Attention, analogies and pressure</h2>
+  <ul>
+    <li><strong>External focus:</strong> Freudenheim and colleagues (2010) found swimmers were faster when focused on "pushing the water back" than on "pulling your hands back," and faster than with no instruction. Stoate and Wulf (2011) found trained swimmers with about ten years of competition were slower with the body-focused cue, but no faster with the water-focused cue than with none.</li>
+    <li><strong>Analogies and implicit learning:</strong> Liao and Masters (2001) found analogy learners built up fewer conscious rules and held up better under a second task than learners given explicit instructions. Lam, Maxwell and Masters (2009) found an explicit-instruction group dropped off under pressure while an analogy group did not. Masters' reinvestment idea is that, under pressure, performers start consciously controlling a skill with the rules they learned, and the skill breaks down.</li>
+    <li><strong>A caution:</strong> with very large amounts of practice the difference may fade. Koedijker and colleagues (2008) found no pressure drop for either explicit or analogy learners after 1,400 or 10,000 table-tennis strokes.</li>
+  </ul>
+  <p>This fits what Rushall and Havriluk see on deck: the old pattern returns under fatigue and racing, so the new one has to be practiced at speed and under pressure, and simple images may protect it better than long checklists.</p>
+
+  <h2 id="compare">Side by side</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Question</th><th>Deliberate practice</th><th>Constraints-led approach</th></tr></thead>
+    <tbody>
+      <tr><td>What changes technique?</td><td>Many focused repetitions of a specific element, with feedback, beyond current ability</td><td>Practice tasks and conditions that make a better movement emerge</td></tr>
+      <tr><td>Role of the coach</td><td>Identifies the target, designs drills, gives feedback</td><td>Designs the environment and tasks; guides the search</td></tr>
+      <tr><td>Role of the swimmer</td><td>Concentrates on the target, monitors and corrects every rep</td><td>Explores solutions; tunes to their own body and the task</td></tr>
+      <tr><td>Instruction</td><td>Clear, specific cues</td><td>Few explicit cues; analogies, goals and task changes</td></tr>
+      <tr><td>Repetition</td><td>Large numbers of near-identical correct reps</td><td>Repetition without repetition: varied reps toward one goal</td></tr>
+      <tr><td>Variability</td><td>Mostly error to reduce</td><td>Partly useful: a source of adaptability</td></tr>
+      <tr><td>Swimming evidence</td><td>Drag-coefficient studies (Havriluk); Rushall's case work</td><td>Coordination studies (Seifert, Komar, Schnitzler)</td></tr>
+      <tr><td>Main criticism</td><td>Practice explains less of elite performance than claimed</td><td>Concepts and evidence still developing</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="apply">What it means for practice</h2>
+  <p>Taken together, the research suggests a practical blend:</p>
+  <ol>
+    <li><strong>Work on one change at a time</strong>, and make it the focus on every rep where it appears, every wall for a streamline, for at least a week.</li>
+    <li><strong>Make every rep count:</strong> the swimmer knows the aim, pays attention and notices what happened. Most feedback is the swimmer's own (feel, sight, stroke counts, the clock), with coach, teammates and video adding to it.</li>
+    <li><strong>Use the task to teach:</strong> stroke-count and tempo targets, equipment, breathing patterns and distances that make the better movement pay off.</li>
+    <li><strong>Prefer effect-focused cues and analogies</strong> ("push the water back") over long lists of body positions.</li>
+    <li><strong>Build from slow to race pace</strong>, then add fatigue and race conditions; return in booster sessions.</li>
+    <li><strong>Limit old-way reps</strong> while the change is new: tired, unfocused swimming practices the old habit.</li>
+    <li><strong>Expect individual timelines</strong>, and judge "done" by what holds in a race.</li>
+  </ol>
+
+  <div class="next">
+    <a href="/training/technique-change/" target="_top">Try the tank model</a>
+    <a class="alt" href="/training/same/education/technique-change-guide/" target="_top">Back to the quick guide</a>
+  </div>
+
+  <h2 id="sources">Sources</h2>
+  <ul class="src">
+    <li>Ericsson, K. A., Krampe, R. T., &amp; Tesch-Römer, C. (1993). The role of deliberate practice in the acquisition of expert performance. <em>Psychological Review</em>, 100, 363–406. <a href="https://lirias.kuleuven.be/316700">Record</a></li>
+    <li>Ericsson, K. A. (2006). The influence of experience and deliberate practice on the development of superior expert performance. In <em>The Cambridge Handbook of Expertise and Expert Performance</em>. <a href="https://www.ida.liu.se/~nilda/Anders_Ericsson/Ericsson_delib_pract.pdf">PDF</a></li>
+    <li>Ericsson, K. A., &amp; Pool, R. (2016). <em>Peak: Secrets from the New Science of Expertise</em>. Houghton Mifflin Harcourt.</li>
+    <li>Ericsson, K. A., &amp; Harwell, K. W. (2019). Deliberate practice and proposed limits on the effects of practice on the acquisition of expert performance. <em>Frontiers in Psychology</em>, 10, 2396. <a href="https://www.frontiersin.org/articles/10.3389/fpsyg.2019.02396/full">Article</a></li>
+    <li>Macnamara, B. N., Moreau, D., &amp; Hambrick, D. Z. (2016). The relationship between deliberate practice and performance in sports: a meta-analysis. <em>Perspectives on Psychological Science</em>, 11, 333–350. <a href="https://www.psychologicalscience.org/journals/perspectives/1745691616635591/">Abstract</a></li>
+    <li>Havriluk, R. (2014). The effect of deliberate practice on the technique of national caliber swimmers. <em>Biomechanics and Medicine in Swimming XII</em>. <a href="https://bms.sport-iat.de/bms/Record/4032635">Record</a> (summarizes Havriluk 2003 and 2006)</li>
+    <li>Havriluk, R. (2020). <em>Approaching Perfect Swimming</em>; (2021) <em>Technique Misconceptions</em>. Swimming Technology Research.</li>
+    <li>Marinho, D. A., et al. (2010). Can 8-weeks of training affect active drag in young swimmers? <em>Journal of Sports Science and Medicine</em>, 9, 71–78. <a href="https://www.jssm.org/jssm-09-71.xml-Fulltext">Article</a></li>
+    <li>Rushall, B. S. <em>A Swimming Technique Macrocycle</em> and <em>Swimming Pedagogy</em> (citing Schmidt, R. A., 1988, <em>Motor Control and Learning</em>).</li>
+    <li>Sherman, C. A., &amp; Rushall, B. S. (1993). Improving swimming stroke using reverse teaching: a case study. <a href="https://coachsci.sdsu.edu/csa/vol31/sherman.htm">Abridged version</a></li>
+    <li>Johnson, M. B., Tenenbaum, G., &amp; Edmonds, W. A. (2006). Adaptation to physically and emotionally demanding conditions: the role of deliberate practice. <em>High Ability Studies</em>. <a href="https://scholars.nova.edu/en/publications/adaptation-to-physically-and-emotionally-demanding-conditions-the/">Record</a></li>
+    <li>Hodges, N. J., et al. (2004). Predicting performance times from deliberate practice hours for triathletes and swimmers: what, when, and where is practice important? <em>Journal of Experimental Psychology: Applied</em>, 10, 219–237. <a href="https://experts.mcmaster.ca/display/publication1314049">Record</a></li>
+    <li>Newell, K. M. (1986). Constraints on the development of coordination. In <em>Motor Development in Children</em>.</li>
+    <li>Renshaw, I., Chow, J. Y., Davids, K., &amp; Hammond, J. (2010). A constraints-led perspective to understanding skill acquisition and game play. <em>Physical Education and Sport Pedagogy</em>, 15, 117–137. <a href="https://shura.shu.ac.uk/3344/">Record</a></li>
+    <li>Pinder, R. A., Davids, K., Renshaw, I., &amp; Araújo, D. (2011). Representative learning design and functionality of research and practice in sport. <em>Journal of Sport and Exercise Psychology</em>, 33, 146–155. <a href="https://shura.shu.ac.uk/7369">Record</a></li>
+    <li>Ranganathan, R., Lee, M.-H., &amp; Newell, K. M. (2020). Repetition without repetition: challenges in understanding behavioral flexibility in motor skill. <em>Frontiers in Psychology</em>, 11, 2018. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7438768">Article</a></li>
+    <li>Seifert, L., Komar, J., Barbosa, T., Toussaint, H., Millet, G., &amp; Davids, K. (2014). Coordination pattern variability provides functional adaptations to constraints in swimming performance. <em>Sports Medicine</em>, 44, 1333–1345. <a href="https://link.springer.com/article/10.1007/s40279-014-0210-x">Article</a></li>
+    <li>Seifert, L., Komar, J., Crettenand, F., &amp; Millet, G. (2014). Inter-limb coordination and energy cost in swimming. <em>Journal of Science and Medicine in Sport</em>. <a href="https://infoscience.epfl.ch/entities/publication/53d0be64-a7df-4847-9d7e-4a34d2e4767f">Record</a></li>
+    <li>Komar, J., Chow, J. Y., Chollet, D., &amp; Seifert, L. (2014). Effect of analogy instructions with an internal focus on learning a complex motor skill. <em>Journal of Applied Sport Psychology</em>. <a href="https://informahealthcare.com/doi/abs/10.1080/10413200.2013.771386">Abstract</a></li>
+    <li>Komar, J., Seifert, L., Vergne, N., &amp; Newell, K. M. (2023). Narrowing the coordination solution space during motor learning. <em>Scientific Reports</em>. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9898268">Article</a></li>
+    <li>Schnitzler, C., Seifert, L., &amp; Button, C. (2021). Adaptability in swimming pattern. <em>Frontiers in Sports and Active Living</em>, 3, 618990. <a href="https://www.frontiersin.org/articles/10.3389/fspor.2021.618990/full">Article</a></li>
+    <li>Newcombe, D. J., Roberts, W. M., Renshaw, I., &amp; Davids, K. (2019). Commentary on Clark, McEwan and Christie's systematic review of constraint-led training in interceptive sports. <a href="https://core.ac.uk/download/196213597.pdf">PDF</a></li>
+    <li>Collins, D., Carson, H. J., Rylander, P., et al. (2025). Ecological dynamics as an accurate and parsimonious contributor to applied practice: a critical appraisal. <em>Sports Medicine</em>, 55, 799–810. <a href="https://link.springer.com/article/10.1007/s40279-024-02161-7">Article</a></li>
+    <li>Freudenheim, A. M., Wulf, G., Madureira, F., Pasetto, S. C., &amp; Corrêa, U. C. (2010). An external focus of attention results in greater swimming speed. <em>International Journal of Sports Science &amp; Coaching</em>. <a href="https://lida.sport-iat.de/twm/Record/4021370?lng=en">Record</a></li>
+    <li>Stoate, I., &amp; Wulf, G. (2011). Does the attentional focus adopted by swimmers affect their performance? <em>International Journal of Sports Science &amp; Coaching</em>. <a href="https://lida.sport-iat.de/dvmf/Record/4021372?lng=en">Record</a></li>
+    <li>Liao, C. M., &amp; Masters, R. S. W. (2001). Analogy learning: a means to implicit motor learning. <em>Journal of Sports Sciences</em>. <a href="https://research.birmingham.ac.uk/en/publications/analogy-learning-a-means-to-implicit-motor-learning/">Record</a></li>
+    <li>Lam, W. K., Maxwell, J. P., &amp; Masters, R. S. W. (2009). Analogy learning and the performance of motor skills under pressure. <em>Journal of Sport and Exercise Psychology</em>, 31, 337–357. <a href="https://scholars.hkbu.edu.hk/en/publications/analogy-learning-and-the-performance-of-motor-skills-under-pressu/">Record</a></li>
+    <li>Koedijker, J. M., Oudejans, R. R. D., &amp; Beek, P. J. (2008). Table tennis performance following explicit and analogy learning over 10,000 repetitions. <em>International Journal of Sport Psychology</em>, 39, 237–256. <a href="https://www.ijsp-online.com/abstract/view/39/237">Abstract</a></li>
+  </ul>
+  <p class="note">NSEA Swim education. Written November 2026 as a coaching summary, not a systematic review. Researchers' positions are paraphrased; see the sources for their full arguments.</p>
+</div></div>
+</body>
+</html>
