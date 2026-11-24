@@ -22,6 +22,10 @@ const TIER_TXT = { hit: 'Got it', under: 'Seed under', 1: '≤1%', 3: '≤3%' };
 const KIND_TXT = { record: 'REC', top10: 'T10', cut: 'CUT' };
 // A DQ as text: "3A Alternating kick · 2nd length". Short form (codes only) for the swim card button.
 const dqText = (q) => (q ? [...(q.calls || []).map(dqCallLabel), q.text].filter(Boolean).join(' · ') : '');
+// Results that aren't a time. NS is a no show, DFS a declared false start (usually a final or a
+// positive check-in event), DNF did not finish; DQ has its own button and call.
+const STATUS_TXT = { DQ: 'Disqualified', NS: 'No show', DFS: 'Declared false start', DNF: 'Did not finish', SCR: 'Scratched' };
+const statusHead = (list) => { const have = new Set(list.map((r) => r.result.status)); return ['DQ', 'NS', 'DFS', 'DNF', 'SCR'].filter((k) => have.has(k)).join(' / ') || 'DQ / NS'; };
 const dqShort = (q) => (q && q.calls && q.calls.length ? q.calls.map((c) => c.code || '✎').join(' ') : '');
 const delta = (d, lbl, cls = '') => (d == null ? '' : `<small class="${d < 0 ? 'drop' : 'add'} ${cls}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}${lbl ? ' ' + lbl : ''}</small>`);
 const sgn = (d) => (d == null ? '' : (d < 0 ? '−' : '+') + fmt(Math.abs(d)));
@@ -340,7 +344,8 @@ function rowHtml(r, showHeat = true, quick = false) {
   const tier = top ? top.tier : '';
   const chips = flags.slice(0, 4).map((f) => `<span class="pill t-${f.tier}" title="${esc(f.label + ' ' + (f.sub || ''))}">${KIND_TXT[f.kind]} ${esc(shortLabel(f))}</span>`).join('');
   const seedLine = r.isFinal ? `prelims ${r.prelim ? (r.prelim.time != null ? fmt(r.prelim.time) : esc(r.prelim.status)) : fmt(r.seed)} · entry ${fmt(r.entryTime)}` : `seed ${fmt(r.seed)}`;
-  const dqLine = res && res.status === 'DQ' ? `<div class="small dqwhy">DQ${r.dq ? ': ' + esc(dqText(r.dq)) : ' · <i>reason?</i>'}</div>` : '';
+  const dqLine = res && res.status === 'DQ' ? `<div class="small dqwhy">DQ${r.dq ? ': ' + esc(dqText(r.dq)) : ' · <i>reason?</i>'}</div>`
+    : res && STATUS_TXT[res.status] ? `<div class="small dqwhy">${esc(STATUS_TXT[res.status])}${r.dq && r.dq.text ? ' · ' + esc(r.dq.text) : ''}</div>` : '';
   return `<div class="row tier-${esc(tier)} ${r.scratched ? 'scr' : ''}" data-act="entry" data-id="${esc(r.id)}">
     ${showHeat ? `<div class="hl ${r.heat ? '' : 'tbd'}">${r.heat ? `H${r.heat}<br>L${r.lane ?? '?'}` : 'TBD'}</div>`
       : `<div class="hl lane ${r.lane ? '' : 'tbd'}"><small>Lane</small>${r.lane ?? '?'}</div>`}
@@ -394,8 +399,8 @@ function openEntry(id) {
     <p class="small muted" style="margin-top:0">${r.heat ? `Heat ${r.heat}${r.heats ? ' of ' + r.heats : ''} · Lane ${r.lane}` : 'Heat/lane not set'}${r.start ? ' · ~' + esc(r.start) : ''} · ${r.isFinal ? `Prelims <b class="mono">${r.prelim ? (r.prelim.time != null ? fmt(r.prelim.time) : esc(r.prelim.status)) : fmt(r.seed)}</b> · Entry <b class="mono">${fmt(r.entryTime)}</b>` : `Seed <b class="mono">${fmt(r.seed)}</b>${r.entryTime != null && r.entryTime !== r.seed ? ` · Entry <b class="mono">${fmt(r.entryTime)}</b>` : ''}`}</p>
     ${res && res.time != null && (r.isFinal || r.dEntry != null) ? `<p class="small" style="margin-top:-6px">${r.isFinal ? `${esc(sgn(r.dPrelim) || '—')} vs prelims · ` : ''}${esc(sgn(r.dEntry) || '—')} vs entry${r.best ? ' · <b class="drop">best time</b>' : ''}</p>` : ''}
     <label class="f" for="t">Time ${res ? `<span class="muted">(now ${res.time != null ? fmt(res.time) : esc(res.status)}, ${esc(res.source || 'manual')}${r.official ? ', official' : ', unofficial'})</span>` : ''}</label>
-    <div class="timein"><input id="t" inputmode="decimal" autocomplete="off" placeholder="e.g. 5912 or 2:15.33 (DQ opens the calls)" value="${res && res.time != null ? fmt(res.time) : ''}"><button class="btn solid" data-act="save-time" data-id="${esc(id)}">Save</button><button class="btn dqbtn" data-act="dq-open" data-id="${esc(id)}">DQ</button></div>
-    <div class="btns" style="margin-top:8px"><button class="btn sm ghost" data-act="status" data-s="NS" data-id="${esc(id)}">NS</button>
+    <div class="timein"><input id="t" inputmode="decimal" autocomplete="off" placeholder="5912 · 2:15.33 · NS" value="${res && res.time != null ? fmt(res.time) : ''}"><button class="btn solid" data-act="save-time" data-id="${esc(id)}">Save</button><button class="btn dqbtn" data-act="dq-open" data-id="${esc(id)}">DQ</button></div>
+    <div class="btns" style="margin-top:8px">${['NS', 'DFS', 'DNF'].map((k) => `<button class="btn sm ${res && res.status === k ? 'solid' : 'ghost'}" data-act="status" data-s="${k}" data-id="${esc(id)}" title="${esc(STATUS_TXT[k])}">${k}</button>`).join('')}
       <button class="btn sm ${r.starred ? 'solid' : 'ghost'}" data-act="star" data-id="${esc(id)}">${r.starred ? '★ Starred' : '☆ Star'}</button>
       ${res ? `<button class="btn sm ghost" data-act="clear-time" data-id="${esc(id)}">Clear time</button>` : ''}
       ${r.meetOut ? '' : `<button class="btn sm ghost" data-act="scratch" data-id="${esc(id)}">${r.scratched ? 'Un-scratch' : 'Scratch'}</button>`}</div>
@@ -540,7 +545,7 @@ function renderSummary(n) {
   ${X.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(X.top10)}</ul></div>` : ''}
   ${finalsBack.length ? `<div class="card"><h3>Back for finals (top 40)${tag}</h3><ul class="sumlist">${finalsBack.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${r.result.place}${ordinal(r.result.place)} <span class="mono">${fmt(r.result.time)}</span></li>`).join('')}</ul></div>` : ''}
   ${X.close.length ? `<div class="card"><h3>Just missed (within 1%)</h3><ul class="sumlist">${X.close.map(({ r, f, miss }) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} <span class="mono">${fmt(r.result.time)}</span> — ${esc(f.label)} by <span class="mono">${fmt(miss)}</span></li>`).join('')}</ul></div>` : ''}
-  ${X.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status === 'DQ' ? (r.dq ? `: ${esc(dqText(r.dq))} <a href="#" class="small" data-act="dq-open" data-id="${esc(r.id)}">edit</a>` : ` · <a href="#" data-act="dq-open" data-id="${esc(r.id)}">add reason</a>`) : ''}</li>`).join('')}</ul></div>` : ''}
+  ${X.dq.length ? `<div class="card"><h3>${statusHead(X.dq)}</h3><ul class="sumlist">${X.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status !== 'DQ' && STATUS_TXT[r.result.status] ? ` <span class="muted small">${esc(STATUS_TXT[r.result.status].toLowerCase())}</span>` : ''}${r.result.status === 'DQ' ? (r.dq ? `: ${esc(dqText(r.dq))} <a href="#" class="small" data-act="dq-open" data-id="${esc(r.id)}">edit</a>` : ` · <a href="#" data-act="dq-open" data-id="${esc(r.id)}">add reason</a>`) : ''}</li>`).join('')}</ul></div>` : ''}
   <h2>Session thoughts</h2>
   ${notesCard(s)}
   ${X.relays.length ? `<div class="card"><h3>Relays</h3><table class="t"><tbody>${X.relays.map((r) => `<tr><td>${evNo(r.event)} ${esc(r.ev.title || '')} <b>${esc(r.relay)}</b><div class="small muted">${r.legSw.map((w, i) => `${i + 1} ${w ? esc(shortName(w)) : '?'}`).join(' · ')}</div></td><td class="num">${fmt(r.seed)}</td><td class="num">${r.result ? (r.result.time != null ? fmt(r.result.time) : esc(r.result.status)) : '—'}</td><td class="num ${r.delta < 0 ? 'drop' : 'add'}">${r.delta != null ? (r.delta < 0 ? '−' : '+') + fmt(Math.abs(r.delta)) : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
@@ -555,7 +560,7 @@ const noteLine = (n) => [...(n.tags || []), n.text].filter(Boolean).join(' · ')
 function textBlocks(L, X) {
   const sec = (t, a) => { if (a.length) { L.push('', t); a.forEach(({ r, f }) => L.push(`• ${who(r)} – ${r.ev.title} ${fmt(r.result.time)} (${f.label})`)); } };
   sec('TEAM RECORDS', X.records); sec('NEW CUTS', X.cuts); sec('TOP 10', X.top10);
-  if (X.dq.length) { L.push('', 'DQ / NS'); X.dq.forEach((r) => L.push(`• ${who(r)} – ${r.ev.title}: ${r.result.status}${r.dq ? ' – ' + dqText(r.dq) : ''}`)); }
+  if (X.dq.length) { L.push('', statusHead(X.dq)); X.dq.forEach((r) => L.push(`• ${who(r)} – ${r.ev.title}: ${r.result.status}${r.result.status !== 'DQ' && STATUS_TXT[r.result.status] ? ` (${STATUS_TXT[r.result.status].toLowerCase()})` : ''}${r.result.status === 'DQ' && r.dq ? ' – ' + dqText(r.dq) : r.dq && r.dq.text ? ' – ' + r.dq.text : ''}`)); }
 }
 function summaryText(n) {
   const B = blockOf(SS(), n), s = B.lead, X = sessionSummary(S.model, B.sessions.map((x) => x.n));
@@ -584,7 +589,7 @@ function renderWrapup() {
   ${W.records.length ? `<div class="card"><h3>Team records${tag}</h3><ul class="sumlist">${li(W.records)}</ul></div>` : ''}
   ${W.cuts.length ? `<div class="card"><h3>New championship cuts${tag}</h3><ul class="sumlist">${li(W.cuts)}</ul></div>` : ''}
   ${W.top10.length ? `<div class="card"><h3>Top 10 boards${tag}</h3><ul class="sumlist">${li(W.top10)}</ul></div>` : ''}
-  ${W.dq.length ? `<div class="card"><h3>DQ / NS</h3><ul class="sumlist">${W.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.dq ? ': ' + esc(dqText(r.dq)) : ''}</li>`).join('')}</ul></div>` : ''}
+  ${W.dq.length ? `<div class="card"><h3>${statusHead(W.dq)}</h3><ul class="sumlist">${W.dq.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)} · ${esc(r.result.status)}${r.result.status !== 'DQ' && STATUS_TXT[r.result.status] ? ` <span class="muted small">${esc(STATUS_TXT[r.result.status].toLowerCase())}</span>` : ''}${r.result.status === 'DQ' && r.dq ? ': ' + esc(dqText(r.dq)) : r.dq && r.dq.text ? ': ' + esc(r.dq.text) : ''}</li>`).join('')}</ul></div>` : ''}
   ${W.tags.length ? `<div class="card"><h3>Notes by tag</h3><p class="small muted">Every swim note and coach note this meet, grouped by its tags. Useful for planning practice.</p>
     ${W.tags.map((g) => `<details><summary><b>${esc(g.tag)}</b> <span class="muted small">${g.list.length}</span></summary><ul class="sumlist">${g.list.map(nl).join('')}</ul></details>`).join('')}</div>` : ''}
   ${W.starred.length ? `<div class="card"><h3>Starred swims</h3><ul class="sumlist">${W.starred.map((r) => `<li><b>${esc(r.swimmer.name)}</b> · ${evNo(r.event)} ${esc(r.ev.title)}${r.notes.length ? `<div class="small" style="color:var(--violet)">${r.notes.map((n) => esc(noteLine(n))).join('<br>')}</div>` : ''}</li>`).join('')}</ul></div>` : ''}
@@ -997,6 +1002,8 @@ document.addEventListener('click', async (ev) => {
     if (a === 'save-time') {
       const v = $('#t').value;
       if (/^\s*dq\s*$/i.test(v)) { openDq(t.dataset.id); return; }
+      const st = v.trim().toUpperCase();
+      if (['NS', 'DFS', 'DNF'].includes(st)) { await addOp('result', { entry: t.dataset.id, time: null, status: st, source: 'manual', official: false }); closeSheet(); toast(`${st} · ${STATUS_TXT[st]}`); return; }
       const cs = parseTyped(v);
       if (cs == null) { toast('Type a time like 5912 or 1:02.45'); return; }
       await addOp('result', { entry: t.dataset.id, time: cs, status: 'OK', source: 'manual', official: false });
@@ -1009,7 +1016,7 @@ document.addEventListener('click', async (ev) => {
       await addOp('entries', { session: r.session, mode: 'merge', source: 'typed heat/lane', rows: [{ event: r.event, round: r.round, swimmerId: r.swimmerId, name: r.swimmer.name, heat, heats: r.heats, lane, seed: r.seed, start: r.start }] });
       closeSheet(); toast(`Heat ${heat}, lane ${lane}`); return;
     }
-    if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); return; }
+    if (a === 'status') { await addOp('result', { entry: t.dataset.id, time: null, status: t.dataset.s, source: 'manual', official: false }); closeSheet(); toast(`${t.dataset.s} · ${STATUS_TXT[t.dataset.s] || ''}`, 1600); return; }
     if (a === 'clear-time') { const r = S.model.rows.find((x) => x.id === t.dataset.id); if (r && r.result) await addOp('undo', { op: r.result.op }); closeSheet(); return; }
     if (a === 'scratch') { const r = S.model.rows.find((x) => x.id === t.dataset.id); await addOp('scratch', { entry: t.dataset.id, on: !r.scratched }); closeSheet(); return; }
     if (a === 'tt-new') {
@@ -1094,7 +1101,8 @@ document.addEventListener('click', async (ev) => {
       const codes = calls.map((c) => c.code).filter(Boolean), text = $('#dqtext').value.trim();
       if (!(r.result && r.result.status === 'DQ')) await addOp('result', { entry: r.id, time: null, status: 'DQ', source: 'manual', official: false });
       if (calls.length || text || (r.dq && !r.dq.official)) await addOp('dq', { entry: r.id, calls, codes, text });
-      closeSheet(); toast(calls.length || text ? `DQ saved${codes.length ? ' · ' + codes.join(' ') : ''}` : 'DQ saved · add the call in the wrap-up'); return;
+      const as = codes.length && codes.every((c) => c === '7C') ? 'DNF' : codes.length && codes.every((c) => c === '7D') ? 'DFS' : null;
+      closeSheet(); toast(as ? `Saved as ${as} · ${STATUS_TXT[as]}` : calls.length || text ? `DQ saved${codes.length ? ' · ' + codes.join(' ') : ''}` : 'DQ saved · add the call in the wrap-up'); return;
     }
     if (a === 'checkin') {
       const B = blockOf(SS(), +t.dataset.b), on = t.dataset.on === '1';

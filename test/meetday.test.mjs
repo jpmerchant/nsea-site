@@ -603,3 +603,22 @@ test('results: DQ reason printed under the swim is kept and stands in for a miss
   row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
   assert.equal(row.dq.calls[0].code, '2C'); assert.equal(row.dq.text, '2nd wall'); assert.equal(row.dqOfficial.call.code, '2H');
 });
+
+test('NS, DFS and DNF: their own results; a DQ called only 7C / 7D reads as DNF / DFS', () => {
+  const R = parseResults(['Event 11 Girls 13 & Over 100 Yard Backstroke', '--- Pond, Coral A 13 Nsea Swim-NC 1:10.00 DFS', '--- Lake, Penny 14 Nsea Swim-NC 1:12.00 DNF']);
+  assert.deepEqual(R.map((r) => r.status), ['DFS', 'DNF']);
+  const P = pkg(); const ops = [];
+  const op = (type, data) => ops.push({ id: 'op' + ops.length + 'xxxxxxx', at: `2026-11-14T1${ops.length}:00:00.000Z`, by: 'Coach', type, data });
+  op('result', { entry: '11-P-1', time: null, status: 'DQ' });
+  op('dq', { entry: '11-P-1', calls: [{ code: '7C', slip: '62', desc: 'Did not finish' }], codes: ['7C'], text: 'cramp' });
+  let row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
+  assert.equal(row.result.status, 'DNF'); assert.equal(row.dq.text, 'cramp');
+  op('dq', { entry: '11-P-1', calls: [{ code: '7D', slip: '63', desc: 'Declared false start' }], codes: ['7D'], text: '' });
+  assert.equal(derive(P, ops).rows.find((r) => r.id === '11-P-1').result.status, 'DFS');
+  // a real DQ call plus anything else stays a DQ
+  op('dq', { entry: '11-P-1', calls: [{ code: '7A', slip: '60', desc: 'False start' }], codes: ['7A'], text: '' });
+  row = derive(P, ops).rows.find((r) => r.id === '11-P-1');
+  assert.equal(row.result.status, 'DQ');
+  const X = sessionSummary(derive(P, ops), 2);
+  assert.equal(X.dq.length, 1);
+});

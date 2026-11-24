@@ -139,6 +139,13 @@ export function derive(pkg, ops, settings = {}) {
       startMin: clockMin(e.start || ''),
     });
   }
+  // Meet Manager files Did Not Finish and Declared False Start as their own results (DNF, DFS), though
+  // they're on the DQ slip (7C, 7D). A DQ whose only call is one of them reads as that status.
+  for (const x of rows) {
+    const codes = x.result && x.result.status === 'DQ' && x.dq ? x.dq.calls.map((c) => c.code) : [];
+    const st = codes.length && codes.every((c) => c === '7C') ? 'DNF' : codes.length && codes.every((c) => c === '7D') ? 'DFS' : null;
+    if (st) x.result = { ...x.result, status: st, fromDq: true };
+  }
   compareRounds(rows);
   rows.sort((a, b) => (a.session ?? 99) - (b.session ?? 99) || order(sessions, a) - order(sessions, b) || (a.heat ?? 99) - (b.heat ?? 99) || (a.lane ?? 99) - (b.lane ?? 99));
   const cutsInfo = (n) => { cutsOf(n); return cutsMemo.get(n); };
