@@ -11,8 +11,9 @@ import { eventsApp, eventsProxy, configured as eventsConfigured } from './events
 import { handleScheduleAdmin } from './schedule.mjs';
 import { handleStaffAdmin, isManager, linkedCoach } from './staff.mjs';
 import { handleCoachingAdmin } from './coaching.mjs';
+import { handleFamiliesAdmin } from './families.mjs';
 
-export const MODULES = ['carpool', 'events', 'schedule', 'content', 'assessment', 'reports', 'meetday'];
+export const MODULES = ['carpool', 'families', 'events', 'schedule', 'content', 'assessment', 'reports', 'meetday'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach', 'staff'];
 
 // ---------- Cloudflare Access JWT ----------
@@ -178,6 +179,13 @@ export async function handleAdmin(req, env, url) {
         await audit(env, me, 'carpool', 'close post', '#' + m[1]);
         return json({ ok: true });
       }
+    }
+
+    // ----- families & roster module -----
+    if (path.startsWith('/families')) {
+      if (!can(me, 'families')) return fail(403, 'You do not have access to Families & Roster.');
+      const b = method === 'GET' ? { q: url.searchParams.get('q') || '' } : body;
+      return handleFamiliesAdmin(env, me, method, path, b, audit, url.origin);
     }
 
     // ----- events module -----

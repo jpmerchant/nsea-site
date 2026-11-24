@@ -1,6 +1,7 @@
 // NSEA Swim carpool board API (family-facing). Admin tools live in admin.mjs.
 // Sign-in is by single-use invite link created by an admin; a link is exchanged for a 90-day session cookie.
 import { json, fail, sha, rand, clean, EMAIL, cookieOf, setCookie, readRequest } from './util.mjs';
+import { familyAccess, gateOn, cleanRelation, cleanGradYear } from './families.mjs';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'];
@@ -43,9 +44,10 @@ export async function handleCarpool(req, env, url) {
         if (!EMAIL.test(email) || !family || !swimmers) return fail(400, 'Please fill in your family name, email and your swimmers.');
         const pending = await env.DB.prepare(`SELECT COUNT(*) n FROM members WHERE status = 'pending'`).first();
         if (pending.n >= 30) return fail(429, 'Too many requests are waiting. Please email team@nseaswim.com.');
+        const relation = cleanRelation(body.relation);
         await env.DB.prepare(
-          `INSERT OR IGNORE INTO members (email, family_name, phone, swimmers, note) VALUES (?, ?, ?, ?, ?)`
-        ).bind(email, family, clean(body.phone, 30) || null, swimmers, clean(body.note, 300) || null).run();
+          `INSERT OR IGNORE INTO members (email, family_name, phone, swimmers, note, relation, grad_year) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(email, family, clean(body.phone, 30) || null, swimmers, clean(body.note, 300) || null, relation, relation === 'alum' ? cleanGradYear(body.gradYear) : null).run();
         return json({ ok: true }); // same answer whether or not the email already exists
       }
 
@@ -78,6 +80,8 @@ export async function handleCarpool(req, env, url) {
       // ---------- members ----------
       const me = await authed(req, env);
       if (!me) return fail(401, 'Not signed in');
+      // Team-families gate (FAMILY_GATE = "on"): the family must be linked to an Active or Alumni swimmer.
+      if (gateOn(env) && !(await familyAccess(env, me.email)).eligible) return fail(403, 'Your sign-in is not linked to an Active or Alumni NSEA swimmer yet. Please email team@nseaswim.com.');
 
       if (method === 'GET' && path === '/me') {
         return json({ id: me.id, family: me.family_name, email: me.email, phone: me.phone });

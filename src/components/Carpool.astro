@@ -54,17 +54,20 @@
     var form = el('form', { class: 'cp-form', onsubmit: function (e) {
       e.preventDefault();
       var f = e.target, out = f.querySelector('.cp-out');
-      var d = { family: f.family.value, email: f.email.value, phone: f.phone.value, swimmers: f.swimmers.value, website: f.website.value };
+      var d = { family: f.family.value, email: f.email.value, phone: f.phone.value, swimmers: f.swimmers.value, relation: f.relation.value, gradYear: f.gradYear.value, website: f.website.value };
       f.querySelector('button').disabled = true;
       api('POST', '/request-access', d).then(function () {
         mount(el('div', { class: 'cp-panel' }, el('h2', null, 'Request received'),
           el('p', null, 'Thank you. An admin will check the roster and send your personal sign-in link. It usually comes through Captyn or a text, so watch for it.')));
       }).catch(function (err) { out.replaceChildren(msg('err', err.message)); f.querySelector('button').disabled = false; });
     } },
+      el('label', null, 'I am', el('select', { name: 'relation', onchange: function (e) { e.target.form.querySelector('.cp-grad').hidden = e.target.value !== 'alum'; } },
+        el('option', { value: 'family' }, 'An NSEA family (parent or guardian)'), el('option', { value: 'alum' }, 'An NSEA alum, or an alum’s family'))),
       el('label', null, 'Family name', el('input', { name: 'family', required: true, maxlength: 60, autocomplete: 'family-name', placeholder: 'e.g. The Smiths' })),
       el('label', null, 'Email', el('input', { name: 'email', type: 'email', required: true, maxlength: 120, autocomplete: 'email' })),
       el('label', null, 'Mobile (optional)', el('input', { name: 'phone', type: 'tel', maxlength: 30, autocomplete: 'tel' })),
       el('label', null, 'Swimmer name(s) and group', el('input', { name: 'swimmers', required: true, maxlength: 160, placeholder: 'e.g. Alex (Surge)' })),
+      el('label', { class: 'cp-grad', hidden: true }, 'High school graduation year', el('input', { name: 'gradYear', type: 'number', min: 2000, max: 2100, placeholder: 'e.g. 2024' })),
       el('div', { class: 'cp-hp', 'aria-hidden': 'true' }, el('label', null, 'Website', el('input', { name: 'website', tabindex: '-1', autocomplete: 'off' }))),
       el('div', { class: 'cp-out' }),
       el('button', { class: 'btn', type: 'submit' }, 'Request access'));
