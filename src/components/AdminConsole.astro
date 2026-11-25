@@ -95,6 +95,7 @@
       if (me.modules.indexOf('schedule') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Practice Schedule'), el('p', null, el('strong', null, String(o.schedule || 0)), ' suggested change' + (o.schedule === 1 ? '' : 's') + ' waiting'), btn('Review', function () { go('schedule'); }, o.schedule ? '' : 'ghost')));
       if (me.modules.indexOf('coaching') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Meet Coaching'), el('p', { class: 'cp-small' }, 'Which meet sessions you can coach, and hotel rooms.'), btn('Open', function () { go('coaching'); }, 'ghost')));
       if (me.modules.indexOf('profile') >= 0) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'My Coach Profile'), el('p', { class: 'cp-small' }, 'Your bio, photo, memberships and accomplishments.'), btn('Open', function () { go('profile'); }, 'ghost')));
+      if (o.thanks != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Family Thanks'), el('p', null, el('strong', null, String(o.thanks)), ' note' + (o.thanks === 1 ? '' : 's') + ' waiting for approval'), btn('Review', function () { ctab = 'thanks'; go('content'); }, o.thanks ? '' : 'ghost')));
       if (o.staff != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Staff Records'), el('p', null, el('strong', null, String(o.staff)), ' coach change' + (o.staff === 1 ? '' : 's') + ' waiting for your OK'), btn('Review', function () { staffTab = o.staff ? 'review' : 'list'; staffSel = null; go('staff'); }, o.staff ? '' : 'ghost')));
       if (o.admins != null) cards.push(el('div', { class: 'cp-panel' }, el('h3', null, 'Admins'), el('p', null, el('strong', null, String(o.admins)), ' people'), btn('Manage admins', function () { go('admins'); }, 'ghost')));
       box.replaceChildren(el('h2', null, 'Overview'), el('div', { class: 'ac-cards' }, cards),
@@ -571,14 +572,75 @@
     }).catch(function (e) { fail(box, e); });
   }
 
+  // ---------- family thanks (Content) ----------
+  // Families write at /embeds/share-thanks.html. Nothing is public until approved here. Approved notes show on /embeds/thanks-wall.html.
+  function vThanks(box) {
+    api('GET', '/content/thanks').then(function (o) {
+      var st = o.settings, origin = location.origin;
+      var formUrl = origin + '/embeds/share-thanks.html', wallUrl = origin + '/embeds/thanks-wall.html';
+      var embed = '<iframe src="' + wallUrl + '" title="NSEA family thanks" style="width:100%;height:900px;border:0" loading="lazy"></iframe>';
+      function post(path, body, okMsg) { api('POST', path, body || {}).then(function () { flash = okMsg; vContent(); }).catch(function (e) { alert(e.message); }); }
+      function copyRow(label, value) {
+        var inp = el('input', { readonly: true, value: value, 'aria-label': label, onfocus: function (e) { e.target.select(); }, style: 'flex:1 1 260px' });
+        return el('div', null, el('p', { class: 'cp-small', style: 'margin:8px 0 2px' }, label),
+          el('div', { class: 'cp-btns', style: 'align-items:center' }, inp, btn('Copy', function () { inp.select(); if (navigator.clipboard) navigator.clipboard.writeText(value); }, 'ghost')));
+      }
+      var pending = o.notes.filter(function (n) { return n.status === 'pending'; });
+      var approved = o.notes.filter(function (n) { return n.status === 'approved'; });
+      var rejected = o.notes.filter(function (n) { return n.status === 'rejected'; });
+      function noteRow(n) {
+        var text = el('p', { style: 'white-space:pre-line;margin:6px 0' }, n.body);
+        var meta = el('p', { class: 'cp-small' }, '— ' + n.signed + ' · sent ' + date(n.created_at) + ' UTC' + (n.email ? ' · private email: ' + n.email : '') + (n.edited ? ' · edited' : '') + (n.featured ? ' · pinned to the top' : '') + (n.decided_by && n.status !== 'pending' ? ' · ' + n.status + ' by ' + n.decided_by : ''));
+        var editBox = el('div', { hidden: true });
+        var noteIn = el('textarea', { rows: 5, maxlength: o.maxNote, style: 'width:100%' }), signIn = el('input', { maxlength: 60, style: 'width:100%' });
+        noteIn.value = n.body; signIn.value = n.signed;
+        editBox.append(el('label', null, 'Note (fix typos, or take out a child’s last name)', noteIn), el('label', null, 'Signed', signIn),
+          n.edited ? el('p', { class: 'cp-small', style: 'white-space:pre-line' }, 'As sent: ' + n.original) : null,
+          el('div', { class: 'cp-btns' }, btn('Save', function () { post('/content/thanks/' + n.id + '/edit', { note: noteIn.value, signed: signIn.value }, 'Note updated.'); }),
+            btn('Cancel', function () { editBox.hidden = true; }, 'ghost')));
+        var buttons = n.status === 'pending' ? [
+            btn('Approve', function () { post('/content/thanks/' + n.id + '/approve', {}, 'Approved. It shows on the Thanks Wall within a minute.'); }),
+            btn('Edit', function () { editBox.hidden = false; noteIn.focus(); }, 'ghost'),
+            btn('Reject', function () { post('/content/thanks/' + n.id + '/reject', {}, 'Rejected. It will not be shown.'); }, 'ghost')]
+          : n.status === 'approved' ? [
+            btn(n.featured ? 'Unpin' : 'Pin to top', function () { post('/content/thanks/' + n.id + '/' + (n.featured ? 'unfeature' : 'feature'), {}, n.featured ? 'Unpinned.' : 'Pinned to the top of the wall.'); }, 'ghost'),
+            btn('Edit', function () { editBox.hidden = false; noteIn.focus(); }, 'ghost'),
+            btn('Take down', function () { post('/content/thanks/' + n.id + '/pending', {}, 'Taken down and moved back to waiting.'); }, 'ghost')]
+          : [btn('Move back to waiting', function () { post('/content/thanks/' + n.id + '/pending', {}, 'Moved back to waiting.'); }, 'ghost')];
+        buttons.push(btn('Delete', function () { if (confirm('Delete this note from ' + n.signed + ' for good?')) post('/content/thanks/' + n.id + '/delete', {}, 'Note deleted.'); }, 'ghost'));
+        return el('div', { class: 'cp-row', style: 'display:block' }, text, meta, el('div', { class: 'cp-btns' }, buttons), editBox);
+      }
+      var topicUrl = 'https://ntfy.sh/' + st.ntfy_topic;
+      box.replaceChildren(
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Waiting for approval (' + pending.length + ')'),
+          el('p', { class: 'cp-small' }, 'Read each note before approving it. Swimmers are minors: if a note gives a child’s full name, edit it down to the first name. The family’s email is private and never shown.'),
+          pending.length ? pending.map(noteRow) : el('p', { class: 'cp-empty' }, 'Nothing waiting.')),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'On the Thanks Wall (' + approved.length + ')'),
+          approved.length ? approved.map(noteRow) : el('p', { class: 'cp-empty' }, 'No approved notes yet.')),
+        rejected.length ? el('details', { class: 'cp-panel' }, el('summary', null, 'Rejected (' + rejected.length + ')'), rejected.map(noteRow)) : el('span'),
+        el('div', { class: 'cp-panel' }, el('h3', null, 'Links and settings'),
+          copyRow('Form for families (newsletter button)', formUrl),
+          copyRow('Thanks Wall (to view)', wallUrl),
+          copyRow('Thanks Wall embed code (paste into a BUILD Custom HTML widget)', embed),
+          el('label', { class: 'inline', style: 'margin-top:12px' }, el('input', { type: 'checkbox', checked: st.open ? 'checked' : null, onchange: function (e) { post('/content/thanks/settings', { open: e.target.checked }, e.target.checked ? 'The form is open.' : 'The form is closed. Families see a short thank-you message instead.'); } }), ' Form is open for new notes'),
+          el('h4', null, 'Phone alerts'),
+          el('label', { class: 'inline' }, el('input', { type: 'checkbox', checked: st.notify ? 'checked' : null, onchange: function (e) { post('/content/thanks/settings', { notify: e.target.checked }, e.target.checked ? 'Phone alerts are on.' : 'Phone alerts are off.'); } }), ' Send a phone alert when a note arrives'),
+          el('p', { class: 'cp-small' }, 'Alerts come through the free ntfy app. Install “ntfy” from the App Store or Google Play, tap +, and subscribe to the topic below (leave the server as ntfy.sh). On a computer you can open the topic link in a browser instead. The alert says only who signed the note; read it here. Keep the topic private: anyone who has it can see the alerts.'),
+          copyRow('Alert topic', st.ntfy_topic),
+          el('p', { class: 'cp-small' }, el('a', { href: topicUrl, target: '_blank', rel: 'noopener' }, 'Open the topic in a browser')),
+          el('div', { class: 'cp-btns' }, btn('Send a test alert', function () { api('POST', '/content/thanks/test', {}).then(function () { alert('Test alert sent. It should reach your phone within a few seconds.'); }).catch(function (e) { alert(e.message); }); }, 'ghost'),
+            btn('Make a new topic', function () { if (confirm('Make a new alert topic? Phones subscribed to the old one will stop getting alerts until they subscribe to the new one.')) post('/content/thanks/settings', { newTopic: true }, 'New alert topic made. Subscribe to it on your phone.'); }, 'ghost'))));
+    }).catch(function (e) { fail(box, e); });
+  }
+
   var ctab = 'thoughts';
   function vContent() {
     var box = el('div', null, loading());
-    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics'], ['spotlights', 'Athlete Spotlights'], ['recognition', 'Recognition'], ['alumni', 'Alumni results']];
+    var tabs = [['thoughts', 'Thought of the Month'], ['fees', 'Fees'], ['programs', 'Prep programs & clinics'], ['spotlights', 'Athlete Spotlights'], ['recognition', 'Recognition'], ['thanks', 'Family Thanks'], ['alumni', 'Alumni results']];
     shell(el('div', null, el('h2', null, 'Content'),
       el('div', { class: 'cp-tabs' }, tabs.map(function (t) { return el('button', { type: 'button', 'aria-current': ctab === t[0] ? 'page' : 'false', onclick: function () { ctab = t[0]; vContent(); } }, t[1]); })),
       box));
-    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms, spotlights: vSpotlights, recognition: vRecognition, alumni: vAlumni })[ctab](box);
+    ({ thoughts: vThoughts, fees: vFees, programs: vPrograms, spotlights: vSpotlights, recognition: vRecognition, thanks: vThanks, alumni: vAlumni })[ctab](box);
   }
   function siteSave(key, payload, out, okMsg) {
     api('POST', '/content/site/' + encodeURIComponent(key), payload).then(function () { flash = okMsg; vContent(); })

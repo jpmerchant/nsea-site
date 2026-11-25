@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NSEA Swim — Share Your Thanks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Family Thanks form. Posts to /api/thanks/submit; every note waits for approval before it reaches the Thanks Wall. */
+  :root{--teal:#008675;--teal-dark:#006A5C;--coral:#ee492f;--coral-light:#FCE7E3;--gray:#676d70;--line:#E4E7E8;--ink:#1B2325;--warm:#FFF7EC;--amber:#e8892b;--rust:#7a3b12}
+  *{box-sizing:border-box;min-width:0}
+  [hidden]{display:none!important}
+  html,body{margin:0;background:#fff}
+  body{font:16px/1.55 'Inter',system-ui,sans-serif;color:var(--ink)}
+  .wrap{max-width:640px;margin:0 auto;padding:clamp(16px,4vw,32px) 16px 40px}
+  .top{display:flex;gap:16px;align-items:center;margin:0 0 18px}
+  .top svg{width:64px;height:64px;flex:none}
+  h1{font:600 clamp(26px,5vw,34px)/1.1 'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.01em;margin:0;color:var(--teal-dark);text-wrap:balance}
+  .lede{margin:0 0 20px;color:#3b4346}
+  .card{background:var(--warm);border:1px solid #F1DCC0;border-radius:14px;padding:clamp(16px,4vw,24px)}
+  label{display:block;font-weight:600;margin:0 0 6px}
+  .hint{display:block;font-weight:400;font-size:13.5px;color:var(--gray);margin-top:2px}
+  textarea,input{width:100%;font:16px/1.5 'Inter',system-ui,sans-serif;color:var(--ink);background:#fff;border:1px solid #cfd4d6;border-radius:10px;padding:12px 14px}
+  textarea{min-height:160px;resize:vertical}
+  textarea:focus,input:focus{outline:3px solid rgba(0,134,117,.25);border-color:var(--teal)}
+  .field{margin:0 0 16px}
+  .count{font-size:12.5px;color:var(--gray);text-align:right;margin-top:4px}
+  .count.near{color:var(--coral)}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .note{font-size:13.5px;color:#4a5255;background:#fff;border-left:4px solid var(--amber);border-radius:6px;padding:10px 12px;margin:0 0 18px}
+  button{font:600 16px 'Inter',system-ui,sans-serif;min-height:48px;padding:0 26px;border:0;border-radius:999px;background:var(--coral);color:#fff;cursor:pointer}
+  button:hover{background:#d63d24}
+  button:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+  button[disabled]{opacity:.6;cursor:default}
+  .err{color:#b8321d;background:var(--coral-light);border-radius:8px;padding:10px 12px;margin:0 0 14px;font-weight:500}
+  .done{text-align:center;padding:12px 4px}
+  .done svg{width:84px;height:84px}
+  .done h2{font:600 26px/1.15 'Oswald',sans-serif;text-transform:uppercase;color:var(--teal-dark);margin:8px 0}
+  .done p{margin:0 0 14px}
+  .links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .links a{font-weight:600;color:var(--teal-dark)}
+  .closed{text-align:center}
+  @media (prefers-reduced-motion:no-preference){.done svg{animation:pop .5s ease-out}@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#FFF7EC"/><path d="M32 9c3 7 9 8 15 7-1 6 1 11 7 14-6 3-7 8-6 14-6-1-11 1-14 7h-4c-3-6-8-8-14-7 1-6 0-11-6-14 6-3 8-8 7-14 6 1 12 0 15-7z" fill="#e8892b"/><path d="M32 19v35" stroke="#7a3b12" stroke-width="2.4" stroke-linecap="round"/><path d="M32 33l-8-6M32 40l9-7" stroke="#7a3b12" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <h1>Share your thanks</h1>
+  </div>
+  <p class="lede">Our coaches shared what they’re grateful for. Now it’s your turn. Thank a coach, a teammate, a fellow swim parent, or just tell us what NSEA means to your family.</p>
+
+  <div class="card" id="box">
+    <form id="f" novalidate>
+      <div id="msg" role="alert"></div>
+      <div class="field">
+        <label for="note">Your note of thanks</label>
+        <textarea id="note" name="note" maxlength="700" required placeholder="We’re thankful for…"></textarea>
+        <div class="count" id="count" aria-live="polite">0 / 700</div>
+      </div>
+      <div class="field">
+        <label for="signed">Sign it as<span class="hint">Shown with your note, for example “The Rivera family” or “A proud Surge parent.”</span></label>
+        <input id="signed" name="signed" maxlength="60" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="email">Your email (optional)<span class="hint">Private. Only used if we need to check something with you. It is never posted.</span></label>
+        <input id="email" name="email" type="email" maxlength="120" autocomplete="email" inputmode="email">
+      </div>
+      <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <p class="note">Please use first names only for swimmers. Every note is read by NSEA staff before it is posted on the Thanks Wall, so it may take a little while to appear.</p>
+      <button type="submit" id="send">Send my thanks</button>
+    </form>
+  </div>
+</main>
+<script>
+{
+  const f = document.getElementById('f'), box = document.getElementById('box'), msg = document.getElementById('msg');
+  const note = document.getElementById('note'), count = document.getElementById('count'), send = document.getElementById('send');
+  const wall = '/embeds/thanks-wall.html';
+  const say = (t) => { msg.className = t ? 'err' : ''; msg.textContent = t || ''; };
+  const upd = () => { const n = note.value.length; count.textContent = n + ' / 700'; count.className = 'count' + (n > 640 ? ' near' : ''); };
+  note.addEventListener('input', upd);
+  const finished = (title, text, again) => {
+    box.replaceChildren();
+    const d = document.createElement('div'); d.className = 'done';
+    d.innerHTML = '<svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="40" fill="#E6F3F1"/><path d="M26 43l11 11 22-24" fill="none" stroke="#008675" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const h = document.createElement('h2'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = text;
+    const links = document.createElement('div'); links.className = 'links';
+    const a = document.createElement('a'); a.href = wall; a.textContent = 'See the Thanks Wall'; links.append(a);
+    if (again) { const b = document.createElement('a'); b.href = location.pathname; b.textContent = 'Write another note'; links.append(b); }
+    d.append(h, p, links); box.append(d);
+  };
+  fetch('/api/thanks/status').then((r) => r.json()).then((s) => {
+    if (s && s.open === false) finished('Thank you!', 'We are not collecting notes right now, but we are grateful you thought of us.', false);
+  }).catch(() => {});
+  f.addEventListener('submit', (e) => {
+    e.preventDefault(); say('');
+    const body = { note: note.value, signed: f.signed.value, email: f.email.value, website: f.website.value };
+    if (body.note.trim().length < 3) { say('Please write your note of thanks.'); note.focus(); return; }
+    if (!body.signed.trim()) { say('Please tell us how to sign your note.'); f.signed.focus(); return; }
+    send.disabled = true; send.textContent = 'Sending…';
+    fetch('/api/thanks/submit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      .then((r) => r.json().catch(() => ({})).then((d) => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (ok) finished('Thank you!', 'Your note is on its way. Once it is read, it will appear on the Thanks Wall.', true);
+        else { say(d.error || 'Something went wrong. Please try again.'); send.disabled = false; send.textContent = 'Send my thanks'; }
+      })
+      .catch(() => { say('We could not reach the team site. Please check your connection and try again.'); send.disabled = false; send.textContent = 'Send my thanks'; });
+  });
+}
+</script>
+</body>
+</html>

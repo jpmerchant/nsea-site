@@ -44,6 +44,7 @@ new_path,title,type,status,replaces,source_files
 "/families/newsletter/thought-of-the-month/","Thought of the Month","tool","done","","The archive is edited in the admin console (Content, Thought of the Month)"
 "/families/newsletter/athlete-spotlights/","Athlete Spotlights","page","done","","Edited in the admin console (Content, Athlete Spotlights)"
 "/families/newsletter/athlete-recognition/","Athlete Recognition","page","done","","Edited in the admin console (Content, Recognition)"
+"/families/newsletter/family-thanks/","Family Thanks","tool","new","","Families write at /embeds/share-thanks.html; notes are approved in the admin console (Content, Family Thanks)"
 "/families/team-store/","Team Store","hub","rebuild","",""
 "/families/team-store/apparel/","Apparel Store","link","ready","",""
 "/families/team-store/caps/","Cap Order Form","link","ready","",""
