@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NSEA Race Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a coach's clipboard — plain, exact, every number traceable to a source.
+   IDEA: a race card read left to right, one column per length, like a split sheet on deck.
+   PICTURE: the per-length strip and the stroke-count grid, with a bar placing the goal among the reference levels.
+   COLOUR and TYPE: NSEA teal leads, coral marks the goal and the coach's picks; Oswald heads, Inter text, Space Mono numbers.
+   LAYOUT: settings, where-the-goal-sits bar, strip, options grid, range, practice targets, notes, sources. No header/footer chrome. */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#0f1716);--ink:light-dark(#1B2325,#e8eeed);--dim:light-dark(#5f6669,#a3abad);--faint:light-dark(#8d9396,#7b8487);
+--teal:light-dark(#008675,#2bb3a1);--teal-d:light-dark(#006A5C,#5fd0bf);--tint:light-dark(#E3F2EF,#14302c);--tint2:light-dark(#F1F8F6,#132422);
+--coral:#ee492f;--coral-l:light-dark(#FCE7E3,#3a1f1a);--line:light-dark(#E4E7E8,#2a3533);--panel:light-dark(#FAFBFB,#152120);--s2:light-dark(#F2F4F4,#1a2624);
+--sky:light-dark(#0B7FB3,#5cb8e6);--sky-l:light-dark(#E2F1F8,#16303d);--amber:light-dark(#9a6412,#e0b15c);--amber-l:light-dark(#FDF6DD,#33290f);--violet:light-dark(#6d3fc0,#b49cf0);--violet-l:light-dark(#efe9fb,#28213a);--off:light-dark(#c4c9cb,#4a5457)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,Arial,sans-serif;overflow-x:clip}
+.wrap{max-width:1200px;margin:0 auto;padding:clamp(16px,3vw,32px) max(3vw,14px) 48px}
+h1,h2{font-family:Oswald,'Arial Narrow',Arial,sans-serif;font-weight:600;line-height:1.08;margin:0}
+h1{font-size:clamp(28px,4vw,40px);text-wrap:balance}
+h2{font-size:19px;margin:0 0 4px}
+.lede{color:var(--dim);max-width:75ch;margin:6px 0 16px}
+.num,td,.mono{font-family:'Space Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.controls label,.controls .lbl{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--dim)}
+.controls input,.controls select{font:16px Inter,Arial,sans-serif;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-height:42px;width:100%}
+.controls input.time{font-family:'Space Mono',monospace;font-size:18px}
+.controls .wide{grid-column:span 2}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{font:500 13px Inter,Arial,sans-serif;padding:0 12px;min-height:40px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--dim);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible,td.pickable:focus-visible{outline:3px solid var(--coral);outline-offset:1px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 6px}
+.btn{font:600 14px Inter,Arial,sans-serif;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--coral);border-color:var(--coral);color:#fff}
+.saved{display:flex;gap:6px;flex-wrap:wrap}
+.saved button{font:500 12.5px Inter;border:1px solid var(--line);background:var(--s2);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer}
+.saved button .x{margin-left:6px;color:var(--faint)}
+.head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:18px 0 8px}
+.head .ev{font:12.5px 'Space Mono',monospace;color:var(--teal-d);margin-top:4px;letter-spacing:.02em}
+.goal{font:600 30px Oswald,sans-serif;color:var(--coral);background:var(--coral-l);padding:4px 16px;border-radius:8px}
+.sit{border:1px solid var(--line);border-radius:12px;padding:12px 16px 6px}
+.sit p{margin:0 0 30px;font-size:13.5px;color:var(--dim)}.sit p b{color:var(--ink)}
+.bar{position:relative;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--sky),var(--teal),var(--amber));margin:0 6px}
+.bar .tk{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink);opacity:.55}
+.bar .tl{position:absolute;top:16px;transform:translateX(-50%);font-size:10.5px;color:var(--dim);white-space:nowrap;text-align:center;line-height:1.25}
+.bar .tl b{font-family:'Space Mono',ui-monospace,monospace;color:var(--ink);font-weight:700}
+.bar .mk{position:absolute;top:-24px;transform:translateX(-50%);font:700 12px 'Space Mono',ui-monospace,monospace;color:var(--coral);white-space:nowrap}
+.bar .mk::after{content:"";display:block;width:3px;height:24px;background:var(--coral);margin:1px auto 0;border-radius:2px}
+.sit .room{height:46px}
+.card{margin-top:24px}
+.sub{font-size:13px;color:var(--dim);margin:0 0 10px;max-width:115ch}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:0;width:100%}
+th,td{padding:7px 8px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line);font-size:13px}
+tbody tr:last-child td{border-bottom:none}
+th.rl,td.rl{text-align:left;position:sticky;left:0;background:var(--bg);z-index:2;font:600 12.5px Inter,Arial,sans-serif;color:var(--ink);border-right:1px solid var(--line);min-width:160px;max-width:200px;white-space:normal}
+td.rl small{display:block;font:400 11px Inter;color:var(--faint);margin-top:1px}
+.src{display:inline-block;font:600 10px Inter,Arial,sans-serif;padding:1px 6px;border-radius:999px;margin:3px 3px 0 0;white-space:nowrap}
+.src.ncaa{background:var(--sky-l);color:var(--sky)}.src.usa{background:var(--violet-l);color:var(--violet)}.src.indiana{background:var(--amber-l);color:var(--amber)}.src.ag{background:var(--tint);color:var(--teal-d)}.src.calc{border:1px solid var(--line);color:var(--dim)}
+thead th{font:400 10.5px 'Space Mono',monospace;color:var(--faint);background:var(--panel)}
+thead tr.grp th{font:600 11.5px Oswald,sans-serif;letter-spacing:.05em;color:var(--teal-d);background:var(--tint2)}
+th.gb,td.gb{border-left:2px solid light-dark(#cfd8d6,#33413e)}
+tr.hero td:not(.rl){font-size:15px;font-weight:700}
+tr.cum td:not(.rl){color:var(--dim)}
+tr.grpsplit td:not(.rl){color:var(--teal-d);font-weight:700}
+tr.ref td:not(.rl){color:var(--faint)}
+td .lg{display:block;font:600 9.5px Inter;color:var(--faint)}
+.faster{color:var(--teal-d)}.slower{color:var(--coral)}
+.opt td:not(.rl){font-size:12px;color:var(--off);min-width:60px}
+.opt td.in{color:var(--dim)}
+.opt td.sweet{background:var(--tint);color:var(--teal-d);font-weight:700}
+.opt td.pick{background:var(--teal);color:#fff;font-weight:700}
+.opt td.coach{box-shadow:inset 0 0 0 2px var(--coral);background:var(--coral-l);color:var(--coral);font-weight:700}
+.opt td.refc{box-shadow:inset 0 -3px 0 var(--sky)}
+.opt td.coach.refc{box-shadow:inset 0 0 0 2px var(--coral),inset 0 -4px 0 var(--sky)}
+.opt td.pickable{cursor:pointer}
+.opt td .spp{display:block;font-size:9.5px;opacity:.8;font-weight:400}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:8px 2px 0}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px;border:1px solid var(--line)}
+.rng tr.goalrow td{background:var(--tint)}
+.rng tr.goalrow td.rl{background:var(--teal);color:#fff}.rng tr.goalrow td.rl small{color:light-dark(#d6eee9,#cfe9e4)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:10px}
+.note{background:var(--s2);border-left:3px solid var(--teal);border-radius:8px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.note.w{border-left-color:var(--coral)}.note.d{border-left-color:var(--amber)}
+.srcs td,.srcs th{white-space:normal;text-align:left;font-family:Inter,Arial,sans-serif;font-size:13px;vertical-align:top}
+.srcs thead th{font-family:Inter;font-weight:600;color:var(--dim)}
+.small{font-size:12px;color:var(--faint)}
+.hint{font-size:12px;color:var(--faint);font-weight:400}
+.err{color:var(--coral);font-size:12px;font-weight:600}
+details summary{cursor:pointer;font-weight:600;color:var(--teal-d);margin:6px 0}
+@media (max-width:600px){.controls .wide{grid-column:auto}th.rl,td.rl{min-width:118px}.goal{font-size:24px}}
+@media print{.controls,.actions,.noprint{display:none!important}body{font-size:12px}.wrap{padding:0}.card{break-inside:avoid}.tw{overflow:visible;border:0}@page{size:landscape;margin:10mm}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Race Planner</h1>
+  <p class="lede">Enter an event and a goal time to get a length-by-length plan: target splits, how long you're off the wall, the stroke count and rate options for every length, and practice targets. It's a starting point built from real race data, not a prediction.</p>
+
+  <div class="controls" role="group" aria-label="Plan settings">
+    <label>Swimmer<input id="name" autocomplete="off" placeholder="Name (optional)"></label>
+    <div class="lbl">Course<div class="seg" id="course"><button type="button" data-v="SCY" aria-pressed="true">SCY</button><button type="button" data-v="LCM" aria-pressed="false">LCM</button></div></div>
+    <div class="lbl">Sex<div class="seg" id="sex"><button type="button" data-v="F" aria-pressed="true">Female</button><button type="button" data-v="M" aria-pressed="false">Male</button></div></div>
+    <label>Stroke<select id="stroke"><option value="FR">Freestyle</option><option value="BK">Backstroke</option><option value="BR">Breaststroke</option><option value="FL">Butterfly</option><option value="IM">IM</option></select></label>
+    <label>Distance<select id="dist"></select></label>
+    <label>Goal time<input id="goal" class="time" inputmode="decimal" autocomplete="off" value="2:05.00"><span class="hint" id="goalHint">e.g. 28.90 or 2:05.00</span></label>
+    <label>Plan from<select id="tierSel"></select></label>
+    <label>Range step<select id="step"><option value="0.5">±0.5%</option><option value="1" selected>±1%</option><option value="2">±2%</option></select></label>
+    <div class="lbl">Stroke rate as<div class="seg" id="rateU"><button type="button" data-v="cpm" aria-pressed="true">Cycles/min</button><button type="button" data-v="spc" aria-pressed="false">Sec/cycle</button></div></div>
+    <div class="lbl">Columns<div class="seg" id="groupBy"></div></div>
+  </div>
+  <div class="actions noprint">
+    <button type="button" class="btn primary" id="saveBtn">Save plan on this device</button>
+    <button type="button" class="btn" id="printBtn">Print</button>
+    <button type="button" class="btn" id="clearPicks">Clear coach picks</button>
+    <div class="saved" id="saved"></div>
+  </div>
+
+  <div id="out"><p class="small">Loading race data…</p></div>
+
+  <div class="card" id="sourcesCard">
+    <h2>Where the numbers come from</h2>
+    <p class="sub">All of it comes from the race-analysis files in NSEA's Race Data folder. Every level is a median of real swims with the splits, breakouts and stroke rates the analysts measured. The planner blends the two levels either side of your goal time. Faster than every level uses the fastest; slower than every level uses the slowest.</p>
+    <div class="tw"><table class="srcs">
+      <thead><tr><th style="width:24%">Level</th><th style="width:28%">What it is</th><th>What the planner takes from it</th></tr></thead>
+      <tbody>
+        <tr><td><span class="src ncaa">NCAA</span> 2024 NCAA top 8</td><td>SCY finals, top-8 averages (Russell Mark, ASCA). Hand-transcribed.</td><td>Splits, stroke rate (tempo) and dolphin kicks for each 25. No breakout times.</td></tr>
+        <tr><td><span class="src usa">USA elite</span> USA Swimming race analysis</td><td>Top performances 2006–2012, SCY and LCM, 1–6 swims per event.</td><td>Splits, breakouts and stroke rate for each length.</td></tr>
+        <tr><td><span class="src indiana">Indiana</span> 2010 Indiana Senior LCM Champs</td><td>Club-level senior finals, mostly 15–18, LCM including 400–1500 free.</td><td>Splits, breakouts and stroke rate for each 50; the club-senior level, converted for SCY.</td></tr>
+        <tr><td><span class="src ag">AG Camp</span> 2012 USA Swimming AG Elite Camp</td><td>11–15 year olds, LCM 100s and 200s, 190 swims.</td><td>Age-group pacing, breakouts and the spread of stroke rates (sweet spot = middle half, range = 10th–90th percentile).</td></tr>
+      </tbody></table></div>
+    <details><summary>How a plan is calculated</summary>
+      <ul class="sub" style="padding-left:18px">
+        <li><b>Splits:</b> each level gives the share of the race each length takes. Your goal is split by the blended shares.</li>
+        <li><b>Off the wall:</b> the median time from the start, or from the wall, to breakout. Swim time is the rest of the length up to the hand touch. On flip turns the touchpad records the feet, so 0.30 s comes off for the hand.</li>
+        <li><b>Stroke counts:</b> the blended stroke rate × swim time. Free and back count both arms (2 strokes a cycle); breast and fly count 1 a cycle. The grid shows every count whose rate falls in the AG Camp range around that centre.</li>
+        <li><b>Course conversion:</b> LCM times ÷ 1.11 for SCY (400 m free → 500 y ×1.115, 800 → 1000 ×1.12, 1500 → 1650 ×0.975). It only places a level on the bar; the pacing shape doesn't depend on it.</li>
+        <li><b>Data checks:</b> swims whose recorded splits are broken (e.g. a 25 of 8.27 then 19.54) are dropped. Events marked <i>modeled</i> have no direct race data and are built from the nearest event, with a note saying how.</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<script>
+{
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const STROKE = { FR: 'Freestyle', BK: 'Backstroke', BR: 'Breaststroke', FL: 'Butterfly', IM: 'IM' };
+const SHORT = { FR: 'Free', BK: 'Back', BR: 'Breast', FL: 'Fly', IM: 'IM' };
+const TAG = { ncaa: 'NCAA', usa: 'USA elite', indiana: 'Indiana', ag: 'AG Camp' };
+const SPC = { FR: 2, BK: 2, BR: 1, FL: 1 };
+const FLIP = 0.30;
+const DEF_SPREAD = { p10: -5, p25: -2, p75: 2, p90: 5 };
+const KEY = 'nsea-race-planner-v2';
+let DATA = null;
+const S = { course: 'SCY', sex: 'F', stroke: 'FR', dist: 200, goal: 125, step: 1, rate: 'cpm', tier: 'blend', group: 'len', name: '', coach: {}, rng: 'split' };
+
+const parseT = (v) => { v = String(v).trim(); if (!v) return NaN; const p = v.split(':'); const t = p.length > 1 ? (+p[0]) * 60 + (+p[1]) : +v; return isFinite(t) ? t : NaN; };
+const fmt = (s) => { if (!isFinite(s)) return '—'; if (s < 60) return s.toFixed(2); const m = Math.floor(s / 60), r = s - m * 60; return m + ':' + (r < 10 ? '0' : '') + r.toFixed(2); };
+const ev = () => DATA.events[`${S.course}_${S.sex}_${S.stroke}_${S.dist}`];
+
+function weights(E, goal) {
+  const T = E.tiers;
+  if (S.tier !== 'blend') return T.map((t) => (t.id === S.tier ? 1 : 0));
+  if (T.length === 1 || goal <= T[0].T) return T.map((_, i) => (i === 0 ? 1 : 0));
+  if (goal >= T[T.length - 1].T) return T.map((_, i) => (i === T.length - 1 ? 1 : 0));
+  const w = T.map(() => 0);
+  for (let i = 0; i < T.length - 1; i++) if (goal >= T[i].T && goal <= T[i + 1].T) { const f = (goal - T[i].T) / (T[i + 1].T - T[i].T); w[i] = 1 - f; w[i + 1] = f; }
+  return w;
+}
+// weighted value at index j over tiers that have it; fall back to the nearest tier by time that does
+function blendAt(E, w, field, j, goal) {
+  let s = 0, ws = 0;
+  E.tiers.forEach((t, k) => { const v = t[field] && t[field][j]; if (w[k] > 0 && v != null) { s += w[k] * v; ws += w[k]; } });
+  if (ws > 0) return s / ws;
+  const near = E.tiers.filter((t) => t[field] && t[field][j] != null).sort((a, b) => Math.abs(a.T - goal) - Math.abs(b.T - goal));
+  return near.length ? near[0][field][j] : null;
+}
+function spreadFor(E, w, goal) {
+  let acc = { p10: 0, p25: 0, p75: 0, p90: 0 }, ws = 0;
+  E.tiers.forEach((t, k) => { if (w[k] > 0 && t.spread) { for (const q in acc) acc[q] += w[k] * t.spread[q]; ws += w[k]; } });
+  if (ws > 0) { for (const q in acc) acc[q] /= ws; return acc; }
+  const near = E.tiers.filter((t) => t.spread).sort((a, b) => Math.abs(a.T - goal) - Math.abs(b.T - goal));
+  return near.length ? near[0].spread : DEF_SPREAD;
+}
+
+function model(E, goal) {
+  const w = weights(E, goal), n = E.n;
+  let share = [];
+  for (let j = 0; j < n; j++) share.push(blendAt(E, w, 'share', j, goal));
+  const tot = share.reduce((a, b) => a + b, 0); share = share.map((x) => x / tot);
+  const sp = share.map((x) => x * goal);
+  const wall = [], centre = [], swim = [], pick = [];
+  const spread = spreadFor(E, w, goal);
+  for (let j = 0; j < n; j++) {
+    let b = blendAt(E, w, 'brk', j, goal);
+    if (b == null) b = j === 0 ? 4.5 : (E.legs[j] === 'BR' ? 4.2 : E.legs[j] === 'FR' ? 2.0 : 3.0);
+    wall.push(b);
+    let c = blendAt(E, w, 'tempo', j, goal);
+    // outside the data (or one level only), hold that level's stroke count: scale its rate by its time / the goal
+    if (c) { const k = w.findIndex((x) => x === 1); if (k >= 0) c *= E.tiers[k].T / goal; }
+    centre.push(c);
+    const hand = E.turns[j] === 'flip' ? sp[j] - FLIP : sp[j];
+    const s = Math.max(hand - b, 0.5); swim.push(s);
+    pick.push(c ? Math.max(1, Math.round(c * SPC[E.legs[j]] * s / 60)) : null);
+  }
+  // reference counts: a level within 8% of the goal that recorded cycles for every length
+  const refT = E.tiers.filter((t) => t.cyc && t.cyc.length === n && t.cyc.every((x) => x != null) && Math.abs(t.T - goal) / goal <= 0.08).sort((a, b) => Math.abs(a.T - goal) - Math.abs(b.T - goal))[0];
+  const refCount = refT ? refT.cyc.map((c, j) => SPC[E.legs[j]] === 2 ? Math.round(refT.id === 'ncaa' ? 2 * c - 1 : 2 * c) : Math.round(c)) : null;
+  return { w, share, sp, wall, centre, swim, pick, spread, refT, refCount };
+}
+const rate = (n, j, M, E) => n / SPC[E.legs[j]] / M.swim[j] * 60;
+const rTxt = (r) => (S.rate === 'cpm' ? r.toFixed(1) : (60 / r).toFixed(2));
+
+// ---------- controls ----------
+function distOptions() {
+  const ds = Object.values(DATA.events).filter((e) => e.course === S.course && e.sex === S.sex && e.stroke === S.stroke).map((e) => e.dist).sort((a, b) => a - b);
+  const sel = $('dist');
+  sel.innerHTML = ds.map((d) => `<option value="${d}">${d} ${S.course === 'SCY' ? 'yd' : 'm'}</option>`).join('');
+  if (!ds.includes(S.dist)) S.dist = ds.includes(200) ? 200 : ds[0];
+  sel.value = S.dist;
+}
+function tierOptions() {
+  const E = ev();
+  $('tierSel').innerHTML = '<option value="blend">Blend by goal time</option>' + E.tiers.map((t) => `<option value="${t.id}">${esc(t.label)} only</option>`).join('');
+  if (S.tier !== 'blend' && !E.tiers.some((t) => t.id === S.tier)) S.tier = 'blend';
+  $('tierSel').value = S.tier;
+}
+function groupOptions() {
+  const E = ev(), opts = [['len', E.L === 25 ? '25s' : '50s']];
+  if (E.n >= 8) opts.push(['g2', E.L === 25 ? '50s' : '100s']);
+  if (E.n >= 16) opts.push(['g4', E.L === 25 ? '100s' : '200s']);
+  if (!opts.some((o) => o[0] === S.group)) S.group = E.n > 20 ? 'g2' : 'len';
+  $('groupBy').innerHTML = opts.map((o) => `<button type="button" data-v="${o[0]}" aria-pressed="${o[0] === S.group}">${o[1]}</button>`).join('');
+  bindSeg('groupBy', 'group');
+}
+function bindSeg(id, key, after) {
+  document.querySelectorAll('#' + id + ' button').forEach((b) => b.onclick = () => {
+    document.querySelectorAll('#' + id + ' button').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true'); S[key] = b.dataset.v; if (after) after(); render();
+  });
+}
+function setSeg(id, v) { document.querySelectorAll('#' + id + ' button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v))); }
+function eventChanged() { S.coach = {}; distOptions(); tierOptions(); groupOptions(); defaultGoal(); }
+function defaultGoal() {
+  const E = ev(); const T = E.tiers; const g = T[T.length - 1].T * (T.length > 1 ? 0.97 : 1.05);
+  S.goal = Math.round(g * 100) / 100; $('goal').value = fmt(S.goal);
+}
+
+// ---------- table helpers ----------
+function cols(E) { const g = S.group === 'g2' ? 2 : S.group === 'g4' ? 4 : 1; const out = []; for (let j = 0; j < E.n; j += g) out.push([j, Math.min(E.n, j + g)]); return out; }
+function head(E, C) {
+  const big = E.L === 25 ? 2 : 2, unit = E.L * big; // header bands: 50s in SCY, 100s in LCM
+  const per = C[0][1] - C[0][0];
+  let g = '<tr class="grp"><th class="rl"></th>';
+  if (per === 1) { for (let j = 0; j < E.n; j += big) { const span = Math.min(big, E.n - j); g += `<th colspan="${span}" class="gb">${(j + span) * E.L}</th>`; } }
+  else { g += `<th colspan="${C.length}" class="gb">${E.dist} ${E.course === 'SCY' ? 'yd' : 'm'}</th>`; }
+  g += '</tr><tr><th class="rl">' + (per === 1 ? 'Length' : 'Segment') + '</th>';
+  C.forEach(([a, b], i) => {
+    const lg = E.stroke === 'IM' ? `<span class="lg">${SHORT[E.legs[a]]}</span>` : '';
+    g += `<th class="${(per === 1 ? a % big === 0 : true) ? 'gb' : ''}">${per === 1 ? 'L' + (a + 1) + ' · ' : ''}${b * E.L}${lg}</th>`;
+  });
+  return '<thead>' + g + '</tr></thead>';
+}
+function row(C, E, lbl, vals, cls, sub, tags) {
+  const per = C[0][1] - C[0][0];
+  let h = `<tr${cls ? ` class="${cls}"` : ''}><td class="rl">${lbl}${sub ? `<small>${sub}</small>` : ''}${tags || ''}</td>`;
+  vals.forEach((v, i) => { h += `<td class="${(per === 1 ? C[i][0] % 2 === 0 : true) ? 'gb' : ''}">${v}</td>`; });
+  return h + '</tr>';
+}
+const tag = (id) => `<span class="src ${id}">${TAG[id] || id}</span>`;
+const tagsFor = (M, E, field) => E.tiers.filter((t, k) => M.w[k] > 0 && t[field] && t[field].some((x) => x != null)).map((t) => tag(t.id)).join('');
+
+// ---------- render ----------
+function render() {
+  if (!DATA) return;
+  const E = ev();
+  if (!E) { $('out').innerHTML = '<p class="err">No data for that event.</p>'; return; }
+  const goal = S.goal;
+  const M = model(E, goal), C = cols(E), per = C[0][1] - C[0][0];
+  const sum = (arr, a, b) => arr.slice(a, b).reduce((x, y) => x + y, 0);
+  const chosen = M.pick.map((p, j) => S.coach[j] || p);
+  const cum = []; M.sp.reduce((a, b, i) => (cum[i] = a + b), 0);
+  const even = goal / E.n;
+  const unit = E.course === 'SCY' ? 'yd' : 'm';
+  let h = '';
+
+  // header + where the goal sits
+  h += `<div class="head"><div><h2 style="font-size:26px">${S.name ? esc(S.name) + ' — ' : ''}${E.dist} ${STROKE[E.stroke]}</h2><div class="ev">${E.sex === 'F' ? 'FEMALE' : 'MALE'} · ${E.course} · ${E.n} × ${E.L}${E.modeled ? ' · MODELED' : ''}</div></div><div class="goal">${fmt(goal)}</div></div>`;
+  const T = E.tiers, lo = Math.min(T[0].T, goal) * 0.985, hi = Math.max(T[T.length - 1].T, goal) * 1.015, X = (t) => ((t - lo) / (hi - lo) * 100).toFixed(2);
+  const mix = E.tiers.map((t, k) => M.w[k] > 0.005 ? `<b>${Math.round(M.w[k] * 100)}% ${esc(t.label)}</b>` : '').filter(Boolean).join(' + ');
+  h += `<div class="sit"><p>${S.tier === 'blend' ? 'This plan is ' : 'Using one level only: '}${mix}.${goal < T[0].T && S.tier === 'blend' ? ' Your goal is faster than every level, so it uses the fastest.' : ''}${goal > T[T.length - 1].T && S.tier === 'blend' ? ' Your goal is slower than every level, so it uses the slowest.' : ''}</p>
+    <div class="bar">${T.map((t) => `<span class="tk" style="left:${X(t.T)}%"></span><span class="tl" style="left:${X(t.T)}%">${TAG[t.id]}<br><b>${fmt(t.T)}</b></span>`).join('')}<span class="mk" style="left:${X(goal)}%">${fmt(goal)}</span></div><div class="room"></div></div>`;
+
+  // race strip
+  const seg = (arr) => C.map(([a, b]) => sum(arr, a, b));
+  h += `<div class="card"><h2>Race plan by ${per === 1 ? E.L : E.L * per}</h2><p class="sub">Read left to right, one column per ${per === 1 ? 'length' : 'segment'}. The tags under each row label show which data it comes from.</p><div class="tw"><table>${head(E, C)}<tbody>`;
+  const segSp = seg(M.sp);
+  h += row(C, E, 'Split', segSp.map(fmt), 'hero', '', tagsFor(M, E, 'share'));
+  h += row(C, E, 'vs even pace', segSp.map((v, i) => { const d = v - even * (C[i][1] - C[i][0]); return `<span class="${d < 0 ? 'faster' : 'slower'}">${d < 0 ? '−' : '+'}${Math.abs(d).toFixed(2)}</span>`; }), '', 'even = ' + (even * per).toFixed(2));
+  if (per === 1 && E.n >= 2) {
+    let g = `<tr class="grpsplit"><td class="rl">${E.L * 2} split</td>`;
+    for (let j = 0; j < E.n; j += 2) { const span = Math.min(2, E.n - j); g += `<td colspan="${span}" class="gb">${fmt(sum(M.sp, j, j + span))}</td>`; }
+    h += g + '</tr>';
+  }
+  h += row(C, E, 'Cumulative', C.map(([a, b]) => fmt(cum[b - 1])), 'cum');
+  if (per === 1) {
+    h += row(C, E, 'Off the wall', M.wall.map((v) => v.toFixed(2)), '', 'start or push-off to breakout', tagsFor(M, E, 'brk'));
+    h += row(C, E, 'Swim time', M.swim.map((v) => v.toFixed(2)), '', 'breakout to hand touch', '<span class="src calc">calculated</span>');
+    h += row(C, E, 'Turn', E.turns.map((t) => t === 'flip' ? 'Flip' : t === 'touch' ? 'Touch' : 'Finish'), '');
+  }
+  h += row(C, E, 'Target strokes', C.map(([a, b]) => { const n = sum(chosen, a, b); const coach = per === 1 && S.coach[a]; return `<b style="color:${coach ? 'var(--coral)' : 'var(--teal-d)'}">${isFinite(n) ? n : '—'}</b>`; }), 'hero', E.stroke === 'BR' || E.stroke === 'FL' ? 'strokes' : 'arm strokes', '<span class="src calc">rate × swim time</span>');
+  h += row(C, E, 'Stroke rate', C.map(([a, b]) => { let s = 0, k = 0; for (let j = a; j < b; j++) if (chosen[j]) { s += rate(chosen[j], j, M, E); k++; } return k ? rTxt(s / k) : '—'; }), '', S.rate === 'cpm' ? 'cycles / min' : 'sec / cycle', tagsFor(M, E, 'tempo'));
+  if (M.refCount) h += row(C, E, 'Strokes at that level', C.map(([a, b]) => sum(M.refCount, a, b)), 'ref', 'recorded by ' + esc(M.refT.label) + ' swimmers (' + fmt(M.refT.T) + ')', tag(M.refT.id));
+  if (E.kicks && per === 1) h += row(C, E, 'Dolphin kicks', E.kicks.map((k) => (k == null ? '—' : k)), '', 'elite average off each wall', '<span class="src ncaa">' + esc(E.kicksSrc.startsWith('NCAA') ? 'NCAA' : 'USA elite') + '</span>');
+  h += '</tbody></table></div>';
+  if (E.breathing) h += `<p class="sub" style="margin-top:8px"><b>Breathing (elite notes):</b> ${E.breathing.map(esc).join(' ')}</p>`;
+  h += '</div>';
+
+  // options grid (always per length)
+  let nlo = 99, nhi = 0;
+  const band = M.centre.map((c) => c ? { lo: c + M.spread.p10, slo: c + M.spread.p25, shi: c + M.spread.p75, hi: c + M.spread.p90 } : null);
+  M.swim.forEach((s, j) => { if (!band[j]) return; for (let n = 1; n < 120; n++) { const r = rate(n, j, M, E); if (r >= band[j].lo && r <= band[j].hi) { nlo = Math.min(nlo, n); nhi = Math.max(nhi, n); } } });
+  const CL = []; for (let j = 0; j < E.n; j++) CL.push([j, j + 1]);
+  h += `<div class="card"><h2>Stroke count options by ${E.L}</h2><p class="sub">Each cell is the stroke rate needed to hold that length's split at that count. Read down a column to compare options for one length; read across to see how a count changes through the race. <b>Click a cell</b> (or press Enter on it) to make it the coach's pick for that length.</p><div class="tw"><table class="opt">${head(E, CL)}<tbody>`;
+  for (let n = nlo; n <= nhi; n++) {
+    if (!M.swim.some((s, j) => band[j] && rate(n, j, M, E) >= band[j].lo && rate(n, j, M, E) <= band[j].hi)) continue;
+    h += `<tr><td class="rl">${n} ${E.stroke === 'BR' || E.stroke === 'FL' ? 'strokes' : 'strokes'}</td>`;
+    for (let j = 0; j < E.n; j++) {
+      const r = rate(n, j, M, E), b = band[j];
+      const inR = b && r >= b.lo && r <= b.hi, sw = b && r >= b.slo && r <= b.shi;
+      const cl = []; if (j % 2 === 0) cl.push('gb'); if (inR) cl.push('in', 'pickable'); if (sw) cl.push('sweet');
+      if (S.coach[j] === n) cl.push('coach'); else if (!S.coach[j] && M.pick[j] === n) cl.push('pick');
+      if (inR && M.refCount && M.refCount[j] === n) cl.push('refc');
+      h += `<td class="${cl.join(' ')}" ${inR ? `tabindex="0" data-j="${j}" data-n="${n}" aria-label="Length ${j + 1}, ${n} strokes at ${rTxt(r)}"` : ''}>${inR ? rTxt(r) + `<span class="spp">${(M.swim[j] / n).toFixed(2)} s/str</span>` : '·'}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += `</tbody></table></div><div class="legend"><span><span class="sw" style="background:var(--teal)"></span>Suggested</span><span><span class="sw" style="background:var(--tint)"></span>Sweet spot (middle half of rates)</span><span><span class="sw"></span>In range (10th–90th percentile)</span>${M.refCount ? '<span><span class="sw" style="box-shadow:inset 0 -3px 0 var(--sky)"></span>Count recorded at that level</span>' : ''}<span><span class="sw" style="background:var(--coral-l);box-shadow:inset 0 0 0 2px var(--coral)"></span>Coach's pick</span></div></div>`;
+
+  // range grid
+  h += `<div class="card"><h2>Goal-time range</h2><p class="sub">Five goal times, each one blended for its own time. The goal row is highlighted.</p><div class="seg noprint" id="rngMode" style="margin-bottom:8px">${[['split', 'Splits'], ['cum', 'Cumulative'], ['count', 'Suggested strokes']].map((o) => `<button type="button" data-v="${o[0]}" aria-pressed="${S.rng === o[0]}">${o[1]}</button>`).join('')}</div><div class="tw"><table class="rng">${head(E, C)}<tbody>`;
+  [-2, -1, 0, 1, 2].forEach((o) => {
+    const g = goal * (1 + o * S.step / 100), m = model(E, g); let cc = 0; const cm = m.sp.map((v) => (cc += v));
+    const vals = C.map(([a, b]) => S.rng === 'split' ? fmt(sum(m.sp, a, b)) : S.rng === 'cum' ? fmt(cm[b - 1]) : sum(m.pick, a, b));
+    const lbl = fmt(g) + `<small>${o === 0 ? 'goal' : (o < 0 ? o : '+' + o) + ' step' + (Math.abs(o) > 1 ? 's' : '') + (o < 0 ? ' faster' : ' slower')}</small>`;
+    h += row(C, E, lbl, vals, o === 0 ? 'goalrow' : '');
+  });
+  h += '</tbody></table></div></div>';
+
+  // practice targets (per length)
+  if (per === 1) {
+    const hand = M.sp.map((v, j) => (E.turns[j] === 'flip' ? v - FLIP : v));
+    h += `<div class="card"><h2>Practice targets</h2><p class="sub">Times to hit in practice for each length, by how it starts and ends. On flip-turn lengths the race split is to the feet; the hand touch is 0.30 earlier.</p><div class="tw"><table>${head(E, CL)}<tbody>`;
+    h += row(CL, E, 'Dive → hand touch', hand.map((v, j) => (j === 0 ? fmt(v) : '—')));
+    h += row(CL, E, 'Push → hand touch', hand.map((v, j) => (j === 0 ? '—' : fmt(v))));
+    h += row(CL, E, 'Race split (wall to wall)', M.sp.map(fmt));
+    if (E.n >= 2) {
+      let g = `<tr class="grpsplit"><td class="rl">${E.L * 2} target<small>first from a dive, then from a push</small></td>`;
+      for (let j = 0; j < E.n; j += 2) { const span = Math.min(2, E.n - j); const last = j + span - 1; g += `<td colspan="${span}" class="gb">${fmt(sum(M.sp, j, j + span) - (E.turns[last] === 'flip' ? FLIP : 0))}</td>`; }
+      h += g + '</tr>';
+    }
+    h += '</tbody></table></div></div>';
+  }
+
+  // notes
+  const notes = [];
+  if (E.n >= 2) {
+    const half = Math.floor(E.n / 2), fh = sum(M.sp, 0, half), bh = sum(M.sp, half, E.n);
+    notes.push(['', `<b>Front half ${fmt(fh)} / back half ${fmt(bh)}</b> (${bh - fh >= 0 ? '+' : '−'}${Math.abs(bh - fh).toFixed(2)}).`]);
+  }
+  if (E.n >= 4) {
+    const mid = M.sp.slice(1, E.n - 1), mx = Math.max(...mid), j = M.sp.indexOf(mx);
+    notes.push(['w', `<b>Slowest planned length: L${j + 1}</b> (${fmt(mx)}). Hold the count here rather than chasing the rate.`]);
+  }
+  if (E.n >= 8 && E.L === 25 || E.n >= 4 && E.L === 50) {
+    const k = E.L === 25 ? 2 : 1, segs = []; for (let j = 0; j < E.n; j += k) segs.push(sum(M.sp, j, j + k));
+    const last = segs[segs.length - 1], prev = segs[segs.length - 2];
+    notes.push([last < prev ? '' : 'w', `<b>Last 50 ${last < prev ? 'faster' : 'slower'} than the one before</b> (${fmt(last)} vs ${fmt(prev)}).${E.tiers.some((t) => t.id === 'ag') ? ' Age-group swimmers usually come home faster than their third 50; elite swimmers often don\'t. The blend carries that across.' : ''}`]);
+  }
+  notes.push(['', `<b>Off the wall</b>: ${M.wall[0].toFixed(2)}s from the start${E.n > 1 ? `, ${(M.wall.slice(1).reduce((a, b) => a + b, 0) / (E.n - 1)).toFixed(2)}s average off each wall` : ''}. Faster swimmers carry more speed off the wall, so watch this number as times drop.`]);
+  E.notes.forEach((t) => notes.push(['d', esc(t)]));
+  const small = E.tiers.filter((t, k) => M.w[k] > 0 && t.n < 3);
+  if (small.length) notes.push(['d', 'Small sample: ' + small.map((t) => `${esc(t.label)} has ${t.n} swim${t.n === 1 ? '' : 's'} for this event`).join('; ') + '. Treat its numbers as rough.']);
+  h += `<div class="card"><h2>Coaching notes</h2><div class="notes">${notes.map(([c, t]) => `<div class="note ${c}">${t}</div>`).join('')}</div></div>`;
+
+  // this event's levels
+  h += `<div class="card"><h2>Levels for this event</h2><div class="tw"><table class="srcs"><thead><tr><th>Level</th><th>Median time</th><th>Swims</th><th>From</th></tr></thead><tbody>${E.tiers.map((t, k) => `<tr><td>${tag(t.id)} ${esc(t.label)}${t.modeled ? ' <i class="small">modeled</i>' : ''}</td><td class="mono">${fmt(t.T)}${t.course !== E.course || t.dist !== E.dist ? ` <span class="small">(${fmt(t.Tnative)} ${t.dist} ${t.course}, ×${t.conv})</span>` : ''}</td><td>${t.n}${t.ages ? ` · ages ${t.ages[0]}–${t.ages[1]}` : ''}</td><td>${Math.round(M.w[k] * 100)}% of this plan</td></tr>`).join('')}</tbody></table></div></div>`;
+
+  $('out').innerHTML = h;
+  document.querySelectorAll('#out td.pickable').forEach((td) => {
+    const act = () => { const j = +td.dataset.j, n = +td.dataset.n; if (S.coach[j] === n) delete S.coach[j]; else S.coach[j] = n; render(); };
+    td.onclick = act; td.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } };
+  });
+  document.querySelectorAll('#rngMode button').forEach((b) => b.onclick = () => { S.rng = b.dataset.v; render(); });
+}
+
+// ---------- saved plans ----------
+function loadSaved() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+function storeSaved(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+function drawSaved() {
+  const list = loadSaved();
+  $('saved').innerHTML = list.map((p, i) => `<button type="button" data-i="${i}">${esc(p.name || 'Plan')} · ${p.dist} ${SHORT[p.stroke]} ${p.course} ${fmt(p.goal)}<span class="x" data-del="${i}" aria-label="Delete">✕</span></button>`).join('');
+  document.querySelectorAll('#saved button').forEach((b) => b.onclick = (e) => {
+    const L = loadSaved();
+    if (e.target.dataset.del != null) { L.splice(+e.target.dataset.del, 1); storeSaved(L); drawSaved(); return; }
+    const p = L[+b.dataset.i]; Object.assign(S, { course: p.course, sex: p.sex, stroke: p.stroke, dist: p.dist, name: p.name || '', tier: 'blend' });
+    setSeg('course', S.course); setSeg('sex', S.sex); $('stroke').value = S.stroke; $('name').value = S.name;
+    distOptions(); tierOptions(); groupOptions(); S.goal = p.goal; $('goal').value = fmt(p.goal); S.coach = p.coach || {}; render();
+  });
+}
+$('saveBtn').onclick = () => {
+  const L = loadSaved().filter((p) => !(p.name === S.name && p.course === S.course && p.sex === S.sex && p.stroke === S.stroke && p.dist === S.dist));
+  L.unshift({ name: S.name, course: S.course, sex: S.sex, stroke: S.stroke, dist: S.dist, goal: S.goal, coach: S.coach });
+  storeSaved(L.slice(0, 30)); drawSaved();
+};
+$('printBtn').onclick = () => { try { window.print(); } catch (e) {} };
+$('clearPicks').onclick = () => { S.coach = {}; render(); };
+
+// ---------- wiring ----------
+function bindAll() {
+  bindSeg('course', 'course', eventChanged);
+  bindSeg('sex', 'sex', eventChanged);
+  bindSeg('rateU', 'rate');
+  $('stroke').onchange = () => { S.stroke = $('stroke').value; eventChanged(); render(); };
+  $('dist').onchange = () => { S.dist = +$('dist').value; S.coach = {}; tierOptions(); groupOptions(); defaultGoal(); render(); };
+  $('tierSel').onchange = () => { S.tier = $('tierSel').value; render(); };
+  $('step').onchange = () => { S.step = +$('step').value; render(); };
+  $('name').oninput = () => { S.name = $('name').value.slice(0, 40); render(); };
+  $('goal').oninput = () => {
+    const t = parseT($('goal').value), E = ev();
+    const ok = isFinite(t) && t > E.tiers[0].T * 0.6 && t < E.tiers[E.tiers.length - 1].T * 2;
+    $('goalHint').className = ok ? 'hint' : 'err';
+    $('goalHint').textContent = ok ? 'e.g. 28.90 or 2:05.00' : 'Enter a time like 1:05.32 for this event';
+    if (ok) { S.goal = t; S.coach = {}; render(); }
+  };
+}
+fetch('race-planner-data.json').then((r) => r.json()).then((d) => {
+  DATA = d; bindAll(); distOptions(); tierOptions(); groupOptions(); S.goal = 125; $('goal').value = '2:05.00'; drawSaved(); render();
+}).catch(() => { $('out').innerHTML = '<p class="err">The race data could not be loaded. Refresh the page to try again.</p>'; });
+}
+</script>
+</body>
+</html>
