@@ -3,7 +3,7 @@ import { json, fail, clean } from './util.mjs';
 import { defaults, FEE_GROUPS, OFFERINGS, COACH_TOPICS } from '../src/data/site-data-defaults.mjs';
 import { publicAlumni, handleAlumniAdmin } from './alumni.mjs';
 import { publicSpotlights, publicRecognition, handleRecognitionAdmin } from './recognition.mjs';
-import { publicSchedule } from './schedule.mjs';
+import { publicSchedule, publicScheduleICS } from './schedule.mjs';
 import { publicStaff, publicStaffPhoto } from './staff.mjs';
 import { publicThanks } from './thanks.mjs';
 
@@ -26,6 +26,7 @@ export async function handleContent(req, env, url) {
   if (path === '/spotlights') return publicSpotlights(env);
   if (path === '/recognition') return publicRecognition(env);
   if (path === '/schedule') return publicSchedule(env, url);
+  if (path === '/schedule.ics') return publicScheduleICS(env, url);
   if (path === '/coach') {
     const today = new Date().toISOString().slice(0, 10);
     const { results } = await env.DB.prepare(
