@@ -62,7 +62,7 @@ tbody tr:last-child td{border-bottom:none}
 th.rl,td.rl{text-align:left;position:sticky;left:0;background:var(--bg);z-index:2;font:600 12.5px Inter,Arial,sans-serif;color:var(--ink);border-right:1px solid var(--line);min-width:160px;max-width:200px;white-space:normal}
 td.rl small{display:block;font:400 11px Inter;color:var(--faint);margin-top:1px}
 .src{display:inline-block;font:600 10px Inter,Arial,sans-serif;padding:1px 6px;border-radius:999px;margin:3px 3px 0 0;white-space:nowrap}
-.src.ncaa{background:var(--sky-l);color:var(--sky)}.src.usa{background:var(--violet-l);color:var(--violet)}.src.indiana{background:var(--amber-l);color:var(--amber)}.src.ag{background:var(--tint);color:var(--teal-d)}.src.calc{border:1px solid var(--line);color:var(--dim)}
+.src.db{background:light-dark(#fde7e3,#3a1f1a);color:var(--coral)}.src.asca{background:var(--s2);color:var(--ink);border:1px solid var(--line)}.src.ncaa{background:var(--sky-l);color:var(--sky)}.src.usa{background:var(--violet-l);color:var(--violet)}.src.indiana{background:var(--amber-l);color:var(--amber)}.src.ag{background:var(--tint);color:var(--teal-d)}.src.calc{border:1px solid var(--line);color:var(--dim)}
 thead th{font:400 10.5px 'Space Mono',monospace;color:var(--faint);background:var(--panel)}
 thead tr.grp th{font:600 11.5px Oswald,sans-serif;letter-spacing:.05em;color:var(--teal-d);background:var(--tint2)}
 th.gb,td.gb{border-left:2px solid light-dark(#cfd8d6,#33413e)}
@@ -107,6 +107,7 @@ details summary{cursor:pointer;font-weight:600;color:var(--teal-d);margin:6px 0}
     <label>Swimmer<input id="name" autocomplete="off" placeholder="Name (optional)"></label>
     <div class="lbl">Course<div class="seg" id="course"><button type="button" data-v="SCY" aria-pressed="true">SCY</button><button type="button" data-v="LCM" aria-pressed="false">LCM</button></div></div>
     <div class="lbl">Sex<div class="seg" id="sex"><button type="button" data-v="F" aria-pressed="true">Female</button><button type="button" data-v="M" aria-pressed="false">Male</button></div></div>
+    <label>Age group<select id="age"></select><span class="hint">for the pacing shape</span></label>
     <label>Stroke<select id="stroke"><option value="FR">Freestyle</option><option value="BK">Backstroke</option><option value="BR">Breaststroke</option><option value="FL">Butterfly</option><option value="IM">IM</option></select></label>
     <label>Distance<select id="dist"></select></label>
     <label>Goal time<input id="goal" class="time" inputmode="decimal" autocomplete="off" value="2:05.00"><span class="hint" id="goalHint">e.g. 28.90 or 2:05.00</span></label>
@@ -130,14 +131,17 @@ details summary{cursor:pointer;font-weight:600;color:var(--teal-d);margin:6px 0}
     <div class="tw"><table class="srcs">
       <thead><tr><th style="width:24%">Level</th><th style="width:28%">What it is</th><th>What the planner takes from it</th></tr></thead>
       <tbody>
+        <tr><td><span class="src db">Results DB</span> NSEA results database</td><td>Every full results file loaded (NC, Southern Zone, sectional and national meets and more): about 708,000 swims with complete 50 splits and 16,000 with 25 splits, ages 24 and under.</td><td>The pacing shape. Swims are sorted by time into bands for each event and age group; your plan is paced like the real swims nearest your goal. 25 splits divide each 50 into two 25s.</td></tr>
         <tr><td><span class="src ncaa">NCAA</span> 2024 NCAA top 8</td><td>SCY finals, top-8 averages (Russell Mark, ASCA). Hand-transcribed.</td><td>Splits, stroke rate (tempo) and dolphin kicks for each 25. No breakout times.</td></tr>
         <tr><td><span class="src usa">USA elite</span> USA Swimming race analysis</td><td>Top performances 2006–2012, SCY and LCM, 1–6 swims per event.</td><td>Splits, breakouts and stroke rate for each length.</td></tr>
         <tr><td><span class="src indiana">Indiana</span> 2010 Indiana Senior LCM Champs</td><td>Club-level senior finals, mostly 15–18, LCM including 400–1500 free.</td><td>Splits, breakouts and stroke rate for each 50; the club-senior level, converted for SCY.</td></tr>
-        <tr><td><span class="src ag">AG Camp</span> 2012 USA Swimming AG Elite Camp</td><td>11–15 year olds, LCM 100s and 200s, 190 swims.</td><td>Age-group pacing, breakouts and the spread of stroke rates (sweet spot = middle half, range = 10th–90th percentile).</td></tr>
+        <tr><td><span class="src ag">AG Camp</span> 2012 USA Swimming AG Elite Camp</td><td>11–15 year olds, LCM 100s and 200s, 190 swims.</td><td>Age-group breakouts and stroke rates, including how widely rates vary (sweet spot = middle half, range = 10th–90th percentile).</td></tr>
+        <tr><td><span class="src asca">ASCA top 8</span> ASCA Performance Data Library</td><td>Russell Mark's average tempos for the top 8 in 2021–22 (LCM) and at the 2022 NCAA Championships (SCY), by 50 or 100.</td><td>The "Top-8 rate" reference row, shown for comparison only.</td></tr>
       </tbody></table></div>
     <details><summary>How a plan is calculated</summary>
       <ul class="sub" style="padding-left:18px">
-        <li><b>Splits:</b> each level gives the share of the race each length takes. Your goal is split by the blended shares.</li>
+        <li><b>Splits:</b> the share of the race each length takes in real swims near your goal time, from the results database (your age group if you choose one). Outside the database's range, the nearest race-analysis level is used.</li>
+        <li><b>Breakouts and rates</b> come from the race-analysis levels (the results database has no stroke data), blended by goal time.</li>
         <li><b>Off the wall:</b> the median time from the start, or from the wall, to breakout. Swim time is the rest of the length up to the hand touch. On flip turns the touchpad records the feet, so 0.30 s comes off for the hand.</li>
         <li><b>Stroke counts:</b> the blended stroke rate × swim time. Free and back count both arms (2 strokes a cycle); breast and fly count 1 a cycle. The grid shows every count whose rate falls in the AG Camp range around that centre.</li>
         <li><b>Course conversion:</b> LCM times ÷ 1.11 for SCY (400 m free → 500 y ×1.115, 800 → 1000 ×1.12, 1500 → 1650 ×0.975). It only places a level on the bar; the pacing shape doesn't depend on it.</li>
@@ -153,13 +157,13 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const STROKE = { FR: 'Freestyle', BK: 'Backstroke', BR: 'Breaststroke', FL: 'Butterfly', IM: 'IM' };
 const SHORT = { FR: 'Free', BK: 'Back', BR: 'Breast', FL: 'Fly', IM: 'IM' };
-const TAG = { ncaa: 'NCAA', usa: 'USA elite', indiana: 'Indiana', ag: 'AG Camp' };
+const TAG = { ncaa: 'NCAA', usa: 'USA elite', indiana: 'Indiana', ag: 'AG Camp', db: 'Results DB', asca: 'ASCA top 8' };
 const SPC = { FR: 2, BK: 2, BR: 1, FL: 1 };
 const FLIP = 0.30;
 const DEF_SPREAD = { p10: -5, p25: -2, p75: 2, p90: 5 };
 const KEY = 'nsea-race-planner-v2';
 let DATA = null;
-const S = { course: 'SCY', sex: 'F', stroke: 'FR', dist: 200, goal: 125, step: 1, rate: 'cpm', tier: 'blend', group: 'len', name: '', coach: {}, rng: 'split' };
+const S = { age: 'all', course: 'SCY', sex: 'F', stroke: 'FR', dist: 200, goal: 125, step: 1, rate: 'cpm', tier: 'blend', group: 'len', name: '', coach: {}, rng: 'split' };
 
 const parseT = (v) => { v = String(v).trim(); if (!v) return NaN; const p = v.split(':'); const t = p.length > 1 ? (+p[0]) * 60 + (+p[1]) : +v; return isFinite(t) ? t : NaN; };
 const fmt = (s) => { if (!isFinite(s)) return '—'; if (s < 60) return s.toFixed(2); const m = Math.floor(s / 60), r = s - m * 60; return m + ':' + (r < 10 ? '0' : '') + r.toFixed(2); };
@@ -167,7 +171,7 @@ const ev = () => DATA.events[`${S.course}_${S.sex}_${S.stroke}_${S.dist}`];
 
 function weights(E, goal) {
   const T = E.tiers;
-  if (S.tier !== 'blend') return T.map((t) => (t.id === S.tier ? 1 : 0));
+  if (S.tier !== 'blend' && S.tier !== 'refs') return T.map((t) => (t.id === S.tier ? 1 : 0));
   if (T.length === 1 || goal <= T[0].T) return T.map((_, i) => (i === 0 ? 1 : 0));
   if (goal >= T[T.length - 1].T) return T.map((_, i) => (i === T.length - 1 ? 1 : 0));
   const w = T.map(() => 0);
@@ -190,10 +194,34 @@ function spreadFor(E, w, goal) {
   return near.length ? near[0].spread : DEF_SPREAD;
 }
 
+function paceProfile(E) {
+  if (!E.pace || S.tier !== 'blend') return null;
+  return E.pace.ages[S.age] || null;
+}
+// pacing levels: results-database bins, plus reference levels outside the database's time range
+function paceLevels(E) {
+  const P = paceProfile(E);
+  if (!P) return null;
+  const b = P.bins, lo = b[0].T, hi = b[b.length - 1].T;
+  const lv = b.map((x) => ({ T: x.T, share: x.share, db: true, n: x.n, lo: x.lo, hi: x.hi }));
+  E.tiers.forEach((t) => { if (t.T < lo * 0.985 || t.T > hi * 1.015) lv.push({ T: t.T, share: t.share, id: t.id }); });
+  return lv.sort((a, c) => a.T - c.T);
+}
+function shareAt(levels, goal, n) {
+  let k = 0;
+  if (goal <= levels[0].T) return { share: levels[0].share, used: [[levels[0], 1]] };
+  if (goal >= levels[levels.length - 1].T) { const L = levels[levels.length - 1]; return { share: L.share, used: [[L, 1]] }; }
+  while (k < levels.length - 1 && levels[k + 1].T < goal) k++;
+  const a = levels[k], b = levels[k + 1], f = (goal - a.T) / (b.T - a.T);
+  return { share: a.share.map((x, j) => x * (1 - f) + b.share[j] * f), used: [[a, 1 - f], [b, f]] };
+}
+
 function model(E, goal) {
   const w = weights(E, goal), n = E.n;
-  let share = [];
-  for (let j = 0; j < n; j++) share.push(blendAt(E, w, 'share', j, goal));
+  let share = [], paceUsed = null;
+  const lv = paceLevels(E);
+  if (lv) { const r = shareAt(lv, goal, n); share = r.share.slice(); paceUsed = r.used; }
+  else for (let j = 0; j < n; j++) share.push(blendAt(E, w, 'share', j, goal));
   const tot = share.reduce((a, b) => a + b, 0); share = share.map((x) => x / tot);
   const sp = share.map((x) => x * goal);
   const wall = [], centre = [], swim = [], pick = [];
@@ -213,7 +241,7 @@ function model(E, goal) {
   // reference counts: a level within 8% of the goal that recorded cycles for every length
   const refT = E.tiers.filter((t) => t.cyc && t.cyc.length === n && t.cyc.every((x) => x != null) && Math.abs(t.T - goal) / goal <= 0.08).sort((a, b) => Math.abs(a.T - goal) - Math.abs(b.T - goal))[0];
   const refCount = refT ? refT.cyc.map((c, j) => SPC[E.legs[j]] === 2 ? Math.round(refT.id === 'ncaa' ? 2 * c - 1 : 2 * c) : Math.round(c)) : null;
-  return { w, share, sp, wall, centre, swim, pick, spread, refT, refCount };
+  return { w, share, sp, wall, centre, swim, pick, spread, refT, refCount, paceUsed };
 }
 const rate = (n, j, M, E) => n / SPC[E.legs[j]] / M.swim[j] * 60;
 const rTxt = (r) => (S.rate === 'cpm' ? r.toFixed(1) : (60 / r).toFixed(2));
@@ -226,9 +254,15 @@ function distOptions() {
   if (!ds.includes(S.dist)) S.dist = ds.includes(200) ? 200 : ds[0];
   sel.value = S.dist;
 }
+function ageOptions() {
+  const E = ev(), have = E.pace ? Object.keys(E.pace.ages) : ['all'];
+  $('age').innerHTML = DATA.ages.filter((a) => have.includes(a[0])).map((a) => `<option value="${a[0]}">${a[1]}</option>`).join('') || '<option value="all">All ages</option>';
+  if (!have.includes(S.age)) S.age = 'all';
+  $('age').value = S.age; $('age').disabled = !E.pace;
+}
 function tierOptions() {
-  const E = ev();
-  $('tierSel').innerHTML = '<option value="blend">Blend by goal time</option>' + E.tiers.map((t) => `<option value="${t.id}">${esc(t.label)} only</option>`).join('');
+  const E = ev(); ageOptions();
+  $('tierSel').innerHTML = (E.pace ? '<option value="blend">Real swims at this time (results DB)</option><option value="refs">Race-analysis levels only</option>' : '<option value="blend">Race-analysis levels</option>') + E.tiers.map((t) => `<option value="${t.id}">${esc(t.label)} only</option>`).join('');
   if (S.tier !== 'blend' && !E.tiers.some((t) => t.id === S.tier)) S.tier = 'blend';
   $('tierSel').value = S.tier;
 }
@@ -292,17 +326,27 @@ function render() {
   let h = '';
 
   // header + where the goal sits
-  h += `<div class="head"><div><h2 style="font-size:26px">${S.name ? esc(S.name) + ' — ' : ''}${E.dist} ${STROKE[E.stroke]}</h2><div class="ev">${E.sex === 'F' ? 'FEMALE' : 'MALE'} · ${E.course} · ${E.n} × ${E.L}${E.modeled ? ' · MODELED' : ''}</div></div><div class="goal">${fmt(goal)}</div></div>`;
-  const T = E.tiers, lo = Math.min(T[0].T, goal) * 0.985, hi = Math.max(T[T.length - 1].T, goal) * 1.015, X = (t) => ((t - lo) / (hi - lo) * 100).toFixed(2);
+  h += `<div class="head"><div><h2 style="font-size:26px">${S.name ? esc(S.name) + ' — ' : ''}${E.dist} ${STROKE[E.stroke]}</h2><div class="ev">${E.sex === 'F' ? 'FEMALE' : 'MALE'} · ${E.course} · ${E.n} × ${E.L}${E.modeled === 'rates' ? ' · RATES MODELED' : E.modeled ? ' · MODELED' : ''}</div></div><div class="goal">${fmt(goal)}</div></div>`;
+  const PB = paceProfile(E) ? paceProfile(E).bins : [];
+  const T = E.tiers, lo = Math.min(T[0].T, goal, PB.length ? PB[0].T : Infinity) * 0.985, hi = Math.max(T[T.length - 1].T, goal, PB.length ? PB[PB.length - 1].T : 0) * 1.015, X = (t) => ((t - lo) / (hi - lo) * 100).toFixed(2);
   const mix = E.tiers.map((t, k) => M.w[k] > 0.005 ? `<b>${Math.round(M.w[k] * 100)}% ${esc(t.label)}</b>` : '').filter(Boolean).join(' + ');
-  h += `<div class="sit"><p>${S.tier === 'blend' ? 'This plan is ' : 'Using one level only: '}${mix}.${goal < T[0].T && S.tier === 'blend' ? ' Your goal is faster than every level, so it uses the fastest.' : ''}${goal > T[T.length - 1].T && S.tier === 'blend' ? ' Your goal is slower than every level, so it uses the slowest.' : ''}</p>
-    <div class="bar">${T.map((t) => `<span class="tk" style="left:${X(t.T)}%"></span><span class="tl" style="left:${X(t.T)}%">${TAG[t.id]}<br><b>${fmt(t.T)}</b></span>`).join('')}<span class="mk" style="left:${X(goal)}%">${fmt(goal)}</span></div><div class="room"></div></div>`;
+  const P = paceProfile(E), ageLbl = (DATA.ages.find((a) => a[0] === S.age) || [0, 'All ages'])[1];
+  let paceTxt;
+  if (M.paceUsed) {
+    const dbUsed = M.paceUsed.filter(([L]) => L.db);
+    if (dbUsed.length) {
+      const nn = dbUsed.reduce((a, [L]) => a + L.n, 0), lo = Math.min(...dbUsed.map(([L]) => L.lo)), hi = Math.max(...dbUsed.map(([L]) => L.hi));
+      paceTxt = `<b>Pacing:</b> ${nn.toLocaleString()} real ${E.course} swims between ${fmt(lo)} and ${fmt(hi)} (${esc(ageLbl.toLowerCase())}) from NSEA's results database${M.paceUsed.some(([L]) => !L.db) ? ', blended with ' + esc(TAG[M.paceUsed.find(([L]) => !L.db)[0].id]) : ''}.`;
+    } else paceTxt = `<b>Pacing:</b> ${M.paceUsed.filter(([, w]) => w > 0.005).map(([L, w]) => `${Math.round(w * 100)}% ${esc(TAG[L.id])}`).join(' + ')}. Your goal is outside the times in the results database for this age group (${fmt(P.bins[0].T)}–${fmt(P.bins[P.bins.length - 1].T)}).`;
+  } else paceTxt = `<b>Pacing:</b> ${mix}.`;
+  h += `<div class="sit"><p>${paceTxt}<br><b>Breakouts and stroke rates:</b> ${mix}.${goal < T[0].T && S.tier !== 'blend' && S.tier !== 'refs' ? '' : goal < T[0].T ? ' Your goal is faster than every level, so they use the fastest.' : ''}${goal > T[T.length - 1].T && (S.tier === 'blend' || S.tier === 'refs') ? ' Your goal is slower than every level, so they use the slowest and hold its stroke count.' : ''}</p>
+    <div class="bar">${P ? `<span style="position:absolute;top:-3px;height:14px;border-radius:7px;background:var(--coral);opacity:.22;left:${X(Math.max(lo, P.bins[0].T))}%;width:${(X(Math.min(hi, P.bins[P.bins.length - 1].T)) - X(Math.max(lo, P.bins[0].T))).toFixed(2)}%" title="Results database"></span>` : ''}${T.map((t) => `<span class="tk" style="left:${X(t.T)}%"></span><span class="tl" style="left:${X(t.T)}%">${TAG[t.id]}<br><b>${fmt(t.T)}</b></span>`).join('')}<span class="mk" style="left:${X(goal)}%">${fmt(goal)}</span></div><div class="room"></div>${P ? `<p class="small" style="margin:0 0 8px">Shaded: the range of times in the results database for this event and age group (${P.n.toLocaleString()} swims).</p>` : ''}</div>`;
 
   // race strip
   const seg = (arr) => C.map(([a, b]) => sum(arr, a, b));
   h += `<div class="card"><h2>Race plan by ${per === 1 ? E.L : E.L * per}</h2><p class="sub">Read left to right, one column per ${per === 1 ? 'length' : 'segment'}. The tags under each row label show which data it comes from.</p><div class="tw"><table>${head(E, C)}<tbody>`;
   const segSp = seg(M.sp);
-  h += row(C, E, 'Split', segSp.map(fmt), 'hero', '', tagsFor(M, E, 'share'));
+  h += row(C, E, 'Split', segSp.map(fmt), 'hero', '', M.paceUsed ? [...new Set(M.paceUsed.map(([L]) => (L.db ? 'db' : L.id)))].map(tag).join('') : tagsFor(M, E, 'share'));
   h += row(C, E, 'vs even pace', segSp.map((v, i) => { const d = v - even * (C[i][1] - C[i][0]); return `<span class="${d < 0 ? 'faster' : 'slower'}">${d < 0 ? '−' : '+'}${Math.abs(d).toFixed(2)}</span>`; }), '', 'even = ' + (even * per).toFixed(2));
   if (per === 1 && E.n >= 2) {
     let g = `<tr class="grpsplit"><td class="rl">${E.L * 2} split</td>`;
@@ -317,6 +361,7 @@ function render() {
   }
   h += row(C, E, 'Target strokes', C.map(([a, b]) => { const n = sum(chosen, a, b); const coach = per === 1 && S.coach[a]; return `<b style="color:${coach ? 'var(--coral)' : 'var(--teal-d)'}">${isFinite(n) ? n : '—'}</b>`; }), 'hero', E.stroke === 'BR' || E.stroke === 'FL' ? 'strokes' : 'arm strokes', '<span class="src calc">rate × swim time</span>');
   h += row(C, E, 'Stroke rate', C.map(([a, b]) => { let s = 0, k = 0; for (let j = a; j < b; j++) if (chosen[j]) { s += rate(chosen[j], j, M, E); k++; } return k ? rTxt(s / k) : '—'; }), '', S.rate === 'cpm' ? 'cycles / min' : 'sec / cycle', tagsFor(M, E, 'tempo'));
+  if (E.eliteTempo) h += row(C, E, 'Top-8 rate (2021–22)', C.map(([a, b]) => { let s = 0; for (let j = a; j < b; j++) s += 60 / E.eliteTempo[j]; return rTxt(s / (b - a)); }), 'ref', 'elite reference, not a target', tag('asca'));
   if (M.refCount) h += row(C, E, 'Strokes at that level', C.map(([a, b]) => sum(M.refCount, a, b)), 'ref', 'recorded by ' + esc(M.refT.label) + ' swimmers (' + fmt(M.refT.T) + ')', tag(M.refT.id));
   if (E.kicks && per === 1) h += row(C, E, 'Dolphin kicks', E.kicks.map((k) => (k == null ? '—' : k)), '', 'elite average off each wall', '<span class="src ncaa">' + esc(E.kicksSrc.startsWith('NCAA') ? 'NCAA' : 'USA elite') + '</span>');
   h += '</tbody></table></div>';
@@ -391,7 +436,8 @@ function render() {
   h += `<div class="card"><h2>Coaching notes</h2><div class="notes">${notes.map(([c, t]) => `<div class="note ${c}">${t}</div>`).join('')}</div></div>`;
 
   // this event's levels
-  h += `<div class="card"><h2>Levels for this event</h2><div class="tw"><table class="srcs"><thead><tr><th>Level</th><th>Median time</th><th>Swims</th><th>From</th></tr></thead><tbody>${E.tiers.map((t, k) => `<tr><td>${tag(t.id)} ${esc(t.label)}${t.modeled ? ' <i class="small">modeled</i>' : ''}</td><td class="mono">${fmt(t.T)}${t.course !== E.course || t.dist !== E.dist ? ` <span class="small">(${fmt(t.Tnative)} ${t.dist} ${t.course}, ×${t.conv})</span>` : ''}</td><td>${t.n}${t.ages ? ` · ages ${t.ages[0]}–${t.ages[1]}` : ''}</td><td>${Math.round(M.w[k] * 100)}% of this plan</td></tr>`).join('')}</tbody></table></div></div>`;
+  const Pp = paceProfile(E) || (E.pace && E.pace.ages[S.age]);
+  h += `<div class="card"><h2>Levels for this event</h2><div class="tw"><table class="srcs"><thead><tr><th>Level</th><th>Median time</th><th>Swims</th><th>Used for</th></tr></thead><tbody>${Pp ? `<tr><td>${tag('db')} NSEA results database (${esc(((DATA.ages.find((a) => a[0] === S.age) || [0, 'All ages'])[1]))})</td><td class="mono">${fmt(Pp.bins[0].T)} – ${fmt(Pp.bins[Pp.bins.length - 1].T)}</td><td>${Pp.n.toLocaleString()} in ${Pp.bins.length} time bands</td><td>${S.tier === 'blend' ? 'pacing' : 'not used (switch "Plan from")'}</td></tr>` : ''}${E.tiers.map((t, k) => `<tr><td>${tag(t.id)} ${esc(t.label)}${t.modeled ? ' <i class="small">modeled</i>' : ''}</td><td class="mono">${fmt(t.T)}${t.course !== E.course || t.dist !== E.dist ? ` <span class="small">(${fmt(t.Tnative)} ${t.dist} ${t.course}, ×${t.conv})</span>` : ''}</td><td>${t.n}${t.ages ? ` · ages ${t.ages[0]}–${t.ages[1]}` : ''}</td><td>${Math.round(M.w[k] * 100)}% of breakouts and rates${M.paceUsed && M.paceUsed.some(([L]) => L.id === t.id) ? ' and pacing' : ''}</td></tr>`).join('')}</tbody></table></div></div>`;
 
   $('out').innerHTML = h;
   document.querySelectorAll('#out td.pickable').forEach((td) => {
@@ -431,6 +477,7 @@ function bindAll() {
   $('stroke').onchange = () => { S.stroke = $('stroke').value; eventChanged(); render(); };
   $('dist').onchange = () => { S.dist = +$('dist').value; S.coach = {}; tierOptions(); groupOptions(); defaultGoal(); render(); };
   $('tierSel').onchange = () => { S.tier = $('tierSel').value; render(); };
+  $('age').onchange = () => { S.age = $('age').value; render(); };
   $('step').onchange = () => { S.step = +$('step').value; render(); };
   $('name').oninput = () => { S.name = $('name').value.slice(0, 40); render(); };
   $('goal').oninput = () => {

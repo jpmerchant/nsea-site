@@ -316,13 +316,65 @@ def derive_50(g, tier, csrc, sex):
                 tempo=[x * ratio if x else None for x in g['tempo'][:h]], cyc=None, kicks=None)
 
 
+DBP = json.load(open(D('db_profiles.json'))) if os.path.exists(D('db_profiles.json')) else {'events': {}, 'ages': []}
+ASCA = json.load(open(D('asca_tempo_2021_22.json')))
+
+
+def elite_tempo(course, sex, stroke, dist, L, n):
+    """ASCA top-8 (2021-22) seconds per cycle, mapped onto each length."""
+    t = ASCA.get(sex, {}).get(course, {}).get(f'{stroke}_{dist}')
+    if not t: return None
+    seg = 50 if dist <= 200 else 100
+    return [t[min(int(((j + 0.5) * L) // seg), len(t) - 1)] for j in range(n)]
+
+
+def pacing(key, course, dist, n):
+    """Results-database pacing bins for this event, per length, by age group."""
+    e = DBP['events'].get(key)
+    if not e: return None
+    out = {}
+    if dist == 50 and course == 'SCY' and e.get('p25'):
+        for a, v in e['p25'].items():
+            out[a] = {'n': v['n'], 'bins': [{'T': b['T'], 'n': b['n'], 'lo': b['lo'], 'hi': b['hi'], 'share': b['share']} for b in v['bins']]}
+        return {'unit': 25, 'ages': out, 'n25': e.get('n25')}
+    if not e.get('p50') or dist < 100: return None
+    w = e.get('w50', {})
+    for a, v in e['p50'].items():
+        ratios = w.get(a) or w.get('all')
+        bins = []
+        for b in v['bins']:
+            sh = b['share']
+            if course == 'SCY':
+                r = ratios if ratios and len(ratios) == len(sh) else None
+                if r is None:
+                    base = ratios or [0.47, 0.495]
+                    r = [base[0]] + [st.median(base[1:]) if len(base) > 1 else 0.495] * (len(sh) - 1)
+                per = []
+                for k, x in enumerate(sh): per += [round(x * r[k], 4), round(x * (1 - r[k]), 4)]
+                sh = per
+            if len(sh) != n: continue
+            bins.append({'T': b['T'], 'n': b['n'], 'lo': b['lo'], 'hi': b['hi'], 'share': sh})
+        if bins: out[a] = {'n': v['n'], 'bins': bins, 'w50src': 'db' if (course == 'SCY' and w.get(a)) else ('db-all' if course == 'SCY' and w.get('all') else None)}
+    return {'unit': 50, 'ages': out, 'n25': e.get('n25')} if out else None
+
+
 def main(out):
-    data = {'version': 2, 'built': 'from scripts/race-planner/build_model.py', 'events': {}}
+    data = {'version': 3, 'built': 'from scripts/race-planner/build_model.py', 'ages': DBP.get('ages', []),
+            'dbTotals': DBP.get('totals'), 'events': {}}
     for e in EVENTS:
         ev = build_event(*e)
         if not ev['tiers']:
             print('NO DATA', e); continue
-        data['events']['%s_%s_%s_%d' % e] = ev
+        key = '%s_%s_%s_%d' % e
+        ev['pace'] = pacing(key, e[0], e[3], ev['n'])
+        if ev['pace'] and ev['modeled']:
+            n = ev['pace']['ages']['all']['n'] if 'all' in ev['pace']['ages'] else sum(v['n'] for v in ev['pace']['ages'].values())
+            what = {50: f'the first half of each level\'s 100 {e[2]}, sped up by the 50 free / 100 free rate difference',
+                    100: 'the 200 IM legs', 1000: 'long course 800 m races', 1650: 'long course 1500 m races'}[e[3]]
+            ev['notes'] = [f'Pacing comes from {n:,} real swims in NSEA\'s results database. There is no race-analysis data for this event, so breakouts and stroke rates are modeled from {what}.']
+            ev['modeled'] = 'rates'
+        ev['eliteTempo'] = elite_tempo(e[0], e[1], e[2], e[3], ev['L'], ev['n'])
+        data['events'][key] = ev
     json.dump(data, open(out, 'w'), separators=(',', ':'))
     print(len(data['events']), 'events ->', out, os.path.getsize(out), 'bytes')
     for b in DROPPED: print('  dropped (broken splits):', b['src'], round(b['T'], 2), [l['split'] for l in b['laps']])
