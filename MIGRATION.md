@@ -1,10 +1,10 @@
 # NSEA Swim site rebuild: migration inventory
 
-_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 101 pages in the new structure._
+_Generated from `src/data/site.mjs` by `npm run report`. 72 live URLs on nseaswimteam.com; 109 pages in the new structure._
 
 Status key: **ready** = already built, HTML saved in `legacy/` · **pull** = lives on BUILD, content must be pulled · **rebuild** = exists today but merged/redesigned · **new** = does not exist yet.
 
-Counts: rebuild 16 · done 69 · ready 14 · new 2
+Counts: rebuild 16 · done 77 · ready 14 · new 2
 
 ## 1. Live page -> new location
 
@@ -144,7 +144,7 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/programs/practice-groups/breakers/` | Breakers | page | done | `/practice-groups#Breakers` | - |
 | `/programs/practice-groups/surge/` | Surge | page | done | `/practice-groups#Surge` | - |
 | `/programs/practice-groups/senior/` | Senior | page | done | `/practice-groups#SeniorSurge` | Practice Group Documents/senior surge requirments.docx |
-| `/programs/schedule/` | Practice Schedule | page | done | `/general-practice-schedule` | - |
+| `/programs/schedule/` | Practice Schedule | page | done | `/general-practice-schedule` | Edited in the admin console (Practice Schedule) |
 | `/programs/clinics/` | Prep Programs & Clinics | hub | done | `/offerings` | - |
 | `/programs/clinics/high-school-prep/` | High School Prep | page | done | `/offerings#HighSchoolPrep` | - |
 | `/programs/clinics/high-school-skills/` | High School Skills Clinics | page | done | `/offerings#HighSchoolSkillsClinics` | - |
@@ -210,14 +210,20 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/times/records/individual/` | Individual Records | tool | ready | `/team-records---scy`, `/team-records---lcm` | tools/boards/records-traditional-*.html |
 | `/times/records/relays/` | Relay Records | tool | ready | `/scy---relay-team-records`, `/lcm---relay-team-records` | tools/boards/records-relays-*.html |
 | `/times/achievements/` | Achievements by Season | hub | rebuild | - | - |
-| `/times/achievements/2025-26/` | 2025 – 2026 | page | done | `/2025---2026`, `/2025---26-updates`, `/records-set-in-2025---26` | public/embeds/new-additions.html (2025–26 version, rebuilt from the results database Nov 2026) |
-| `/times/achievements/2024-25/` | 2024 – 2025 | page | done | `/2024---2025` | - |
+| `/times/achievements/2025-26/` | 2025 – 2026 | tool | done | `/2025---2026`, `/2025---26-updates`, `/records-set-in-2025---26` | legacy/achievements-md/2025-26.md; public/embeds/board-additions-2025-26.html (every Top 10 placement; kept, no longer linked) |
+| `/times/achievements/2024-25/` | 2024 – 2025 | tool | done | `/2024---2025` | legacy/achievements-md/2024-25.md (empty on the old site) |
 | `/times/achievements/2023-24/` | 2023 – 2024 | tool | done | `/2023---2024` | - |
 | `/times/achievements/2022-23/` | 2022 – 2023 | tool | done | `/2022---23-achievements` | - |
+| `/times/achievements/2021-22/` | 2021 – 2022 | tool | done | - | - |
+| `/times/achievements/2020-21/` | 2020 – 2021 | tool | done | - | - |
+| `/times/achievements/2019-20/` | 2019 – 2020 | tool | done | - | - |
+| `/times/achievements/2018-19/` | Summer 2019 — Founding Season | tool | done | - | - |
 | `/training/` | Training | hub | rebuild | - | - |
 | `/training/coaches-corner/` | Coach’s Corner | page | done | - | - |
 | `/training/zones/` | Training Zone Cheat Sheet | tool | done | `/training-zone-cheat-sheet` | NSEASwim-KB-Repo/NSEA_Training_Zones_Cheat_Sheet.pdf |
 | `/training/rpe/` | RPE & Session RPE | tool | done | `/rpe-information` | content/guides/rpe-session-rpe-handout.html; Project: claude/rpe-session-rpe-reference.md |
+| `/training/race-planner/` | Race Planner | tool | done | - | Claude artifact: NSEA Race Pacer; Project: claude/race-data-extracts.md; Project: claude/race-planner-reference-notes.md |
+| `/training/technique-change/` | How Long Does a Technique Change Take? | tool | done | - | Claude artifact: Technique Change Tank |
 | `/training/same/` | S.A.M.E. | hub | rebuild | - | - |
 | `/training/same/strength/` | Strength: Shoulder Care | tool | done | `/strength`, `/shoulder-strength` | Project: claude/nsea-shoulder-care-guide.html |
 | `/training/same/agility/` | Agility | page | done | `/agility` | - |
@@ -226,6 +232,8 @@ These pages are excluded from the menu and the build until the owner releases th
 | `/training/same/mobility/routines/` | Mobility Routines | tool | done | - | Project: claude/nsea-swimmer-mobility-routines.html |
 | `/training/same/foam-rolling/` | Foam Rolling | tool | done | `/foam-rolling` | Project: claude/nsea-foam-roller-guide.html |
 | `/training/same/education/` | Education | hub | rebuild | `/education` | - |
+| `/training/same/education/technique-change-guide/` | Changing Technique: A Quick Guide | tool | done | - | - |
+| `/training/same/education/technique-change-research/` | Changing Technique: The Research | tool | done | - | - |
 | `/training/same/education/caffeine-guide/` | Caffeine & Energy Drinks: A Quick Guide | tool | done | `/caffeine---energy-drinks--a-quick-guide` | content/guides/caffeine-guide-for-nsea-families_1.html |
 | `/training/same/education/caffeine-research/` | Caffeine & Energy Drinks: The Research | tool | done | `/caffeine---energy-drinks--research` | content/guides/caffeine-youth-athletes-research.html; Project: claude/nsea-research-caffeine-and-youth-athletes.html |
 
