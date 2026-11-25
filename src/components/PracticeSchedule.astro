@@ -2,11 +2,27 @@
 // Practice schedule. The base schedules render at build time from src/data/schedule-defaults.mjs, then the page loads
 // the live data (/api/content/schedule): this week and next with approved changes marked, and the current base schedules.
 // Edited in the admin console (Practice Schedule). Captyn messages are still where changes are announced first.
+// "Add to your calendar" links to the practice feed (/api/content/schedule.ics?group=…): this week + the next 4, changes applied.
 import { SEASONS, SCHED_GROUPS } from '../data/schedule-defaults.mjs';
 const DAYS6 = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const fmt = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 ---
 <div class="sched" data-sched>
+  <section class="sched-feed" data-sched-feed>
+    <h2>Add practices to your calendar</h2>
+    <p>Subscribe once and your calendar app keeps your swimmer's practice times up to date, including approved changes, for this week and the next four. Calendar apps check for updates every few hours, so Captyn messages still have the latest.</p>
+    <p class="sched-feed-pick">
+      <label>Group <select data-feed-group>
+        {SCHED_GROUPS.map((g) => <option value={g.toLowerCase()}>{g}</option>)}
+        <option value="all">All groups</option>
+      </select></label>
+    </p>
+    <div class="btn-row">
+      <a class="btn solid" data-feed-sub href="/api/content/schedule.ics?group=splash">Subscribe (iPhone, Mac, Outlook)</a>
+      <a class="btn" data-feed-google href="https://calendar.google.com/calendar/r" target="_blank" rel="noopener">Add to Google Calendar</a>
+    </div>
+    <p class="cp-small">Or copy this link into your calendar app's "subscribe" / "from URL" option: <code data-feed-url></code></p>
+  </section>
   <section data-sched-weeks hidden>
     <h2>This week &amp; next</h2>
     <p class="sched-legend"><span>Shaded</span> times are changes from the usual schedule. Captyn messages always have the latest.</p>
@@ -34,6 +50,20 @@ const fmt = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { mont
 (function () {
   var root = document.querySelector('[data-sched]');
   if (!root) return;
+  (function feed() {
+    var sel = root.querySelector('[data-feed-group]');
+    if (!sel) return;
+    function set() {
+      var https = location.origin + '/api/content/schedule.ics?group=' + sel.value;
+      var webcal = https.replace(/^https?:/, 'webcal:');
+      root.querySelector('[data-feed-sub]').href = webcal;
+      root.querySelector('[data-feed-google]').href = 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal);
+      root.querySelector('[data-feed-url]').textContent = https;
+    }
+    var m = location.hash.match(/^#(splash|tidepool|riptide|breakers|surge|senior)$/);
+    if (m) sel.value = m[1];
+    sel.addEventListener('change', set); set();
+  })();
   var GROUPS = ['Splash', 'Tidepool', 'Riptide', 'Breakers', 'Surge', 'Senior'], DAYS6 = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
   function long(d) { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); }
@@ -76,3 +106,10 @@ const fmt = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { mont
   }).catch(function () {});
 })();
 </script>
+<style>
+  .sched-feed{background:#E6F3F1;border-left:5px solid var(--teal);border-radius:8px;padding:16px 20px;margin:0 0 28px}
+  .sched-feed h2{margin-top:0}
+  .sched-feed select{font:inherit;padding:6px 8px;margin-left:6px;border-radius:6px;border:1px solid #9BA0A3}
+  .sched-feed code{word-break:break-all;font-size:12px}
+  .sched .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+</style>

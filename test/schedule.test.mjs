@@ -248,3 +248,68 @@ test('sheet import: suggestions, re-import updates only undecided ones, approved
     assert.deepEqual(live.map((x) => x.value), ['7:00 - 9:00']);
   } finally { global.Date = RealDate; }
 });
+
+// ---------- calendar feed ----------
+import { parseRange, practiceICS, feedGroup, publicScheduleICS, FEED_WEEKS } from '../worker/schedule.mjs';
+
+test('feed: practice times read as AM/PM by session', () => {
+  assert.deepEqual(parseRange('4:30 - 6:00', 'PM'), { start: '1630', end: '1800' });
+  assert.deepEqual(parseRange('6:45 - 8:15', 'PM'), { start: '1845', end: '2015' });
+  assert.deepEqual(parseRange('5:30 - 7:00', 'AM'), { start: '0530', end: '0700' });
+  assert.deepEqual(parseRange('8:30 - 10:00', 'AM'), { start: '0830', end: '1000' });
+  assert.deepEqual(parseRange('10:30 - 12:00', 'AM'), { start: '1030', end: '1200' });
+  assert.equal(parseRange('6:30–8:30am', 'PM'), null); // start read as PM, end as AM: not a range
+  assert.deepEqual(parseRange('6:30 am - 8:30 am', 'PM'), { start: '0630', end: '0830' });
+  assert.equal(parseRange('Rock Gym', 'PM'), null);
+  assert.equal(parseRange('TBD', 'PM'), null);
+  assert.equal(feedGroup('senior'), 'Senior');
+  assert.equal(feedGroup('ALL'), 'All');
+  assert.equal(feedGroup(undefined), 'All');
+  assert.equal(feedGroup('nope'), null);
+});
+
+test('feed: one group, changes applied, cancelled practices keep their UID', () => {
+  const changes = [
+    { date: '2026-11-16', group_name: 'Tidepool', session: 'PM', kind: 'cancel', value: '', note: 'Pool closed', status: 'approved' },
+    { date: '2026-11-18', group_name: 'Senior', session: 'PM', kind: 'time', value: '3:30 - 5:30', note: 'HS meet night', status: 'approved' },
+    { date: '2026-11-22', group_name: 'Surge', session: 'AM', kind: 'add', value: 'Rock Gym', note: '', status: 'approved' },
+  ];
+  const wk = weekView(cfg, '2026-11-16', changes);
+  const now = new Date('2026-11-15T12:00:00Z');
+  const senior = practiceICS(cfg, [wk], 'Senior', now);
+  const unfold = (s) => s.replace(/\r\n /g, '');
+  assert.ok(senior.endsWith('\r\n'));
+  assert.ok(senior.split('\r\n').every((l) => new TextEncoder().encode(l).length <= 75));
+  const u = unfold(senior);
+  assert.match(u, /X-WR-CALNAME:NSEA Swim Senior Practices/);
+  assert.match(u, /BEGIN:VTIMEZONE\r\nTZID:America\/New_York/);
+  // Senior: Tue/Thu/Fri/Sat AM + Mon–Thu PM = 8 practices
+  assert.equal((u.match(/BEGIN:VEVENT/g) || []).length, 8);
+  assert.ok(!u.includes('Tidepool'));
+  assert.match(u, /UID:practice-20261118-senior-pm@nseaswimteam.com\r\nDTSTAMP:20261115T120000Z\r\nDTSTART;TZID=America\/New_York:20261118T153000\r\nDTEND;TZID=America\/New_York:20261118T173000\r\nSUMMARY:Senior practice \(changed\)/);
+  assert.match(u, /DESCRIPTION:Changed from the usual schedule.\\nHS meet night\\n/);
+  assert.match(u, /DTSTART;TZID=America\/New_York:20261117T053000\r\nDTEND;TZID=America\/New_York:20261117T070000\r\nSUMMARY:Senior practice \(AM\)/);
+  assert.match(u, /LOCATION:Earl Jackson Pool\\, 750 Bess St\\, Wilmington\\, NC 28401/);
+  const tp = unfold(practiceICS(cfg, [wk], 'Tidepool', now));
+  assert.match(tp, /UID:practice-20261116-tidepool-pm@nseaswimteam.com[\s\S]*?DTSTART;TZID=America\/New_York:20261116T163000[\s\S]*?SUMMARY:Cancelled: Tidepool practice[\s\S]*?Pool closed[\s\S]*?STATUS:CANCELLED/);
+  const surge = unfold(practiceICS(cfg, [wk], 'Surge', now));
+  assert.match(surge, /DTSTART;VALUE=DATE:20261122\r\nDTEND;VALUE=DATE:20261123\r\nSUMMARY:Surge: Rock Gym/);
+  const all = unfold(practiceICS(cfg, [wk], 'All', now));
+  assert.match(all, /X-WR-CALNAME:NSEA Swim Practices/);
+  assert.match(all, /SUMMARY:Breakers practice AM/);
+  assert.ok((all.match(/BEGIN:VEVENT/g) || []).length > 30);
+});
+
+test('feed: public endpoint serves this week + 4 from approved changes', { skip: !DatabaseSync }, async () => {
+  const env = d1();
+  const r = await publicScheduleICS(env, new URL('https://x.test/api/content/schedule.ics?group=riptide'));
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get('content-type'), /text\/calendar/);
+  const body = (await r.text()).replace(/\r\n /g, '');
+  const dates = [...body.matchAll(/DTSTART;TZID=America\/New_York:(\d{8})/g)].map((m) => m[1]);
+  const mon = mondayOf(etToday()).replace(/-/g, '');
+  assert.ok(dates.length > 0);
+  assert.ok(dates.every((d) => d >= mon));
+  assert.equal(FEED_WEEKS, 5);
+  assert.equal((await publicScheduleICS(env, new URL('https://x.test/api/content/schedule.ics?group=nope'))).status, 404);
+});

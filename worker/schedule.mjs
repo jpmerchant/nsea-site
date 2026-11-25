@@ -391,6 +391,104 @@ export async function publicSchedule(env, url) {
   return json({ today, weeks, seasons: publicSeasons(cfg) }, 200, { 'cache-control': 'public, max-age=60' });
 }
 
+// ---------- calendar feed (.ics) ----------
+// Public: GET /api/content/schedule.ics?group=senior (or group=all). This week plus the next 4 weeks, approved changes
+// applied. Families subscribe once; calendar apps re-read it on their own schedule (Google: every few hours).
+// A practice keeps the same UID whether it is moved or cancelled, so a subscribed calendar updates it in place.
+export const FEED_WEEKS = 5;
+const SITE_HOST = 'nseaswimteam.com';
+const POOL = 'Earl Jackson Pool, 750 Bess St, Wilmington, NC 28401';
+const NY_TZ = ['BEGIN:VTIMEZONE', 'TZID:America/New_York',
+  'BEGIN:DAYLIGHT', 'TZOFFSETFROM:-0500', 'TZOFFSETTO:-0400', 'TZNAME:EDT', 'DTSTART:19700308T020000', 'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU', 'END:DAYLIGHT',
+  'BEGIN:STANDARD', 'TZOFFSETFROM:-0400', 'TZOFFSETTO:-0500', 'TZNAME:EST', 'DTSTART:19701101T020000', 'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU', 'END:STANDARD',
+  'END:VTIMEZONE'];
+// "4:30 - 6:00" in a PM session -> { start: '1630', end: '1800' }. Returns null for anything that isn't a time range.
+export function parseRange(text, session) {
+  const m = String(text || '').replace(/[–—]/g, '-').match(/^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*-\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
+  if (!m) return null;
+  const hh = (h, suffix) => {
+    h = +h;
+    if (suffix) return /pm/i.test(suffix) ? (h % 12) + 12 : h % 12;
+    return session === 'PM' && h < 12 ? h + 12 : h;
+  };
+  let a = hh(m[1], m[3]), b = hh(m[4], m[6]);
+  if (b < a && session === 'AM' && !m[6]) b += 12; // e.g. AM "10:30 - 12:00"
+  if (a > 23 || b > 23 || (b * 60 + +(m[5] || 0)) <= (a * 60 + +(m[2] || 0))) return null;
+  const f = (h, mi) => String(h).padStart(2, '0') + String(mi || '00').padStart(2, '0');
+  return { start: f(a, m[2]), end: f(b, m[5]) };
+}
+const icsText = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1');
+function fold(line) {
+  // 75 octets per line, continuation lines start with a space (RFC 5545 3.1); never split a UTF-8 character.
+  const enc = new TextEncoder(), out = [];
+  let cur = '', n = 0;
+  for (const ch of line) {
+    const w = enc.encode(ch).length;
+    if (n + w > (out.length ? 74 : 75)) { out.push(cur); cur = ''; n = 0; }
+    cur += ch; n += w;
+  }
+  out.push(cur);
+  return out.join('\r\n ');
+}
+const stamp = (now) => now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+export function feedGroup(v) {
+  const k = String(v || 'all').trim().toLowerCase();
+  if (k === 'all' || k === '') return 'All';
+  return SCHED_GROUPS.find((g) => g.toLowerCase() === k) || null;
+}
+// weeks: weekView() results. group: one of SCHED_GROUPS or 'All'.
+export function practiceICS(cfg, weeks, group, now = new Date()) {
+  const name = group === 'All' ? 'NSEA Swim Practices' : `NSEA Swim ${group} Practices`;
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NSEA Swim//Practice Schedule//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    `X-WR-CALNAME:${icsText(name)}`, 'X-WR-TIMEZONE:America/New_York',
+    `X-WR-CALDESC:${icsText('Practice times from the NSEA Swim practice schedule. Captyn is the source of truth for practice times.')}`,
+    'REFRESH-INTERVAL;VALUE=DURATION:PT6H', 'X-PUBLISHED-TTL:PT6H', ...NY_TZ];
+  const ts = stamp(now);
+  for (const w of weeks) for (const r of w.rows) {
+    if (group !== 'All' && r.group !== group) continue;
+    r.cells.forEach((c, i) => {
+      const d = w.days[i].date, ymd = d.replace(/-/g, '');
+      const base = baseTime(cfg, d, r.group, r.session);
+      const cancelled = c.changed && c.text === 'Off' && practices(base);
+      const text = cancelled ? base : c.text;
+      if (!text || text === 'Off' || text === 'TBD') return;
+      const uid = `practice-${ymd}-${r.group.toLowerCase()}-${r.session.toLowerCase()}@${SITE_HOST}`;
+      const t = parseRange(text, r.session);
+      const label = `${r.group} practice` + (r.session === 'AM' && group !== 'All' ? ' (AM)' : r.session === 'AM' ? ' AM' : '');
+      const desc = [];
+      if (cancelled) desc.push('Cancelled.');
+      else if (c.changed) desc.push('Changed from the usual schedule.');
+      if (c.note) desc.push(c.note);
+      desc.push('Captyn is the source of truth for practice times. If this calendar and Captyn disagree, go with Captyn.');
+      desc.push(`Practice schedule: https://www.${SITE_HOST}/programs/schedule/`);
+      L.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${ts}`);
+      if (t) L.push(`DTSTART;TZID=America/New_York:${ymd}T${t.start}00`, `DTEND;TZID=America/New_York:${ymd}T${t.end}00`);
+      else L.push(`DTSTART;VALUE=DATE:${ymd}`, `DTEND;VALUE=DATE:${addDays(d, 1).replace(/-/g, '')}`);
+      const summary = cancelled ? `Cancelled: ${label}` : t ? label + (c.changed ? ' (changed)' : '') : `${r.group}: ${text}`;
+      L.push(`SUMMARY:${icsText(summary)}`, `DESCRIPTION:${icsText(desc.join('\n'))}`);
+      if (t) L.push(`LOCATION:${icsText(POOL)}`, 'TRANSP:OPAQUE');
+      else L.push('TRANSP:TRANSPARENT');
+      L.push(`STATUS:${cancelled ? 'CANCELLED' : 'CONFIRMED'}`, 'END:VEVENT');
+    });
+  }
+  L.push('END:VCALENDAR');
+  return L.map(fold).join('\r\n') + '\r\n';
+}
+export async function publicScheduleICS(env, url) {
+  const group = feedGroup(url.searchParams.get('group'));
+  if (!group) return new Response('Unknown group. Use one of: all, ' + SCHED_GROUPS.map((g) => g.toLowerCase()).join(', '), { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  const cfg = await loadConfig(env);
+  const start = mondayOf(etToday());
+  const end = addDays(start, FEED_WEEKS * 7 - 1);
+  const { results } = await env.DB.prepare(`SELECT date, group_name, session, kind, value, note, status FROM sched_changes WHERE status = 'approved' AND date >= ? AND date <= ?`).bind(start, end).all();
+  const weeks = [];
+  for (let i = 0; i < FEED_WEEKS; i++) weeks.push(weekView(cfg, addDays(start, i * 7), results));
+  const file = group === 'All' ? 'nsea-practices' : `nsea-${group.toLowerCase()}-practices`;
+  return new Response(practiceICS(cfg, weeks, group), { status: 200, headers: {
+    'content-type': 'text/calendar; charset=utf-8', 'content-disposition': `inline; filename="${file}.ics"`,
+    'cache-control': 'public, max-age=900', 'access-control-allow-origin': '*' } });
+}
+
 // ---------- the weekly check ----------
 async function getText(url, fetchImpl) {
   const r = await fetchImpl(url, { headers: { 'user-agent': 'nsea-site-schedule-check', accept: 'text/calendar, application/json, */*' }, cf: { cacheTtl: 0 } });
