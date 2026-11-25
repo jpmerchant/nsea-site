@@ -12,6 +12,7 @@ import { handleScheduleAdmin } from './schedule.mjs';
 import { handleStaffAdmin, isManager, linkedCoach } from './staff.mjs';
 import { handleCoachingAdmin } from './coaching.mjs';
 import { handleFamiliesAdmin } from './families.mjs';
+import { handleThanksAdmin, pendingThanks } from './thanks.mjs';
 
 export const MODULES = ['carpool', 'families', 'events', 'schedule', 'content', 'assessment', 'reports', 'meetday'];
 const ROLE_NAMES = ['owner', ...MODULES, 'coach', 'staff'];
@@ -127,7 +128,8 @@ export async function handleAdmin(req, env, url) {
       const sched = can(me, 'schedule') ? await env.DB.prepare(`SELECT COUNT(*) n FROM sched_changes WHERE status = 'suggested' AND date >= date('now', '-1 day')`).first().catch(() => ({ n: 0 })) : null;
       const recent = isOwner(me) ? (await env.DB.prepare(`SELECT at, admin_email, module, action, detail FROM audit_log ORDER BY id DESC LIMIT 8`).all()).results : [];
       const staff = isManager(me) ? await env.DB.prepare(`SELECT (SELECT COUNT(*) FROM staff_changes WHERE status = 'pending') + (SELECT COUNT(*) FROM staff_items WHERE approved = 0 AND removed_at IS NULL) n`).first().catch(() => ({ n: 0 })) : null;
-      return json({ carpool: can(me, 'carpool') ? { pending: pending.n, members: members.n, openPosts: posts.n, matches: conns.n } : null, schedule: sched ? sched.n : null, staff: staff ? staff.n : null, admins: isOwner(me) ? admins.n : null, recent });
+      const thanks = can(me, 'content') ? await pendingThanks(env).catch(() => null) : null;
+      return json({ thanks, carpool: can(me, 'carpool') ? { pending: pending.n, members: members.n, openPosts: posts.n, matches: conns.n } : null, schedule: sched ? sched.n : null, staff: staff ? staff.n : null, admins: isOwner(me) ? admins.n : null, recent });
     }
 
     // ----- carpool module -----
@@ -244,6 +246,10 @@ export async function handleAdmin(req, env, url) {
     // ----- content module -----
     if (path.startsWith('/content')) {
       if (!can(me, 'content')) return fail(403, 'You do not have access to the Content module.');
+      if (path.startsWith('/content/thanks')) {
+        const t = await handleThanksAdmin(env, me, method, path, body, (module, action, detail) => audit(env, me, module, action, detail), url.origin);
+        if (t) return t;
+      }
       const r = await handleContentAdmin(env, me, method, path, body, (module, action, detail) => audit(env, me, module, action, detail));
       if (r) return r;
     }

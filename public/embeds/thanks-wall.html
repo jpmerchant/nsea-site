@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NSEA Swim — Family Thanks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Thanks Wall: approved family notes from /api/content/thanks, newest first, pinned notes on top. Refreshes every minute.
+     Works in a fixed-height iframe (BUILD) by scrolling inside, and tells a parent page its height (message "nsea-embed-height"). */
+  :root{--teal:#008675;--teal-dark:#006A5C;--coral:#ee492f;--gray:#676d70;--line:#E4E7E8;--ink:#1B2325;--warm:#FFF7EC;--amber:#e8892b;--rust:#7a3b12}
+  *{box-sizing:border-box;min-width:0}
+  [hidden]{display:none!important}
+  html,body{margin:0;background:transparent}
+  body{font:16px/1.55 'Inter',system-ui,sans-serif;color:var(--ink)}
+  .wall{max-width:1200px;margin:0 auto;padding:4px 4px 16px}
+  .head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#7a3b12,#b8321d 55%,#e8892b);color:#fff;border-radius:14px;padding:18px 20px;margin:0 0 16px}
+  .head h1{font:600 clamp(22px,4vw,30px)/1.1 'Oswald',sans-serif;text-transform:uppercase;margin:0;letter-spacing:.01em}
+  .head p{margin:4px 0 0;font-size:14px;opacity:.95}
+  .share{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:#fff;color:var(--rust);font-weight:700;text-decoration:none;white-space:nowrap}
+  .share:hover{background:var(--warm)}
+  .share:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .notes{columns:3 280px;column-gap:14px}
+  .n{break-inside:avoid;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px 18px;margin:0 0 14px;position:relative}
+  .n::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:var(--amber)}
+  .n:nth-child(3n+2)::before{background:var(--coral)}
+  .n:nth-child(3n)::before{background:var(--teal)}
+  .n.pin{background:var(--warm);border-color:#F1DCC0}
+  .n.pin .tag{display:inline-block}
+  .tag{display:none;font-size:11.5px;font-weight:700;color:var(--rust);background:#fff;border:1px solid #F1DCC0;border-radius:999px;padding:1px 9px;margin:0 0 6px}
+  .body{margin:0;white-space:pre-line;font-size:15.5px}
+  .by{margin:10px 0 0;font-weight:600;color:var(--teal-dark);font-size:14.5px}
+  .empty{text-align:center;color:var(--gray);background:var(--warm);border-radius:12px;padding:30px 16px}
+  .more{display:block;margin:4px auto 0;min-height:44px;padding:0 22px;border-radius:999px;border:1px solid var(--teal);background:#fff;color:var(--teal-dark);font:600 15px 'Inter',sans-serif;cursor:pointer}
+  .more:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+  @media (prefers-reduced-motion:no-preference){.n.new{animation:in .6s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<div class="wall">
+  <div class="head">
+    <div><h1>What our families are grateful for</h1><p>Notes of thanks from the NSEA Swim family.</p></div>
+    <a class="share" href="/embeds/share-thanks.html" target="_top">Share your thanks</a>
+  </div>
+  <div id="notes" class="notes" aria-live="polite"></div>
+  <p id="empty" class="empty" hidden>The first notes are on their way. Be the first to share yours!</p>
+  <button id="more" class="more" type="button" hidden>Show more notes</button>
+</div>
+<script>
+{
+  const box = document.getElementById('notes'), empty = document.getElementById('empty'), more = document.getElementById('more');
+  const PAGE = 24;
+  let all = [], shown = PAGE, seen = null;
+  // Opened from the site's own origin, links can stay in the frame; anywhere else (e.g. BUILD) the share link opens the form full page.
+  const card = (n, fresh) => {
+    const d = document.createElement('article'); d.className = 'n' + (n.featured ? ' pin' : '') + (fresh ? ' new' : '');
+    const t = document.createElement('span'); t.className = 'tag'; t.textContent = 'Featured';
+    const p = document.createElement('p'); p.className = 'body'; p.textContent = n.body;
+    const b = document.createElement('p'); b.className = 'by'; b.textContent = '— ' + n.signed;
+    d.append(t, p, b); return d;
+  };
+  const tellHeight = () => { try { parent.postMessage({ type: 'nsea-embed-height', height: document.documentElement.scrollHeight }, '*'); } catch (e) {} };
+  const render = () => {
+    const list = all.slice(0, shown);
+    box.replaceChildren(...list.map((n) => card(n, seen && !seen.has(n.id))));
+    empty.hidden = all.length > 0;
+    more.hidden = all.length <= shown;
+    seen = new Set(all.map((n) => n.id));
+    tellHeight();
+  };
+  const load = () => fetch('/api/content/thanks', { cache: 'no-store' }).then((r) => r.json()).then((d) => { all = Array.isArray(d.notes) ? d.notes : []; render(); }).catch(() => {});
+  more.addEventListener('click', () => { shown += PAGE; render(); });
+  load();
+  setInterval(() => { if (!document.hidden) load(); }, 60000);
+  window.addEventListener('resize', tellHeight);
+}
+</script>
+</body>
+</html>

@@ -8,12 +8,14 @@ import { syncAll } from './alumni.mjs';
 import { handleMeetdayNotify } from './meetday.mjs';
 import { handleHub } from './hub.mjs';
 import { runCheck } from './schedule.mjs';
+import { handleThanksPublic } from './thanks.mjs';
 
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (url.pathname.startsWith('/api/carpool/')) return handleCarpool(req, env, url);
     if (url.pathname.startsWith('/api/assessment/')) return handleAssessmentPublic(req, env, url);
+    if (url.pathname.startsWith('/api/thanks/')) return handleThanksPublic(req, env, url);
     if (url.pathname.startsWith('/api/content/')) return handleContent(req, env, url);
     if (url.pathname === '/api/meetday/notify') return handleMeetdayNotify(req, env, url);
     if (url.pathname.startsWith('/api/admin/')) return handleAdmin(req, env, url);

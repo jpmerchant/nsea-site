@@ -5,6 +5,7 @@ import { publicAlumni, handleAlumniAdmin } from './alumni.mjs';
 import { publicSpotlights, publicRecognition, handleRecognitionAdmin } from './recognition.mjs';
 import { publicSchedule } from './schedule.mjs';
 import { publicStaff, publicStaffPhoto } from './staff.mjs';
+import { publicThanks } from './thanks.mjs';
 
 export const ART = ['path', 'lanes', 'steps', 'wave', 'clock', 'star'];
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -20,6 +21,7 @@ export async function handleContent(req, env, url) {
   }
   if (path === '/staff') return publicStaff(env);
   { const m = path.match(/^\/staff\/photo\/(\d+)$/); if (m) return publicStaffPhoto(env, Number(m[1])); }
+  if (path === '/thanks') return publicThanks(env);
   if (path === '/alumni') return publicAlumni(env);
   if (path === '/spotlights') return publicSpotlights(env);
   if (path === '/recognition') return publicRecognition(env);
