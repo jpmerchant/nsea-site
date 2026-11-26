@@ -327,9 +327,10 @@ export function parseHy3(text) {
       const m = l.match(/^F3[MF]\s*(\d+).{5}F(\d)/);
       if (m) cur.legs[+m[2] - 1] = +m[1];
     } else if (l.startsWith('E1')) {
-      // fixed columns: sex 2, athlete 3-7, distance 15-20, stroke 21; then fee, event number, seed time + course
+      // fixed columns: sex 2, athlete 3-7, distance 15-20, stroke 21, age low 22-24, age high 25-27 (109 = and over);
+      // then fee, event number, seed time + course. The ages are read by column: "11 12" and " 0 10" have a gap, "13109" doesn't.
       const id = parseInt(l.slice(3, 8), 10), dist = parseInt(l.slice(15, 21), 10), st = HY3_STROKE[l[21]];
-      const m = l.slice(22).match(/^\s*\d+\s+[\d.]+\s+(\d+)\s+\S+\s+([\d.]+)([YLS])/);
+      const m = l.slice(28).match(/^\s*[\d.]+\s+(\d+)\s+\S+\s+([\d.]+)([YLS])/);
       if (id && dist && st && m) out.entries.push({ swimmerId: id, dist, stroke: st, event: +m[1], seed: +m[2] > 0 ? Math.round(+m[2] * 100) : null, seedCourse: m[3] });
     }
   }
