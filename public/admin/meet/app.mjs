@@ -6,6 +6,7 @@ import { derive, sessionSummary, meetSummary, parseTyped, notesFor, blocksOf, bl
 import { guessSession, heatSheetRows, photoHeatRows, ttPhotoRows, resultOps, resultsFromText, screenshotResults, htmlToText, resultLinks } from './lib/ingest.mjs';
 import * as store from './lib/store.mjs';
 import { dqGroups, DQ_BY_CODE, dqCall, dqCallLabel } from './lib/dqcodes.mjs';
+import { familyViewOn, parseInfoText } from './lib/familyinfo.mjs';
 
 const CDN = {
   pdf: new URL('vendor/pdf.min.mjs', import.meta.url).href,
@@ -680,6 +681,9 @@ function renderTools() {
     <input type="file" id="f-official" accept="application/pdf,.pdf"><div id="o-official"></div>
     <div class="btns" style="margin-top:8px"><button class="btn" data-act="official" data-s="${sessN}">${S.model.official.get(sessN)?.on ? 'Mark session unofficial' : 'Mark session official'}</button></div></div>` : ''}
 
+  ${S.pkg ? `<div class="card" id="fam-card"><h3>Families</h3><p class="small muted">The family side of Meet Day: each family's private link shows their own swimmers (heats, lanes, estimated times, results, new cuts), a team heat list with names only, and the meet info below. Nothing coach-only goes to families. Links last the season and work at every meet with family view on.</p>
+    <div id="fam-body"><p class="small muted">${S.online ? 'Loading…' : 'Needs a signal.'}</p></div></div>` : ''}
+
   <div class="card"><h3>Offline</h3><p class="small muted">Downloads the PDF and photo readers to this phone so uploads and photos work with no signal. Do this on Wi-Fi before the meet.</p>
     <div class="btns"><button class="btn" data-act="offline-libs">Download readers for offline</button></div><div id="o-off"></div></div>
 
@@ -698,7 +702,42 @@ function renderTools() {
     ${S.pkg ? `<p class="small muted">Loaded: ${esc(S.pkg.name)} · built ${esc(new Date(S.pkg.builtAt).toLocaleString())} · ${S.ops.length} changes synced${S.outbox ? `, ${S.outbox} waiting to send` : ''}.</p>` : ''}
     ${S.err ? `<p class="small" style="color:var(--coral)">Last sync problem: ${esc(S.err)}</p>` : ''}</div>`;
   bindTools();
+  if (S.pkg && S.online) loadFamilies();
 }
+
+// ---------- families (family side of Meet Day) ----------
+const ago = (t) => { if (!t) return 'not opened yet'; const m = Math.round((Date.now() - Date.parse(t.replace(' ', 'T') + 'Z')) / 60000); return m < 60 ? `opened ${m} min ago` : m < 2880 ? `opened ${Math.round(m / 60)} h ago` : `opened ${new Date(t.replace(' ', 'T') + 'Z').toLocaleDateString()}`; };
+async function loadFamilies() {
+  const el = $('#fam-body'); if (!el) return;
+  let F;
+  try { F = await api('GET', '/meetday/families?meet=' + encodeURIComponent(S.meetId)); } catch (e) { el.innerHTML = `<p class="small" style="color:var(--coral)">${esc(e.message)}</p>`; return; }
+  S.fam = F;
+  const on = familyViewOn(S.ops);
+  const live = F.links.filter((l) => !l.revoked), here = live.filter((l) => l.inMeet);
+  const pick = F.swimmers.filter((x) => x.families.length);
+  el.innerHTML = `
+    <div class="btns"><button class="btn ${on ? '' : 'solid'}" data-act="fam-on" data-on="${on ? 0 : 1}">${on ? 'Turn family view off for this meet' : 'Turn family view on for this meet'}</button></div>
+    <p class="small ${on ? '' : 'muted'}">${on ? `<b>On.</b> ${here.length} famil${here.length === 1 ? 'y has' : 'ies have'} swimmers here.` : 'Off: families with links see nothing for this meet yet.'}</p>
+    <label class="f" for="fam-info">Meet info for families</label>
+    <textarea id="fam-info" rows="8" placeholder="Warm-ups:\n- Arrive 15 minutes before warm-up">${esc(F.infoText)}</textarea>
+    <p class="small muted" style="margin:4px 0 0">${F.infoSaved ? 'Saved; families see this.' : 'Not saved yet: families see no meet info until you save. Starts from the meet file\'s general info, so check it reads right for families.'} A line ending in “:” starts a section; each line under it is a bullet.</p>
+    <div class="btns" style="margin-top:6px"><button class="btn" data-act="fam-info">Save meet info</button></div>
+    <h4 style="margin:14px 0 4px">Family links (${live.length})</h4>
+    ${live.length ? `<ul class="small" style="padding-left:18px">${live.map((l) => `<li style="margin:6px 0"><b>${esc(l.label)}</b> · ${esc(l.swimmers.join(', ') || 'no swimmers linked')}<br><span class="muted">${l.inMeet ? `${l.inMeet} swims in this meet` : 'not in this meet'} · ${esc(ago(l.seen))}${l.phones ? ` · alerts on ${l.phones} phone${l.phones > 1 ? 's' : ''}` : ''}</span>
+      <div class="btns" style="margin-top:4px"><button class="btn sm solid" data-act="fam-copy" data-url="${esc(l.url)}">Copy link</button>${navigator.share ? `<button class="btn sm" data-act="fam-share" data-url="${esc(l.url)}" data-label="${esc(l.label)}">Share…</button>` : ''}<button class="btn sm ghost" data-act="fam-revoke" data-id="${l.id}" data-label="${esc(l.label)}">Turn off</button></div></li>`).join('')}</ul>` : '<p class="small muted">No links yet.</p>'}
+    <label class="f" for="fam-pick">Make a link: swimmer in this meet</label>
+    <select id="fam-pick"><option value="">— pick a swimmer —</option>${pick.map((x) => `<option value="${x.id}">${esc(x.name)}${x.families.every((f) => f.hasLink) ? ' ✓' : ''}</option>`).join('')}</select>
+    <div id="fam-fams"></div>
+    ${F.swimmers.length > pick.length ? `<p class="small muted">${F.swimmers.length - pick.length} swimmer${F.swimmers.length - pick.length > 1 ? 's' : ''} in this meet ${F.swimmers.length - pick.length > 1 ? 'have' : 'has'} no family on the roster (Families & Roster in the admin console).</p>` : ''}
+    <h4 style="margin:14px 0 4px">Feedback from families (${F.feedback.length})</h4>
+    ${F.feedback.length ? `<ul class="small" style="padding-left:18px">${F.feedback.slice(0, 30).map((f) => `<li style="margin:4px 0">${esc(f.text)}<br><span class="muted">${esc(f.family)} · ${esc(f.page || '')} · ${esc(new Date(f.at.replace(' ', 'T') + 'Z').toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' }))}</span></li>`).join('')}</ul>` : '<p class="small muted">None yet.</p>'}`;
+  const sel = $('#fam-pick');
+  sel.onchange = () => {
+    const sw = F.swimmers.find((x) => String(x.id) === sel.value);
+    $('#fam-fams').innerHTML = !sw ? '' : `<div class="btns" style="margin-top:6px">${sw.families.map((f) => f.hasLink ? `<span class="small muted">${esc(f.family)}: has a link ✓</span>` : `<button class="btn solid sm" data-act="fam-make" data-email="${esc(f.email)}" data-label="${esc(f.family)}">Make link: ${esc(f.family)} family</button>`).join(' ')}</div>`;
+  };
+}
+
 function currentSession() {
   const t = todayIso();
   const ss = SS().filter((s) => s.nsea !== false);
@@ -984,6 +1023,12 @@ document.addEventListener('click', async (ev) => {
       const key = [...b].map((x) => 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[x % 57]).join('');
       await addOp('notifykey', { key }); toast('Key made. Copy the address into MacroDroid.'); render(); return;
     }
+    if (a === 'fam-on') { await addOp('familyview', { on: t.dataset.on === '1' }); toast(t.dataset.on === '1' ? 'Family view on' : 'Family view off'); render(); return; }
+    if (a === 'fam-info') { const sections = parseInfoText($('#fam-info').value); await addOp('finfo', { sections }); toast(sections.length ? `Meet info saved (${sections.length} section${sections.length > 1 ? 's' : ''})` : 'Meet info cleared'); render(); return; }
+    if (a === 'fam-make') { const r = await api('POST', '/meetday/family-link', { email: t.dataset.email, label: t.dataset.label }); try { await navigator.clipboard.writeText(r.url); toast('Link made and copied'); } catch { toast('Link made'); } loadFamilies(); return; }
+    if (a === 'fam-copy') { await navigator.clipboard.writeText(t.dataset.url); toast('Link copied'); return; }
+    if (a === 'fam-share') { try { await navigator.share({ title: 'NSEA Meet Day', text: `Meet Day for the ${t.dataset.label} family (private link, please don't share):`, url: t.dataset.url }); } catch { /* cancelled */ } return; }
+    if (a === 'fam-revoke') { if (!confirm(`Turn off the ${t.dataset.label} family link? It stops working on their phones right away.`)) return; await api('POST', '/meetday/family-link/revoke', { id: +t.dataset.id }); toast('Link turned off'); loadFamilies(); return; }
     if (a === 'mm-copy') { await navigator.clipboard.writeText($('#mm-url').value); toast('Address copied'); return; }
     if (a === 'save-times') {
       const n = +t.dataset.s, s = SS().find((x) => x.n === n);
