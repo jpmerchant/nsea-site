@@ -6,6 +6,7 @@ import { handleContent } from './content.mjs';
 import { handleAssessmentPublic } from './assessment-public.mjs';
 import { syncAll } from './alumni.mjs';
 import { handleMeetdayNotify } from './meetday.mjs';
+import { handleMeetdayFamily, runFamilyAlerts } from './meetday-family.mjs';
 import { handleHub } from './hub.mjs';
 import { runCheck } from './schedule.mjs';
 import { handleThanksPublic } from './thanks.mjs';
@@ -18,14 +19,17 @@ export default {
     if (url.pathname.startsWith('/api/thanks/')) return handleThanksPublic(req, env, url);
     if (url.pathname.startsWith('/api/content/')) return handleContent(req, env, url);
     if (url.pathname === '/api/meetday/notify') return handleMeetdayNotify(req, env, url);
+    if (url.pathname.startsWith('/api/meetday/family/')) return handleMeetdayFamily(req, env, url);
     if (url.pathname.startsWith('/api/admin/')) return handleAdmin(req, env, url);
     if (url.pathname.startsWith('/api/hub/')) return handleHub(req, env, url);
     return fail(404, 'Not found');
   },
   // Crons (see wrangler.jsonc): daily alumni roster refresh; Wednesday night practice schedule check
-  // ("0 2 * * 4" UTC = Wednesday 9 PM Eastern in winter, 10 PM in summer), ready for the Thursday newsletter.
+  // ("0 2 * * 4" UTC = Wednesday 9 PM Eastern in winter, 10 PM in summer), ready for the Thursday newsletter;
+  // every minute: Meet Day family alerts (does nothing unless a meet is on and a family phone is subscribed).
   async scheduled(event, env, ctx) {
-    if (event.cron === '0 2 * * 4') ctx.waitUntil(runCheck(env, 'cron').catch((e) => console.error('schedule check', e && e.message)));
+    if (event.cron === '* * * * *') ctx.waitUntil(runFamilyAlerts(env).catch((e) => console.error('family alerts', e && e.message)));
+    else if (event.cron === '0 2 * * 4') ctx.waitUntil(runCheck(env, 'cron').catch((e) => console.error('schedule check', e && e.message)));
     else ctx.waitUntil(syncAll(env));
   },
 };

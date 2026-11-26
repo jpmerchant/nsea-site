@@ -24,7 +24,7 @@ const inMeet = (p) => (fs.existsSync(at(p)) ? at(p) : path.resolve(meetDir, p));
 
 const team = new RegExp(cfg.teamMatch || 'nsea', 'i');
 const hy = parseHy3(fs.readFileSync(inMeet(cfg.hy3), 'latin1'));
-const swimmers = hy.swimmers.map((s) => ({ id: s.id, name: `${cap(s.last)}, ${s.first}`, first: s.first, last: cap(s.last), sex: s.sex, age: s.age }));
+const swimmers = hy.swimmers.map((s) => ({ id: s.id, name: `${cap(s.last)}, ${s.first}`, first: s.first, last: cap(s.last), sex: s.sex, age: s.age, ...(s.usaId ? { usaId: s.usaId } : {}) }));
 const byId = new Map(swimmers.map((s) => [s.id, s]));
 
 // Sessions: from the config, then the host's session report (timeline) if given. Multi-pool meets: the

@@ -6,9 +6,10 @@
 // IndexedDB, queue their own ops while offline and push/pull when signal comes back. Ops carry a
 // client-made id, so a retried push never duplicates anything.
 import { json, fail, clean, sha } from './util.mjs';
+import { handleFamilyAdmin } from './meetday-family.mjs';
 
 const ID = /^[a-z0-9][a-z0-9-]{2,60}$/;
-const OP_TYPES = new Set(['result', 'note', 'entries', 'official', 'scratch', 'source', 'undo', 'times', 'notifykey', 'mmnotify', 'mscratch', 'gnote', 'tags', 'timeline', 'legs', 'session', 'dq', 'star', 'sscratch', 'assign', 'cuts']);
+const OP_TYPES = new Set(['result', 'note', 'entries', 'official', 'scratch', 'source', 'undo', 'times', 'notifykey', 'mmnotify', 'mscratch', 'gnote', 'tags', 'timeline', 'legs', 'session', 'dq', 'star', 'sscratch', 'assign', 'cuts', 'familyview', 'finfo']);
 const MAX_PKG = 1_500_000;
 const MAX_OP = 200_000;
 
@@ -90,6 +91,9 @@ export async function handleMeetdayAdmin(env, me, method, path, body, audit, url
     if (/pdf/i.test(type) || /\.pdf$/i.test(u.pathname)) return json({ url: r.url || u.toString(), type: 'pdf', base64: b64(buf) });
     return json({ url: r.url || u.toString(), type: 'text', text: new TextDecoder().decode(buf) });
   }
+
+  // Family links, picker and feedback (Tools › Families)
+  if (path.startsWith('/meetday/famil')) { const r = await handleFamilyAdmin(env, me, method, path, body, audit, url); if (r) return r; }
 
   if (method === 'POST' && path === '/meetday/delete') {
     if (!owner) return fail(403, 'Only an owner can delete a meet.');
