@@ -622,3 +622,14 @@ test('NS, DFS and DNF: their own results; a DQ called only 7C / 7D reads as DNF 
   const X = sessionSummary(derive(P, ops), 2);
   assert.equal(X.dq.length, 1);
 });
+
+test('parseHy3 reads entries whose age columns have a gap (11 12, 0 10) as well as 13109', () => {
+  const hy = parseHy3([
+    'D1M    1Testa               Sam                                      ABCDEFGHIJKLMN    03312015 11',
+    'E1M    1TestaMM   100A 11 12      9.00  72       0Y  101.96Y',
+    'E1M    1TestaMM   100B 13109     12.00  52       0Y   84.26Y',
+    'E1M    1TestaMM   500A  0109      9.00   4       0Y  366.86Y',
+    'E1M    1TestaMM    50A  0 10      9.00  24       0Y    0.00Y',
+  ].join('\n'));
+  assert.deepEqual(hy.entries.map((e) => [e.event, e.dist, e.stroke, e.seed]), [[72, 100, 'Free', 10196], [52, 100, 'Back', 8426], [4, 500, 'Free', 36686], [24, 50, 'Free', null]]);
+});
